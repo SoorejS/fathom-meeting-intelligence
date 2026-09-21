@@ -173,3 +173,9 @@ Native transcript SHA-256 at verification: `303e794f0998e1aee4735e182f5aef7e8b53
 Unchanged capture file SHA-256: `5a85d7964c2d1ef90649c26a721e807c436bc348218d7a6f9f48ceba213adfe2`.
 
 No Session 3 was needed because the two native identities are different. This update appends evidence only; it does not rewrite or delete any existing log entry, replace any commit, or modify assignment application code. The earlier stated limitation about reboot/relaunch testing remains unchanged.
+
+## Final engineering-audit capture check — 2026-09-21
+
+The two Codex canary files still match the SHA-256 values recorded above. Both capture directories and configurations remain tracked, and `.agent-logs/` is not ignored. Native-session identity evidence and all existing excerpts in this document remain unchanged.
+
+The inherited Antigravity working-tree log already differed from its committed response 6 at the start of this engineering pass. Another process later committed `ee82475` and updated that response again. The user confirmed Antigravity was paused before finalization. The engineering audit does not rewrite these captured entries or erase any earlier commit; see `FINAL-AUDIT.md` for the limitation. This observation prevents an unqualified claim that the entire historical Antigravity record was append-only.
