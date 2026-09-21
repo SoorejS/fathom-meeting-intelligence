@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Search, X, MessageSquare, CheckSquare, FileText, Calendar, ArrowRight, Video, Sparkles } from "lucide-react";
+import { Search, X, MessageSquare, CheckSquare, FileText, ArrowRight, Video, Sparkles } from "lucide-react";
 import { Meeting } from "@/types/meeting";
 
 interface GlobalSearchModalProps {
@@ -40,9 +40,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setQuery("");
-      setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      inputRef.current?.focus();
     }
   }, [isOpen]);
 
@@ -168,7 +166,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-start justify-center pt-16 px-4 animate-in fade-in duration-150">
+    <div role="dialog" aria-modal="true" aria-label="Search meetings" className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-start justify-center pt-16 px-4 animate-in fade-in duration-150">
       <div
         className="w-full max-w-2xl bg-[#131722] border border-[#2B3446] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-150"
         onKeyDown={handleKeyDown}
@@ -195,6 +193,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               <X className="w-4 h-4" />
             </button>
           )}
+          <button aria-label="Close search" onClick={onClose}>Close</button>
           <kbd className="text-[10px] text-slate-400 px-1.5 py-0.5 rounded bg-[#1B2230] border border-[#2A3446]">
             ESC
           </kbd>
@@ -233,16 +232,16 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               <Sparkles className="w-8 h-8 text-cyan-400/50 mx-auto mb-2.5" />
               <p className="font-medium text-slate-300">Search through all 6 seeded meetings</p>
               <p className="text-[11px] text-slate-400 mt-1">
-                Try searching for: <span className="text-cyan-400 font-mono">"retention"</span>,{" "}
-                <span className="text-cyan-400 font-mono">"Sarah"</span>,{" "}
-                <span className="text-cyan-400 font-mono">"Okta"</span>,{" "}
-                <span className="text-cyan-400 font-mono">"pgBouncer"</span>,{" "}
-                <span className="text-cyan-400 font-mono">"Maya"</span>
+                Try searching for: <span className="text-cyan-400 font-mono">&ldquo;retention&rdquo;</span>,{" "}
+                <span className="text-cyan-400 font-mono">&ldquo;Sarah&rdquo;</span>,{" "}
+                <span className="text-cyan-400 font-mono">&ldquo;Okta&rdquo;</span>,{" "}
+                <span className="text-cyan-400 font-mono">&ldquo;pgBouncer&rdquo;</span>,{" "}
+                <span className="text-cyan-400 font-mono">&ldquo;Maya&rdquo;</span>
               </p>
             </div>
           ) : filteredResults.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-xs">
-              <p className="text-slate-300">No results found for "{query}"</p>
+              <p className="text-slate-300">No results found for &ldquo;{query}&rdquo;</p>
               <p className="text-[11px] text-slate-400 mt-1">Try another keyword or change the category filter.</p>
             </div>
           ) : (

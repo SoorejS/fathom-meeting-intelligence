@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { MeetingsDashboard } from "@/components/MeetingsDashboard";
@@ -9,12 +9,28 @@ import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 import { ShareModal } from "@/components/ShareModal";
 import { SEEDED_MEETINGS } from "@/data/seededMeetings";
 import { Meeting } from "@/types/meeting";
-import { Users, ListMusic, Bell, DollarSign, Sparkles } from "lucide-react";
+import { Users, ListMusic } from "lucide-react";
 
+function subscribeToUrl(callback: () => void) {
+  window.addEventListener("popstate", callback);
+  return () => window.removeEventListener("popstate", callback);
+}
+function navigate(meetingId?: string, timestamp?: number) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  if (meetingId) url.searchParams.set("meeting", meetingId);
+  if (timestamp !== undefined) url.searchParams.set("t", String(timestamp));
+  window.history.pushState({}, "", url);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
 export default function Home() {
   const [meetings, setMeetings] = useState<Meeting[]>(SEEDED_MEETINGS);
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
-  const [selectedMeetingTimestamp, setSelectedMeetingTimestamp] = useState<number | undefined>(undefined);
+  const search = useSyncExternalStore(subscribeToUrl, () => window.location.search, () => "");
+  const params = new URLSearchParams(search);
+  const selectedMeetingId = params.get("meeting");
+  const rawTime = Number(params.get("t") || 0);
+  const selectedMeetingTimestamp = Number.isFinite(rawTime) ? Math.max(0, rawTime) : 0;
+  const [shareTimestamp, setShareTimestamp] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sharingMeeting, setSharingMeeting] = useState<Meeting | null>(null);
   const [sidebarTab, setSidebarTab] = useState<string>("my-calls");
@@ -22,15 +38,15 @@ export default function Home() {
   const selectedMeeting = meetings.find((m) => m.id === selectedMeetingId) || null;
 
   const handleSelectMeeting = (meetingId: string, timestamp?: number) => {
-    setSelectedMeetingId(meetingId);
-    setSelectedMeetingTimestamp(timestamp);
+    navigate(meetingId, timestamp);
   };
 
   const handleUpdateMeeting = (updated: Meeting) => {
     setMeetings((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
   };
 
-  const handleShareMeeting = (meeting: Meeting) => {
+  const handleShareMeeting = (meeting: Meeting, timestamp = 0) => {
+    setShareTimestamp(timestamp);
     setSharingMeeting(meeting);
   };
 
@@ -40,7 +56,7 @@ export default function Home() {
       <Header
         onOpenSearch={() => setIsSearchOpen(true)}
         onNavigateHome={() => {
-          setSelectedMeetingId(null);
+          navigate();
           setSidebarTab("my-calls");
         }}
       />
@@ -53,7 +69,7 @@ export default function Home() {
             activeTab={sidebarTab}
             onSelectTab={(tab) => {
               setSidebarTab(tab);
-              setSelectedMeetingId(null);
+              navigate();
             }}
             totalCallsCount={meetings.length}
           />
@@ -64,13 +80,14 @@ export default function Home() {
           {selectedMeeting ? (
             /* Meeting Detail Vertical Slice */
             <MeetingDetailView
+              key={`${selectedMeetingId}:${selectedMeetingTimestamp}`}
               meeting={selectedMeeting}
-              initialTimestamp={selectedMeetingTimestamp}
+              initialTimestamp={Math.min(selectedMeetingTimestamp, selectedMeeting.duration)}
               onBack={() => {
-                setSelectedMeetingId(null);
-                setSelectedMeetingTimestamp(undefined);
+                navigate();
+                setSidebarTab("my-calls");
               }}
-              onShare={() => handleShareMeeting(selectedMeeting)}
+              onShare={(timestamp) => handleShareMeeting(selectedMeeting, timestamp)}
               onUpdateMeeting={handleUpdateMeeting}
             />
           ) : sidebarTab === "team-calls" ? (
@@ -86,6 +103,8 @@ export default function Home() {
                 </p>
               </div>
               <MeetingsDashboard
+                activeSubTab={sidebarTab}
+                onNavigate={setSidebarTab}
                 meetings={meetings.filter((m) => m.category === "Product" || m.category === "Engineering")}
                 onSelectMeeting={handleSelectMeeting}
                 onShareMeeting={handleShareMeeting}
@@ -126,9 +145,17 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          ) : sidebarTab === "alerts" || sidebarTab === "deals" ? (
+            <div className="p-8 space-y-4">
+              <h1 className="text-xl font-bold">{sidebarTab === "alerts" ? "Alerts" : "Deals"}</h1>
+              <p className="text-slate-400">{sidebarTab === "alerts" ? "No alerts in this demo workspace. Live notifications are outside this demo." : "CRM integrations are outside this demo. Explore the Sales meeting for a seeded sales review."}</p>
+              <button onClick={() => setSidebarTab("my-calls")} className="text-cyan-400">Back to My Calls</button>
+            </div>
           ) : (
             /* Default Dashboard: My Calls */
             <MeetingsDashboard
+                activeSubTab={sidebarTab}
+                onNavigate={setSidebarTab}
               meetings={meetings}
               onSelectMeeting={handleSelectMeeting}
               onShareMeeting={handleShareMeeting}
@@ -138,18 +165,19 @@ export default function Home() {
       </div>
 
       {/* 3. Global Modals */}
-      <GlobalSearchModal
+      {isSearchOpen && <GlobalSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         meetings={meetings}
         onSelectMeeting={(id, ts) => handleSelectMeeting(id, ts)}
-      />
+      />}
 
-      <ShareModal
+      {sharingMeeting && <ShareModal
+        currentTimestamp={shareTimestamp}
         meeting={sharingMeeting}
         isOpen={!!sharingMeeting}
         onClose={() => setSharingMeeting(null)}
-      />
+      />}
     </div>
   );
 }

@@ -31,7 +31,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({ summaryTemplates }) =>
     { key: "engineering", label: "Engineering Spec" },
   ];
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const text = `
 ${currentSummary.title}
 
@@ -44,8 +44,8 @@ Decisions Made:
 ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
     `.trim();
 
-    navigator.clipboard.writeText(text);
-    setCopied(true);
+    try { await navigator.clipboard.writeText(text); setCopied(true); }
+    catch { setBannerToast("Clipboard unavailable. Select and copy the summary text."); }
     setTimeout(() => setCopied(false), 2500);
   };
 
@@ -63,7 +63,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
           <div className="inline-flex items-center rounded-lg bg-[#181a22] border border-[#272b38] text-xs text-white overflow-hidden shadow-sm">
             <div className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-[#202430] transition-colors relative cursor-pointer">
               <FileText className="w-3.5 h-3.5 text-[#00c2ff]" />
-              <select
+              <select aria-label="Summary template"
                 value={activeTemplate}
                 onChange={(e) => setActiveTemplate(e.target.value as SummaryTemplateKey)}
                 className="bg-transparent text-xs font-semibold text-white focus:outline-none appearance-none pr-4 cursor-pointer"
@@ -78,7 +78,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
             </div>
 
             <button
-              onClick={() => showBannerToast("Template configuration updated")}
+              onClick={() => showBannerToast("Choose a summary template from the dropdown. Custom template editing is outside this demo.")}
               className="px-2 py-1.5 border-l border-[#272b38] hover:bg-[#202430] text-slate-400 hover:text-white transition-colors cursor-pointer"
               title="Template settings"
             >
@@ -123,14 +123,14 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => showBannerToast("Preset applied to all future meeting summaries")}
+            onClick={() => showBannerToast("Future recording preferences are outside this seeded demo.")}
             className="px-2.5 py-1 rounded-md border border-[#00c2ff]/40 hover:bg-[#00c2ff]/10 text-[#00c2ff] text-[11px] font-semibold transition-colors cursor-pointer"
           >
             Apply to Future Summaries
           </button>
 
           <button
-            onClick={() => showBannerToast("Edit summary enabled")}
+            onClick={() => showBannerToast("Summary editing is outside this demo. Try another prepared template.")}
             className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#202430] transition-colors"
             title="Edit Summary"
           >
@@ -138,7 +138,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
           </button>
 
           <button
-            onClick={() => showBannerToast("Reverted to original summary")}
+            onClick={() => { setActiveTemplate("default"); showBannerToast("Restored the Enhanced template"); }}
             className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#202430] transition-colors"
             title="Undo Changes"
           >

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Gift, Settings, HelpCircle, User, Sparkles, ChevronDown, Check, Clock } from "lucide-react";
+import { Search, Gift, Settings, HelpCircle, Sparkles, Check } from "lucide-react";
 
 interface HeaderProps {
   onOpenSearch: () => void;
@@ -50,11 +50,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
           {/* Search Bar adjacent to Logo */}
           <button
             onClick={onOpenSearch}
-            className="flex items-center gap-2.5 px-3 py-1.5 bg-[#1e2026] hover:bg-[#252830] border border-[#2b2e38] hover:border-cyan-500/40 rounded-lg text-xs text-slate-400 transition-all duration-150 w-52 sm:w-64 md:w-72 group cursor-pointer"
+            className="flex items-center gap-2.5 px-3 py-1.5 bg-[#1e2026] hover:bg-[#252830] border border-[#2b2e38] hover:border-cyan-500/40 rounded-lg text-xs text-slate-400 transition-all duration-150 w-9 sm:w-52 md:w-64 group cursor-pointer"
             title="Search recordings (⌘K)"
           >
             <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400 transition-colors shrink-0" />
-            <span className="truncate text-slate-300 flex-1 text-left">Search Call Recordings</span>
+            <span className="hidden sm:block truncate text-slate-300 flex-1 text-left">Search Call Recordings</span>
             <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono text-slate-400 bg-[#14151a] border border-[#2d303a] rounded">
               ⌘K
             </kbd>
@@ -62,11 +62,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
         </div>
 
         {/* Right: Refer, Settings, Help & Feedback, Points badge, Profile Avatar */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Refer button */}
           <button
-            onClick={() => showToast("Referral link copied! Give 1 mo, get 1 mo Premium free.")}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
+            onClick={() => showToast("Referrals are outside this demo.")}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
             title="Refer & Earn"
           >
             <Gift className="w-4 h-4 text-slate-400" />
@@ -75,7 +75,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
 
           {/* Settings button */}
           <button
-            onClick={() => showToast("Settings: Zoom, Google Meet & Auto-record are active.")}
+            onClick={() => showToast("Demo workspace: recording and calendar integrations are not connected.")}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
             title="Settings"
           >
@@ -85,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
 
           {/* Help & Feedback button */}
           <button
-            onClick={() => showToast("Help & Feedback: Fathom Support Chat available.")}
+            onClick={() => showToast("Explore a meeting, then switch between Summary, Transcript, and Ask Fathom.")}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
             title="Help & Feedback"
           >
@@ -95,8 +95,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
 
           {/* Gold Star Points Badge */}
           <button
-            onClick={() => showToast("You have 30 points! Earning chances in monthly $1,000 Amazon Gift Card raffle.")}
-            className="flex items-center gap-1 px-2.5 py-1 bg-[#1e2026] hover:bg-[#252830] border border-amber-500/30 rounded-full text-xs font-bold text-amber-400 transition-colors cursor-pointer"
+            onClick={() => showToast("Demo workspace — billing and rewards are not enabled.")}
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-[#1e2026] hover:bg-[#252830] border border-amber-500/30 rounded-full text-xs font-bold text-amber-400 transition-colors cursor-pointer"
             title="30 Points"
           >
             <span className="text-amber-400">★</span>
@@ -108,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
             <button
               onClick={() => setProfileOpen(!profileOpen)}
               className="w-7 h-7 rounded-full bg-[#e85a38] text-white flex items-center justify-center text-xs font-bold ring-1 ring-white/20 hover:ring-cyan-400 transition-all cursor-pointer focus:outline-none"
-              title="Soorej (soorej22subra@gmail.com)"
+              title="Demo Reviewer (reviewer@example.com)"
             >
               S
             </button>
@@ -116,8 +116,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
             {profileOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-[#16181d] border border-[#2a2d37] rounded-xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-3.5 py-2 border-b border-[#22252c]">
-                  <p className="text-xs font-semibold text-white">Soorej S</p>
-                  <p className="text-[11px] text-slate-400 truncate">soorej22subra@gmail.com</p>
+                  <p className="text-xs font-semibold text-white">Demo Reviewer</p>
+                  <p className="text-[11px] text-slate-400 truncate">reviewer@example.com</p>
                   <div className="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     <Sparkles className="w-2.5 h-2.5" />
                     <span>Fathom Pro Workspace</span>
@@ -145,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
                   <button
                     onClick={() => {
                       setProfileOpen(false);
-                      showToast("Logged out of session");
+                      showToast("This public demo does not require sign-in.");
                     }}
                     className="w-full text-left px-3.5 py-2 hover:bg-[#1e222a] text-rose-400 transition-colors"
                   >

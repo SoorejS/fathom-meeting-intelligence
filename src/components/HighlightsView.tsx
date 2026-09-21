@@ -107,7 +107,7 @@ export const HighlightsView: React.FC<HighlightsViewProps> = ({
                 </div>
 
                 <p className="text-xs text-slate-200 leading-relaxed italic">
-                  "{h.text}"
+                  &ldquo;{h.text}&rdquo;
                 </p>
 
                 <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1f222d]">

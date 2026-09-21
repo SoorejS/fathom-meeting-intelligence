@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { findMeetingAnswer } from "@/lib/meetingAnswers";
 import { AiQnAItem } from "@/types/meeting";
-import { Sparkles, Play, RefreshCw, ArrowUp, Bot, User } from "lucide-react";
+import { Sparkles, Play, RefreshCw, ArrowUp } from "lucide-react";
 
 interface AskAiViewProps {
   aiQnA: AiQnAItem[];
@@ -24,19 +25,17 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
     {
       id: "msg_init",
       sender: "fathom",
-      text: `I've analyzed this entire call (${meetingTitle}). Ask me anything about decisions, action items, speaker quotes, or specific discussions.`,
+      text: `Explore prepared answers grounded in this meeting (${meetingTitle}). Choose a question below or ask about the same topics.`,
     },
   ]);
   const [inputQuery, setInputQuery] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const suggestedQuestions = [
-    "Things I promised I'd do by this week",
-    "What were the key decisions made?",
-    "What concerns were raised?",
-    "Summarize the next steps",
-  ];
+  const suggestedQuestions = aiQnA.map((item) => item.question);
+  const responseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messageSequence = useRef(0);
+  useEffect(() => () => { if (responseTimer.current) clearTimeout(responseTimer.current); }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,10 +43,10 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
 
   const handleAsk = (query: string) => {
     const q = query.trim();
-    if (!q) return;
+    if (!q || isTyping) return;
 
     const userMsg: Message = {
-      id: `u_${Date.now()}`,
+      id: `u_${++messageSequence.current}`,
       sender: "user",
       text: q,
     };
@@ -55,40 +54,12 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
     setInputQuery("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const normalizedQ = q.toLowerCase();
-      let matched = aiQnA.find(
-        (item) =>
-          normalizedQ.includes(item.question.toLowerCase().slice(0, 15)) ||
-          item.question.toLowerCase().includes(normalizedQ.slice(0, 15))
-      );
-
-      if (!matched) {
-        if (
-          normalizedQ.includes("promised") ||
-          normalizedQ.includes("action") ||
-          normalizedQ.includes("step")
-        ) {
-          matched = aiQnA.find((item) => item.question.toLowerCase().includes("action"));
-        } else if (
-          normalizedQ.includes("decide") ||
-          normalizedQ.includes("decision") ||
-          normalizedQ.includes("launch")
-        ) {
-          matched = aiQnA.find((item) => item.question.toLowerCase().includes("decide"));
-        } else if (normalizedQ.includes("concern") || normalizedQ.includes("client")) {
-          matched = aiQnA.find((item) => item.question.toLowerCase().includes("concern"));
-        } else {
-          matched = aiQnA[0];
-        }
-      }
-
-      const answerText = matched
-        ? matched.answer
-        : `Based on the transcript analysis for this call, participants aligned on timeline deliverables, resolved system bottlenecks, and finalized next milestones.`;
+    responseTimer.current = setTimeout(() => {
+      const matched = findMeetingAnswer(q, aiQnA);
+      const answerText = matched?.answer || "I don't have a supported answer to that question in this meeting's prepared notes. Try one of the meeting-specific questions below or review the transcript.";
 
       const aiMsg: Message = {
-        id: `f_${Date.now()}`,
+        id: `f_${++messageSequence.current}`,
         sender: "fathom",
         text: answerText,
         citationTimestamp: matched?.citationTimestamp,
@@ -116,15 +87,17 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
         </div>
 
         <button
-          onClick={() =>
+          onClick={() => {
+            if (responseTimer.current) clearTimeout(responseTimer.current);
+            setIsTyping(false);
             setMessages([
               {
                 id: "msg_init_reset",
                 sender: "fathom",
                 text: `Conversation reset. Ask any question about this meeting.`,
               },
-            ])
-          }
+            ]);
+          }}
           className="p-1 text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
           title="Reset conversation"
         >
@@ -197,6 +170,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
         {suggestedQuestions.map((sq, i) => (
           <button
             key={i}
+            disabled={isTyping}
             onClick={() => handleAsk(sq)}
             className="px-2.5 py-1 rounded-full bg-[#161820] hover:bg-[#20232d] border border-[#262a37] text-[11px] text-slate-300 hover:text-white transition-colors whitespace-nowrap cursor-pointer"
           >

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState } from "react";
 import { Meeting } from "@/types/meeting";
 import { X, Copy, Check, Link, Globe, Clock } from "lucide-react";
@@ -19,14 +20,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 }) => {
   const [includeTimestamp, setIncludeTimestamp] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
 
   if (!isOpen || !meeting) return null;
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://fathom.video";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
   const shareUrl =
     includeTimestamp && currentTimestamp > 0
-      ? `${baseUrl}/share/${meeting.id}?t=${Math.floor(currentTimestamp)}`
-      : `${baseUrl}/share/${meeting.id}`;
+      ? `${baseUrl}?meeting=${encodeURIComponent(meeting.id)}&t=${Math.floor(currentTimestamp)}`
+      : `${baseUrl}?meeting=${encodeURIComponent(meeting.id)}`;
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -34,14 +36,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setCopyError(false);
+    } catch { setCopyError(true); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+    <div role="dialog" aria-modal="true" aria-label="Share meeting" onKeyDown={(event) => { if (event.key === "Escape") onClose(); }} className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
       <div className="w-full max-w-md bg-[#13151c] border border-[#262a36] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[#20242f]">
@@ -51,10 +55,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-white">Share Call Recording</h3>
-              <p className="text-[11px] text-slate-400">Share video, transcript & AI summary</p>
+              <p className="text-[11px] text-slate-400">Share simulated playback, transcript & summary</p>
             </div>
           </div>
           <button
+            aria-label="Close share dialog"
             onClick={onClose}
             className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
           >
@@ -67,7 +72,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* Meeting Summary Pill */}
           <div className="p-3 bg-[#171a23] border border-[#262a36] rounded-xl flex items-center gap-3">
             <div className="w-11 h-11 rounded-lg bg-slate-800 overflow-hidden shrink-0 border border-white/10">
-              <img src={meeting.thumbnail} alt={meeting.title} className="w-full h-full object-cover" />
+              <Image width={600} height={338} src={meeting.thumbnail} alt={meeting.title} className="w-full h-full object-cover" />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-xs font-bold text-white truncate">{meeting.title}</h4>
@@ -108,6 +113,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </div>
           </div>
 
+          {copyError && <p role="alert" className="text-xs text-amber-300">Clipboard unavailable. Select and copy the link below.</p>}
           {/* Link Display and Copy */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-slate-400">Shareable URL</label>
@@ -115,8 +121,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <input
                 type="text"
                 readOnly
+                aria-label="Shareable URL"
                 value={shareUrl}
-                className="flex-1 bg-transparent px-2 text-xs font-mono text-slate-300 focus:outline-none truncate select-all"
+                className="min-w-0 flex-1 bg-transparent px-2 text-xs font-mono text-slate-300 focus:outline-none truncate select-all"
               />
               <button
                 onClick={handleCopy}
@@ -145,7 +152,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Footer */}
         <div className="p-3 bg-[#0e1015] border-t border-[#1f232d] text-center">
           <p className="text-[10px] text-slate-400">
-            Recipients can watch the recording, read transcripts, and track action items without signing in.
+            Recipients can explore the demo playback, transcripts, and seeded action items without signing in.
           </p>
         </div>
       </div>

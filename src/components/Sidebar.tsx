@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { PhoneCall, Users, ListMusic, Bell, DollarSign, Bot, Radio, Plus, Zap } from "lucide-react";
+import { PhoneCall, Users, ListMusic, Bell, DollarSign, Bot, Radio, Plus } from "lucide-react";
 
 interface SidebarProps {
   activeTab: string;
@@ -16,10 +16,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navItems = [
     { id: "my-calls", label: "My Calls", icon: PhoneCall, count: totalCallsCount, primary: true },
-    { id: "team-calls", label: "Team Calls", icon: Users, count: 18 },
-    { id: "playlists", label: "Playlists", icon: ListMusic, count: 3 },
-    { id: "alerts", label: "Alerts", icon: Bell, count: 2 },
-    { id: "deals", label: "Deals", icon: DollarSign, count: 5 },
+    { id: "team-calls", label: "Team Calls", icon: Users, count: 2 },
+    { id: "playlists", label: "Playlists", icon: ListMusic, count: 2 },
+    { id: "alerts", label: "Alerts", icon: Bell },
+    { id: "deals", label: "Deals", icon: DollarSign },
   ];
 
   return (
@@ -72,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center justify-between px-2.5 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             <span>Pinned Lists</span>
             <button
-              onClick={() => alert("Playlist created: Customer Objections")}
+              onClick={() => alert("Playlist editing is outside this demo. Explore the two seeded playlists.")}
               className="hover:text-cyan-400 transition-colors"
               title="Create new playlist"
             >
@@ -111,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <p className="text-xs font-semibold text-white truncate">Fathom Notetaker</p>
               <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
             </div>
-            <p className="text-[10px] text-slate-400 truncate">Auto-joining enabled</p>
+            <p className="text-[10px] text-slate-400 truncate">Demo capture · not connected</p>
           </div>
         </div>
 

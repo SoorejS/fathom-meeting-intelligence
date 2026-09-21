@@ -9,7 +9,6 @@ import {
   Volume2,
   VolumeX,
   Maximize2,
-  Activity,
   Mic,
 } from "lucide-react";
 import { Highlight, Participant, HighlightType } from "@/types/meeting";
@@ -30,20 +29,19 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
   onTimeUpdate,
   highlights,
   currentSpeaker,
-  allSpeakers,
   meetingTitle,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(0.85);
+  const playerRef = useRef<HTMLDivElement>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
   // Playback loop
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isPlaying) {
+    if (isPlaying && currentTime < duration) {
       interval = setInterval(() => {
         onTimeUpdate(Math.min(duration, currentTime + 0.5 * playbackSpeed));
       }, 500);
@@ -51,7 +49,11 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
     return () => clearInterval(interval);
   }, [isPlaying, currentTime, duration, playbackSpeed, onTimeUpdate]);
 
-  const togglePlay = () => setIsPlaying(!isPlaying);
+  const playing = isPlaying && currentTime < duration;
+  const togglePlay = () => {
+    if (currentTime >= duration) { onTimeUpdate(0); setIsPlaying(true); }
+    else setIsPlaying(!isPlaying);
+  };
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -101,7 +103,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="bg-[#12141a] border border-[#20232c] rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+    <div ref={playerRef} className="bg-[#12141a] border border-[#20232c] rounded-2xl overflow-hidden flex flex-col shadow-2xl">
       {/* Video Simulation Canvas Screen (Matching Fathom Reference Screenshot) */}
       <div
         className="relative aspect-video w-full bg-gradient-to-br from-[#0a0c11] via-[#121622] to-[#181d2a] flex flex-col items-center justify-center overflow-hidden group select-none cursor-pointer"
@@ -191,6 +193,13 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
       {/* Scrubber Timeline Bar with Highlight Pips (Matching Screenshot) */}
       <div className="px-4 pt-2.5 pb-1 bg-[#0f1116]">
         <div
+          role="slider"
+          aria-label="Playback position"
+          aria-valuemin={0}
+          aria-valuemax={duration}
+          aria-valuenow={Math.floor(currentTime)}
+          tabIndex={0}
+          onKeyDown={(event) => { if (["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) { event.preventDefault(); if (event.key === "Home") onTimeUpdate(0); else if (event.key === "End") onTimeUpdate(duration); else skipSeconds(event.key === "ArrowRight" ? 10 : -10); } }}
           ref={timelineRef}
           onClick={handleTimelineClick}
           onMouseMove={handleTimelineHover}
@@ -240,14 +249,14 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
       </div>
 
       {/* Player Bottom Controls (Matching Live Fathom 6b0e6e8c-3a51-4773-b1bd-bc28ac4ab733.png) */}
-      <div className="px-4 py-2 bg-[#0f1116] flex items-center justify-between gap-3 text-xs text-slate-300">
+      <div className="px-3 py-2 bg-[#0f1116] flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300">
         {/* Left: Speaker label + Volume + Time */}
         <div className="flex items-center gap-3">
           {/* Speaker label tag on bottom-left: ll Speaker Name (Demo) */}
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
             <span className="text-[#00c2ff] font-bold">ll</span>
             <span className="text-slate-300 truncate max-w-[140px]">
-              {currentSpeaker?.name || "Emily Bowman"} (Demo)
+              {currentSpeaker?.name || "Speaker"} (Demo)
             </span>
           </div>
 
@@ -285,7 +294,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
           <button
             onClick={togglePlay}
             className="p-1.5 rounded-full bg-[#00c2ff] hover:bg-[#00b0e8] text-black transition-colors cursor-pointer shadow-md"
-            title={isPlaying ? "Pause" : "Play"}
+            title={playing ? "Pause" : "Play"}
           >
             {isPlaying ? (
               <Pause className="w-3.5 h-3.5 fill-current" />
@@ -314,9 +323,9 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
           </button>
 
           <button
-            onClick={togglePlay}
+            onClick={async () => { if (document.fullscreenElement) await document.exitFullscreen(); else await playerRef.current?.requestFullscreen(); }}
             className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
-            title="Fullscreen / Mini-player"
+            title="Fullscreen"
           >
             <Maximize2 className="w-3.5 h-3.5" />
           </button>

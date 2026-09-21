@@ -1,0 +1,13 @@
+.agent-logs/
+.agents/
+.codex/
+screenshot-for-fathomAI-clone/
+CAPTURE-TEST*.md
+scripts/keep_tunnel.py
+scripts/capture-codex.cjs
+.git/
+out/
+.next/
+node_modules/
+*.log
+.env*

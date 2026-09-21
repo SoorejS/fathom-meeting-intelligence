@@ -796,14 +796,14 @@ export const SEEDED_MEETINGS: Meeting[] = [
       {
         question: "What caused the database incident?",
         answer:
-          "An unindexed query on meeting participants during team workspace fetches caused sequential table scans and exhausted the connection pool. Dev Patel added a composite index that dropped p99 latency to 14ms.",
+          "Dev Patel identified an unindexed meeting-participant query during team workspace fetches. He added a composite index and reported that p99 query latency dropped from 840ms to 14ms.",
         citationTimestamp: 35,
         citationFormatted: "00:35",
       },
       {
         question: "What frontend performance improvements were made?",
         answer:
-          "Priya Sharma implemented transcript list virtualization, enabling smooth 60fps scrolling and reducing client memory consumption by 62% for long transcripts.",
+          "Priya Sharma implemented transcript list virtualization. She reported locked 60fps scrolling for calls with over 2,000 segments and very few DOM nodes kept in memory.",
         citationTimestamp: 130,
         citationFormatted: "02:10",
       },
@@ -1151,7 +1151,7 @@ export const SEEDED_MEETINGS: Meeting[] = [
       {
         question: "What was the interview decision?",
         answer:
-          "Both Alex Rivera and Sarah Chen recommended Maya Lin for the next stage, praising her deep expertise in media synchronization, Web Audio API, and frontend performance.",
+          "The transcript excerpt does not record a final hiring decision. At 01:35, Sarah asks Maya how she handles synchronization when a user clicks a transcript paragraph.",
         citationTimestamp: 95,
         citationFormatted: "01:35",
       },

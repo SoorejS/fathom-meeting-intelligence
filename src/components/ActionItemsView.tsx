@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { ActionItem } from "@/types/meeting";
-import { CheckSquare, Square, Calendar, User, Clock, Check, Plus, Play } from "lucide-react";
+import { Calendar, Check, Plus, Play } from "lucide-react";
 
 interface ActionItemsViewProps {
   actionItems: ActionItem[];

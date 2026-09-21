@@ -155,7 +155,7 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
           </div>
 
           <p className="text-xs text-slate-300 italic line-clamp-2 bg-[#12141c] p-2.5 rounded-lg border border-[#222736]">
-            "{highlightModalSegment.text}"
+            &ldquo;{highlightModalSegment.text}&rdquo;
           </p>
 
           <div className="flex flex-wrap items-center justify-between gap-2">

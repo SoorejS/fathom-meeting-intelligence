@@ -1,40 +1,39 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useMemo } from "react";
 import { Meeting } from "@/types/meeting";
 import {
   Play,
-  Calendar,
-  Clock,
   CheckSquare,
   Sparkles,
   Share2,
   Search,
   ArrowUpRight,
-  MessageSquare,
   ChevronDown,
   ArrowUp,
   PanelRightClose,
   PanelRightOpen,
-  Gift,
-  Bot,
-} from "lucide-react";
+  } from "lucide-react";
 
 interface MeetingsDashboardProps {
   meetings: Meeting[];
   onSelectMeeting: (meetingId: string) => void;
   onShareMeeting: (meeting: Meeting) => void;
+  activeSubTab: string;
+  onNavigate: (tab: string) => void;
 }
 
 export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
   meetings,
   onSelectMeeting,
   onShareMeeting,
+  activeSubTab,
+  onNavigate,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<"newest" | "duration">("newest");
-  const [activeSubTab, setActiveSubTab] = useState<string>("my-calls");
   const [isAskAiOpen, setIsAskAiOpen] = useState(true);
   const [askAiQuery, setAskAiQuery] = useState("");
   const [askAiAnswer, setAskAiAnswer] = useState<string | null>(null);
@@ -51,9 +50,9 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
   ];
 
   const suggestedQuestions = [
-    "Things I promised I'd do by this week",
-    "Summarize my meetings from last week",
-    "Questions I struggle to answer",
+    "Show open action items",
+    "Summarize these meetings",
+    "What decisions were made?",
   ];
 
   const filteredMeetings = useMemo(() => {
@@ -81,24 +80,21 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
 
   const handleAskAi = (prompt: string) => {
     const q = prompt.trim();
-    if (!q) return;
+    if (!q || isAiLoading) return;
     setAskAiQuery(q);
     setIsAiLoading(true);
     setAskAiAnswer(null);
 
     setTimeout(() => {
-      if (q.toLowerCase().includes("promised") || q.toLowerCase().includes("action")) {
-        setAskAiAnswer(
-          "Across your recent calls, you committed to: 1) Deploying the low-latency websocket proxy for customer real-time sync, 2) Preparing SOC2 audit report draft for Acme Corp, and 3) Finalizing candidate interview feedback by Wednesday."
-        );
-      } else if (q.toLowerCase().includes("summarize") || q.toLowerCase().includes("week")) {
-        setAskAiAnswer(
-          "Summary of recent calls: You aligned on the Q4 release roadmap (target: Nov 12), confirmed enterprise SLA sign-off with Acme Corp, resolved database shard latency issues down to 42ms, and vetted a senior backend candidate."
-        );
+      const query = q.toLowerCase();
+      if (query.includes("action")) {
+        setAskAiAnswer(meetings.flatMap((m) => m.actionItems.filter((item) => item.status === "open").map((item) => item.owner + ": " + item.text + " (" + m.title + ")")).join(" • ") || "No open action items.");
+      } else if (query.includes("summar")) {
+        setAskAiAnswer(meetings.map((m) => m.title + ": " + m.summary.default.overview).join(" • "));
+      } else if (query.includes("decision")) {
+        setAskAiAnswer(meetings.map((m) => m.title + ": " + m.summary.default.decisions.join(" ")).join(" • "));
       } else {
-        setAskAiAnswer(
-          "Based on your meetings history, client inquiries frequently centered around SOC2 compliance certification timing, API tier limits, and single sign-on integration timelines."
-        );
+        setAskAiAnswer("Choose an overview question below, or open a meeting for questions with transcript citations. This demo only answers from its seeded meeting notes.");
       }
       setIsAiLoading(false);
     }, 600);
@@ -107,14 +103,14 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#0e1014]">
       {/* 1. Sub-navigation Bar (Matching Fathom Reference Screenshot) */}
-      <div className="h-11 border-b border-[#1c1f26] bg-[#111216] px-6 flex items-center justify-between shrink-0 select-none">
-        <div className="flex items-center gap-6 h-full text-xs font-semibold">
+      <div className="py-2 min-h-11 border-b border-[#1c1f26] bg-[#111216] px-3 sm:px-6 flex flex-wrap items-center justify-between gap-2 shrink-0 select-none">
+        <div className="flex items-center gap-4 h-8 overflow-x-auto text-xs font-semibold">
           {subNavTabs.map((tab) => {
             const isActive = activeSubTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveSubTab(tab.id)}
+                onClick={() => onNavigate(tab.id)}
                 className={`h-full flex items-center relative transition-colors cursor-pointer ${
                   isActive ? "text-[#00c2ff]" : "text-slate-400 hover:text-slate-200"
                 }`}
@@ -149,15 +145,15 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
       </div>
 
       {/* 2. Main Body: Left Content + Right Ask Fathom Panel */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* Left Area: Meetings Grid */}
-        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+        <div className="min-w-0 flex-1 lg:overflow-y-auto p-4 sm:p-8 space-y-6">
           {/* Section Header: "Today" */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">Today</h1>
+              <h1 className="text-xl font-bold text-white tracking-tight">Your meetings</h1>
               <p className="text-xs text-slate-400 mt-0.5">
-                {filteredMeetings.length} calls recorded and synchronized
+                {filteredMeetings.length} seeded meetings · Explore summaries, transcripts, and decisions
               </p>
             </div>
 
@@ -230,7 +226,7 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
                 >
                   {/* Thumbnail with duration badge overlay */}
                   <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
-                    <img
+                    <Image width={600} height={338}
                       src={meeting.thumbnail}
                       alt={meeting.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85 group-hover:opacity-100"
@@ -310,7 +306,7 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
 
         {/* Right Area: ASK FATHOM Panel (Matching Screenshot a85ae19e-c030-4304-9fda-9fc01c753c8d.png) */}
         {isAskAiOpen && (
-          <aside className="w-80 lg:w-96 border-l border-[#1c1f26] bg-[#111216] flex flex-col justify-between p-4 shrink-0 overflow-y-auto select-none animate-in slide-in-from-right-4 duration-150">
+          <aside className="w-full lg:w-80 xl:w-96 border-l border-[#1c1f26] bg-[#111216] flex flex-col justify-between p-4 shrink-0 overflow-y-auto select-none animate-in slide-in-from-right-4 duration-150">
             <div className="space-y-4">
               {/* Header */}
               <div className="flex items-center justify-between pb-2 border-b border-[#1c1f26]">
@@ -334,11 +330,10 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
                   <span className="text-base">🎁</span>
                   <div>
                     <span className="font-bold text-amber-300">
-                      Account-level Ask Fathom is here!
+                      Your meeting intelligence, in one place
                     </span>
                     <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
-                      We're gifting you unlimited use until Oct 1. Limits may apply after.{" "}
-                      <span className="text-[#00c2ff] underline cursor-pointer">Learn More</span>
+                      Explore prepared meeting intelligence. Open a call for answers with transcript citations.
                     </p>
                   </div>
                 </div>
@@ -370,6 +365,7 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
                 {suggestedQuestions.map((q, idx) => (
                   <button
                     key={idx}
+                    disabled={isAiLoading}
                     onClick={() => handleAskAi(q)}
                     className="px-3 py-1.5 bg-[#181a22] hover:bg-[#222530] border border-[#272a37] text-[11px] text-slate-300 hover:text-white rounded-xl transition-colors text-right shadow-sm cursor-pointer"
                   >

@@ -20,3 +20,14 @@ next-env.d.ts
 
 # Reference Screenshots (excluded from git)
 screenshot-for-fathomAI-clone/
+
+# Local credentials, recordings, and deployment artifacts
+.env
+.env.*
+!.env.example
+*.log
+recordings/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

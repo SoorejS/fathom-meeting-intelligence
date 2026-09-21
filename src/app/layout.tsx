@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Fathom AI — AI Meeting Assistant & Intelligence Workspace",
-  description: "Record, transcribe, highlight, and summarize meetings with Fathom AI. Never take meeting notes again.",
+  description: "A Fathom-inspired demo of meeting summaries, searchable transcripts, action items, highlights, and grounded Q&A using seeded meetings.",
 };
 
 export default function RootLayout({

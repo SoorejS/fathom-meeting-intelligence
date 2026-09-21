@@ -9,7 +9,6 @@ import { AskAiView } from "./AskAiView";
 import {
   ArrowLeft,
   Share2,
-  CheckSquare,
   Sparkles,
   Calendar,
   Clock,
@@ -26,7 +25,7 @@ interface MeetingDetailViewProps {
   meeting: Meeting;
   initialTimestamp?: number;
   onBack: () => void;
-  onShare: () => void;
+  onShare: (timestamp: number) => void;
   onUpdateMeeting: (updatedMeeting: Meeting) => void;
 }
 
@@ -63,7 +62,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
   }, [meeting, currentTime]);
 
   const handleSeek = (seconds: number) => {
-    setCurrentTime(seconds);
+    setCurrentTime(Math.max(0, Math.min(meeting.duration, seconds)));
   };
 
   const handleToggleActionItem = (id: string) => {
@@ -100,22 +99,12 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
     onUpdateMeeting(updated);
   };
 
-  const handleCopySummary = () => {
-    const s = meeting.summary.default;
-    const txt = `${meeting.title}\n\nOverview:\n${s.overview}\n\nDecisions:\n${s.decisions.join(
-      "\n"
-    )}\n\nNext Steps:\n${s.nextSteps.join("\n")}`;
-    navigator.clipboard.writeText(txt);
-    setCopiedToast("Summary copied to clipboard!");
-    setTimeout(() => setCopiedToast(null), 2500);
-  };
-
-  const handleCopyTranscript = () => {
+  const handleCopyTranscript = async () => {
     const txt = meeting.transcript
       .map((t) => `[${t.timestampFormatted}] ${t.speaker}: ${t.text}`)
       .join("\n");
-    navigator.clipboard.writeText(txt);
-    setCopiedToast("Transcript copied to clipboard!");
+    try { await navigator.clipboard.writeText(txt); setCopiedToast("Transcript copied to clipboard!"); }
+    catch { setCopiedToast("Clipboard unavailable. Select and copy the transcript text."); }
     setTimeout(() => setCopiedToast(null), 2500);
   };
 
@@ -167,7 +156,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
       {/* Main Two-Column Layout (Matching Fathom Reference Screenshot) */}
       <div className="flex-1 overflow-y-auto p-5 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 min-h-0 max-w-[1600px] mx-auto w-full">
         {/* LEFT COLUMN: Player + Tab Strip + Intelligence Workspace (~58% on Desktop) */}
-        <div className="lg:col-span-7 flex flex-col space-y-4">
+        <div className="min-w-0 lg:col-span-7 flex flex-col space-y-4">
           {/* 1. Video Player */}
           <MeetingPlayer
             duration={meeting.duration}
@@ -180,8 +169,8 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
           />
 
           {/* 2. Horizontal Tab Strip (SUMMARY | TRANSCRIPT | ASK FATHOM) */}
-          <div className="border-b border-[#1f222a] flex items-center justify-between pt-1 select-none">
-            <div className="flex items-center gap-6 text-xs font-bold tracking-wider">
+          <div className="border-b border-[#1f222a] flex flex-wrap gap-2 items-center justify-between pt-1 select-none">
+            <div className="flex items-center gap-3 sm:gap-6 text-xs font-bold tracking-wider">
               {(
                 [
                   { id: "summary", label: "SUMMARY" },
@@ -208,17 +197,6 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
             </div>
 
             {/* Quick Copy Action on Right of Tab Strip */}
-            {activeTab === "summary" && (
-              <button
-                onClick={handleCopySummary}
-                className="flex items-center gap-1.5 px-3 py-1 bg-[#15232d] hover:bg-[#1b2d3a] border border-[#00c2ff]/30 text-[#00c2ff] rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                title="Copy Summary"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copy Summary</span>
-              </button>
-            )}
-
             {activeTab === "transcript" && (
               <button
                 onClick={handleCopyTranscript}
@@ -279,7 +257,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
           {/* Share Button (Fathom Teal Pill + Adjacent Menu) */}
           <div className="flex items-center gap-2">
             <button
-              onClick={onShare}
+              onClick={() => onShare(currentTime)}
               className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#0e3b43] hover:bg-[#134d58] border border-[#00c2ff]/30 text-[#00c2ff] hover:text-white text-xs font-bold transition-all shadow-md cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" />
@@ -287,7 +265,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
             </button>
 
             <button
-              onClick={onShare}
+              onClick={() => onShare(currentTime)}
               className="p-2 rounded-xl bg-[#161820] hover:bg-[#1f222b] border border-[#262934] text-slate-400 hover:text-white transition-colors cursor-pointer"
               title="More options"
             >
@@ -310,7 +288,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
             <div className="bg-[#14161d] border border-[#222530] rounded-xl p-3.5 space-y-3">
               {meeting.actionItems.length === 0 ? (
                 <p className="text-xs text-slate-400 italic py-2">
-                  None detected. Add manually on transcript tab
+                  No action items were identified in this meeting.
                 </p>
               ) : (
                 <div className="space-y-2.5">
@@ -400,7 +378,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-300 italic line-clamp-2">"{h.text}"</p>
+                    <p className="text-xs text-slate-300 italic line-clamp-2">&ldquo;{h.text}&rdquo;</p>
                   </div>
                 );
               })}
