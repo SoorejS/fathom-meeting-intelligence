@@ -1,0 +1,96 @@
+import { UpcomingMeeting } from "@/types/upcoming";
+
+export const SEEDED_UPCOMING_MEETINGS: UpcomingMeeting[] = [
+  {
+    id: "up_arch_sync",
+    title: "Enterprise Architecture Sync & API v2 Review",
+    provider: "zoom",
+    startTime: "2026-09-22T15:30:00Z",
+    startTimeFormatted: "Today • 3:30 PM",
+    durationMinutes: 45,
+    participants: [
+      {
+        id: "p_sarah",
+        name: "Sarah Chen",
+        role: "VP of Engineering",
+        initials: "SC",
+        color: "bg-blue-600",
+      },
+      {
+        id: "p_alex",
+        name: "Alex Rivera",
+        role: "Head of Product",
+        initials: "AR",
+        color: "bg-cyan-500",
+      },
+      {
+        id: "p_elena",
+        name: "Elena Rostova",
+        role: "Lead Designer",
+        initials: "ER",
+        color: "bg-purple-500",
+      },
+    ],
+    notetakerEnabled: true,
+    joinUrl: "https://zoom.us/j/9876543210",
+  },
+  {
+    id: "up_fintech_followup",
+    title: "FinTech Global Follow-up & Security Deep Dive",
+    provider: "google_meet",
+    startTime: "2026-09-23T10:00:00Z",
+    startTimeFormatted: "Tomorrow • 10:00 AM",
+    durationMinutes: 30,
+    participants: [
+      {
+        id: "p_marcus",
+        name: "Marcus Vance",
+        role: "Head of Growth",
+        initials: "MV",
+        color: "bg-emerald-500",
+      },
+      {
+        id: "p_rachel",
+        name: "Rachel Hayes",
+        role: "CIO, FinTech Global",
+        initials: "RH",
+        color: "bg-pink-500",
+      },
+    ],
+    notetakerEnabled: true,
+    joinUrl: "https://meet.google.com/abc-defg-hij",
+  },
+  {
+    id: "up_leadership",
+    title: "Weekly Cross-Functional Leadership Alignment",
+    provider: "teams",
+    startTime: "2026-09-23T14:00:00Z",
+    startTimeFormatted: "Tomorrow • 2:00 PM",
+    durationMinutes: 60,
+    participants: [
+      {
+        id: "p_alex",
+        name: "Alex Rivera",
+        role: "Head of Product",
+        initials: "AR",
+        color: "bg-cyan-500",
+      },
+      {
+        id: "p_sarah",
+        name: "Sarah Chen",
+        role: "VP of Engineering",
+        initials: "SC",
+        color: "bg-blue-600",
+      },
+      {
+        id: "p_marcus",
+        name: "Marcus Vance",
+        role: "Head of Growth",
+        initials: "MV",
+        color: "bg-emerald-500",
+      },
+    ],
+    notetakerEnabled: false,
+    joinUrl: "https://teams.microsoft.com/l/meetup-join/123456",
+  },
+];

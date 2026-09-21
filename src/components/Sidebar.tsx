@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { PhoneCall, Users, ListMusic, Bell, DollarSign, Bot, Radio, Plus } from "lucide-react";
+import { PhoneCall, Users, ListMusic, Bell, DollarSign, Bot, Radio, Plus, Calendar } from "lucide-react";
 
 interface SidebarProps {
   notetakerStatus?: string;
@@ -12,6 +12,7 @@ interface SidebarProps {
   playlists?: { id: string; title: string }[];
   onCreatePlaylistClick?: () => void;
   trackersCount?: number;
+  upcomingCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -23,10 +24,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   playlists = [],
   onCreatePlaylistClick,
   trackersCount,
+  upcomingCount = 3,
 }) => {
   const navItems = [
     { id: "my-calls", label: "My Calls", icon: PhoneCall, count: totalCallsCount, primary: true },
     { id: "team-calls", label: "Team Calls", icon: Users, count: teamCallsCount },
+    { id: "upcoming", label: "Upcoming", icon: Calendar, count: upcomingCount },
     { id: "playlists", label: "Playlists", icon: ListMusic, count: playlists.length },
     { id: "alerts", label: "Alerts", icon: Bell, count: trackersCount },
     { id: "deals", label: "Deals", icon: DollarSign },

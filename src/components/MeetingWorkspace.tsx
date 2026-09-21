@@ -17,6 +17,7 @@ import { useWorkspaceStore } from "@/lib/useWorkspaceStore";
 import { PlaylistsView } from "./PlaylistsView";
 import { TrackersView } from "./TrackersView";
 import { SettingsModal } from "./SettingsModal";
+import { UpcomingMeetingsView } from "./UpcomingMeetingsView";
 
 function subscribeToUrl(callback: () => void) {
   window.addEventListener("popstate", callback);
@@ -78,6 +79,9 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
     updateHighlightType,
     reorderHighlightTypes,
     deleteHighlightType,
+
+    upcomingMeetings,
+    toggleUpcomingNotetaker,
   } = useWorkspaceStore();
 
   useEffect(() => {
@@ -136,6 +140,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
             teamCallsCount={meetings.filter(m => m.category === "Product" || m.category === "Engineering").length}
             playlists={playlists}
             trackersCount={trackers.filter(t => t.enabled).length}
+            upcomingCount={upcomingMeetings.length}
             onCreatePlaylistClick={() => {
               setSidebarTab("playlists");
             }}
@@ -181,6 +186,13 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
                 onShareMeeting={handleShareMeeting}
               />
             </div>
+          ) : sidebarTab === "upcoming" ? (
+            /* Upcoming Calendar Meetings View */
+            <UpcomingMeetingsView
+              upcomingMeetings={upcomingMeetings}
+              onToggleNotetaker={toggleUpcomingNotetaker}
+              onStartTestCall={showCapture}
+            />
           ) : sidebarTab === "playlists" ? (
             /* Full Real Playlists View */
             <PlaylistsView

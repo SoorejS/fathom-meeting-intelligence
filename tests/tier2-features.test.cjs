@@ -5,9 +5,11 @@ const load = require('./load-typescript.cjs');
 const { SEEDED_MEETINGS: meetings } = load('src/data/seededMeetings.ts');
 const { SEEDED_PLAYLISTS: initialPlaylists } = load('src/data/seededPlaylists.ts');
 const { SEEDED_TRACKERS: initialTrackers } = load('src/data/seededTrackers.ts');
+const { SEEDED_UPCOMING_MEETINGS: initialUpcoming } = load('src/data/seededUpcoming.ts');
 const playlistService = load('src/services/playlistService.ts');
 const trackerService = load('src/services/trackerService.ts');
 const settingsService = load('src/services/settingsService.ts');
+const upcomingService = load('src/services/upcomingService.ts');
 
 test('playlist resolves clips against real seeded meeting and highlight records', () => {
   const p1 = initialPlaylists[0];
@@ -185,4 +187,23 @@ test('settings service: updates recording, summary, sharing, and custom highligh
   // Delete
   settings = settingsService.deleteHighlightType(settings, newType.id);
   assert.equal(settings.highlights.types.length, 4);
+});
+
+test('upcoming meetings: supports provider metadata and toggles notetaker arming', () => {
+  assert.equal(initialUpcoming.length, 3);
+  assert.ok(initialUpcoming.some(m => m.provider === 'zoom'));
+  assert.ok(initialUpcoming.some(m => m.provider === 'google_meet'));
+  assert.ok(initialUpcoming.some(m => m.provider === 'teams'));
+
+  // Provider label formatting
+  const zoomLabel = upcomingService.formatProviderLabel('zoom');
+  assert.equal(zoomLabel.label, 'Zoom');
+
+  const meetLabel = upcomingService.formatProviderLabel('google_meet');
+  assert.equal(meetLabel.label, 'Google Meet');
+
+  // Toggle notetaker
+  const first = initialUpcoming[0];
+  const toggled = upcomingService.toggleUpcomingNotetaker(initialUpcoming, first.id);
+  assert.equal(toggled.find(m => m.id === first.id).notetakerEnabled, !first.notetakerEnabled);
 });

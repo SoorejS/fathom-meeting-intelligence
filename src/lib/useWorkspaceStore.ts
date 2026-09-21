@@ -150,6 +150,16 @@ export function useWorkspaceStore() {
     saveTier2State({ ...getTier2Snapshot(), settings: updated });
   }, []);
 
+  const upcomingMeetings = state.upcomingMeetings;
+
+  const handleToggleUpcomingNotetaker = useCallback((meetingId: string) => {
+    const current = getTier2Snapshot().upcomingMeetings;
+    const updated = current.map((m) =>
+      m.id === meetingId ? { ...m, notetakerEnabled: !m.notetakerEnabled } : m
+    );
+    saveTier2State({ ...getTier2Snapshot(), upcomingMeetings: updated });
+  }, []);
+
   return {
     playlists,
     createPlaylist: handleCreatePlaylist,
@@ -173,5 +183,8 @@ export function useWorkspaceStore() {
     updateHighlightType: handleUpdateHighlightType,
     reorderHighlightTypes: handleReorderHighlightTypes,
     deleteHighlightType: handleDeleteHighlightType,
+
+    upcomingMeetings,
+    toggleUpcomingNotetaker: handleToggleUpcomingNotetaker,
   };
 }
