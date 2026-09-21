@@ -100,6 +100,16 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ meeting, onSeek }) => {
         </button>
       </div>
 
+      {/* Meeting Scope Indicator */}
+      <div className="px-3 py-1.5 rounded-lg bg-cyan-950/30 border border-cyan-500/25 text-[11px] text-cyan-300 flex flex-wrap items-center justify-between gap-1 select-none">
+        <span className="truncate">
+          Scoped to: <strong className="text-white">{meeting.title}</strong>
+        </span>
+        <span className="text-[10px] text-slate-400 font-mono">
+          {meeting.transcript.length} utterances indexed
+        </span>
+      </div>
+
       {/* Messages Thread */}
       <div className="flex-1 overflow-y-auto space-y-3.5 pr-1">
         {messages.map((m) => {

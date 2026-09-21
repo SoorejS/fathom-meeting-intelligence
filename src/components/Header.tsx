@@ -1,16 +1,25 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Gift, Settings, HelpCircle, Sparkles, Check } from "lucide-react";
+import { Search, Gift, Settings, HelpCircle, Sparkles, Check, Menu, Bot } from "lucide-react";
 
 interface HeaderProps {
   onStartTestCall: () => void;
   onOpenSearch: () => void;
   onNavigateHome: () => void;
   onOpenSettings?: () => void;
+  onOpenHelp?: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, onStartTestCall, onOpenSettings }) => {
+export const Header: React.FC<HeaderProps> = ({
+  onOpenSearch,
+  onNavigateHome,
+  onStartTestCall,
+  onOpenSettings,
+  onOpenHelp,
+  onToggleMobileMenu,
+}) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -32,17 +41,29 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, on
 
   return (
     <>
-      <header className="h-14 border-b border-[#202227] bg-[#111215] px-4 flex items-center justify-between sticky top-0 z-30 select-none">
+      <header className="h-14 border-b border-[#202227] bg-[#111215] px-2 sm:px-4 shrink-0 flex items-center justify-between sticky top-0 z-30 select-none">
         {/* Left: Brand Logo & Wordmark + Adjacent Search Bar */}
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-6">
+          {/* Mobile Navigation Toggle */}
+          {onToggleMobileMenu && (
+            <button
+              onClick={onToggleMobileMenu}
+              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#1e2026] md:hidden cursor-pointer"
+              title="Open Navigation Menu"
+              aria-label="Toggle navigation menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+
           <button
             onClick={onNavigateHome}
             className="flex items-center gap-2 group text-left cursor-pointer focus:outline-none"
             title="Return to My Calls"
           >
-            <span className="text-xl font-black text-white tracking-wider">FATHOM</span>
+            <span className="text-base sm:text-xl font-black text-white tracking-wider">FATHOM</span>
             {/* 3 cyan slanted pills logo mark */}
-            <div className="flex items-center gap-[3px] -rotate-12 translate-y-[-1px]">
+            <div className="hidden sm:flex items-center gap-[3px] -rotate-12 translate-y-[-1px]">
               <span className="w-1.5 h-4 bg-[#00c2ff] rounded-full"></span>
               <span className="w-1.5 h-3.5 bg-[#00c2ff] rounded-full"></span>
               <span className="w-1.5 h-2 bg-[#00c2ff] rounded-full"></span>
@@ -63,16 +84,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, on
           </button>
         </div>
 
-        {/* Right: Refer, Settings, Help & Feedback, Points badge, Profile Avatar */}
+        {/* Right: Record Test Call, Refer, Settings, Help & Feedback, Points badge, Profile Avatar */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Dedicated Record Test Call Button */}
+          <button
+            onClick={onStartTestCall}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:text-cyan-300 text-xs font-semibold transition-all cursor-pointer"
+            title="Launch interactive practice call"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <Bot className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Record Test Call</span>
+          </button>
+
           {/* Refer button */}
           <button
             onClick={() => showToast("Referrals are outside this demo.")}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
             title="Refer & Earn"
           >
             <Gift className="w-4 h-4 text-slate-400" />
-            <span className="hidden sm:inline">Refer</span>
+            <span>Refer</span>
           </button>
 
           {/* Settings button */}
@@ -90,12 +122,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, on
 
           {/* Help & Feedback button */}
           <button
-            onClick={onStartTestCall}
+            onClick={() => {
+              if (onOpenHelp) onOpenHelp();
+              else showToast("Help & documentation");
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
             title="Help & Feedback"
           >
             <HelpCircle className="w-4 h-4 text-slate-400" />
-            <span className="hidden md:inline">Help & Feedback</span>
+            <span className="hidden md:inline">Help &amp; Feedback</span>
           </button>
 
           {/* Gold Star Points Badge */}

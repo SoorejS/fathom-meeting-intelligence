@@ -28,7 +28,7 @@ Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, and Lucide icons. N
 
 ## Core workflows
 
-1. **Meetings dashboard:** Start with six meetings, filter by category or keyword, and sort by date or duration. Team Calls and two seeded playlist entry points provide alternate navigation. Alerts and Deals explicitly describe their demo scope.
+1. **Meetings dashboard:** Start with six meetings, filter by category or keyword, and sort by date or duration. Team Calls filters by teammate and local visibility. Upcoming presents seeded calendar events and launches the consented test-call flow. Playlists curate highlights into a timed, simulated reel; Trackers scan real transcript excerpts and open their timestamps. Settings persist locally, including the default summary template. Help provides FAQs and explicitly simulated feedback/support. Deals remains a scoped demo.
 2. **Transcript and playback:** Play/pause locally recorded microphone audio when available, or the explicitly simulated timeline, seek with the scrubber or arrow keys, skip ten seconds, and cycle speeds from 1x to 2x. Transcript segments and timestamps seek the same clock and update the active speaker.
 3. **Summaries:** Switch between Enhanced, Executive Brief, Sales & Deals, and Engineering Spec. Each presents a different structured view of the same meeting facts. Selection persists per meeting; copying includes the displayed key points.
 4. **Action items:** Review owners and due dates, mark items complete, and jump to the source timestamp.
@@ -88,6 +88,8 @@ npm start
 See [FINAL-AUDIT.md](FINAL-AUDIT.md) for final build, browser checks, deployment evidence, and known limitations. Regression tests check all six meetings' participant/citation relationships, retrieval isolation and unsupported queries, named-speaker attribution, and storage round-trips/corruption recovery. See [FUNCTIONAL-DEPTH-AUDIT.md](FUNCTIONAL-DEPTH-AUDIT.md) for the subsequent persistence, retrieval, and public share-route pass.
 
 See [CAPTURE-LIFECYCLE-AUDIT.md](CAPTURE-LIFECYCLE-AUDIT.md) for the interactive capture implementation and its verification limits.
+
+See [WALKTHROUGH-VERIFICATION.md](WALKTHROUGH-VERIFICATION.md) for the final Tier 2 regression pass, public browser checks, mobile checks, and remaining demo limitations.
 
 ## Agent capture integrity
 

@@ -6,7 +6,6 @@ import { formatProviderLabel } from "@/services/upcomingService";
 import {
   Calendar,
   Clock,
-  Video,
   Radio,
   ExternalLink,
   Bot,
@@ -15,7 +14,6 @@ import {
   ToggleRight,
   Play,
   Check,
-  UserCheck,
 } from "lucide-react";
 
 interface UpcomingMeetingsViewProps {
@@ -47,13 +45,13 @@ export const UpcomingMeetingsView: React.FC<UpcomingMeetingsViewProps> = ({
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
             <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
-            <span>Calendar Sync Active</span>
+            <span>Demo Calendar</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
             Upcoming Calendar Meetings
           </h1>
           <p className="text-xs text-slate-400 max-w-xl">
-            Fathom monitors your connected calendar and sends your AI Notetaker to record, transcribe, and generate actionable executive summaries automatically.
+            These seeded upcoming meetings demonstrate Notetaker scheduling. Calendar sync and conference joining are simulated; Record with Notetaker opens a consented browser test call.
           </p>
         </div>
 

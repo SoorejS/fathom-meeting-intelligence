@@ -31,13 +31,20 @@ export function defaultTier2State(): Tier2State {
 }
 
 let memoryState: Tier2State = defaultTier2State();
+const serverSnapshot = defaultTier2State();
+export const getTier2ServerSnapshot = () => serverSnapshot;
+let cachedRaw: string | null | undefined;
+let storageUnavailable = false;
 const listeners = new Set<() => void>();
 
 export function getTier2Snapshot(): Tier2State {
-  if (typeof window === "undefined") return memoryState;
+  if (typeof window === "undefined" || storageUnavailable) return memoryState;
   try {
     const raw = window.localStorage.getItem(TIER2_STORAGE_KEY);
-    if (!raw) return memoryState;
+    // React requires the same snapshot reference until the stored value changes.
+    if (raw === cachedRaw) return memoryState;
+    cachedRaw = raw;
+    if (!raw) { memoryState = defaultTier2State(); return memoryState; }
     const parsed = JSON.parse(raw);
     if (parsed && parsed.version === 1 && Array.isArray(parsed.playlists)) {
       const trackers = Array.isArray(parsed.trackers) ? parsed.trackers : SEEDED_TRACKERS;
@@ -70,8 +77,11 @@ export function saveTier2State(nextState: Tier2State): void {
   if (typeof window !== "undefined") {
     try {
       window.localStorage.setItem(TIER2_STORAGE_KEY, JSON.stringify(nextState));
+      cachedRaw = JSON.stringify(nextState);
+      storageUnavailable = false;
     } catch {
       // Storage quota or disabled; memory fallback remains intact
+      storageUnavailable = true;
     }
   }
   listeners.forEach((cb) => cb());
@@ -80,7 +90,8 @@ export function saveTier2State(nextState: Tier2State): void {
 export function subscribeTier2(listener: () => void): () => void {
   listeners.add(listener);
   const onStorage = (e: StorageEvent) => {
-    if (e.key === TIER2_STORAGE_KEY) {
+    if (e.key === TIER2_STORAGE_KEY || e.key === null) {
+      storageUnavailable = false;
       listeners.forEach((cb) => cb());
     }
   };

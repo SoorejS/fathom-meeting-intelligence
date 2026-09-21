@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Meeting } from "@/types/meeting";
-import { Tracker, TrackerMatch } from "@/types/tracker";
+import { Tracker } from "@/types/tracker";
 import { scanTranscriptMatches } from "@/services/trackerService";
 import {
   Bell,
@@ -18,7 +18,6 @@ import {
   Edit2,
   X,
   Filter,
-  Check,
 } from "lucide-react";
 
 interface TrackersViewProps {

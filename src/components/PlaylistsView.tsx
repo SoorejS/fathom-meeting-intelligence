@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Meeting } from "@/types/meeting";
 import { Playlist, ResolvedClip } from "@/types/playlist";
 import { resolvePlaylistClips } from "@/services/playlistService";
@@ -14,9 +14,9 @@ import {
   ChevronUp,
   ChevronDown,
   X,
-  Sparkles,
   ExternalLink,
   Volume2,
+  Pause,
   SkipForward,
   SkipBack,
   Check,
@@ -27,7 +27,7 @@ import {
 interface PlaylistsViewProps {
   playlists: Playlist[];
   meetings: Meeting[];
-  onCreatePlaylist: (title: string, description?: string) => void;
+  onCreatePlaylist: (title: string, description?: string) => Playlist;
   onRenamePlaylist: (id: string, title: string, description?: string) => void;
   onDeletePlaylist: (id: string) => void;
   onRemoveClip: (playlistId: string, clipId: string) => void;
@@ -63,7 +63,8 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
   // "Play All" Modal Player State
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [currentClipIndex, setCurrentClipIndex] = useState(0);
-  const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [reelElapsed, setReelElapsed] = useState(0);
+  const [reelPaused, setReelPaused] = useState(false);
 
   const activePlaylist = useMemo(() => {
     return playlists.find((p) => p.id === selectedPlaylistId) || playlists[0] || null;
@@ -74,10 +75,24 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
     return resolvePlaylistClips(activePlaylist, meetings);
   }, [activePlaylist, meetings]);
 
+  const currentClip = resolvedClips[currentClipIndex];
+  const clipDuration = currentClip ? Math.max(1, Math.min(15, (meetings.find(m => m.id === currentClip.meetingId)?.duration || 0) - currentClip.timestamp)) : 1;
+  useEffect(() => {
+    if (!isPlayingAll || reelPaused || !currentClip) return;
+    const timer = setInterval(() => {
+      if (reelElapsed + 1 >= clipDuration) {
+        if (currentClipIndex < resolvedClips.length - 1) { setCurrentClipIndex(currentClipIndex + 1); setReelElapsed(0); }
+        else { setReelElapsed(clipDuration); setReelPaused(true); }
+      } else setReelElapsed(reelElapsed + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isPlayingAll, reelPaused, currentClip, currentClipIndex, resolvedClips.length, reelElapsed, clipDuration]);
+
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    onCreatePlaylist(newTitle, newDescription);
+    const created = onCreatePlaylist(newTitle, newDescription);
+    setSelectedPlaylistId(created.id);
     setNewTitle("");
     setNewDescription("");
     setIsCreateOpen(false);
@@ -103,7 +118,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
   const handleStartPlayAll = () => {
     if (resolvedClips.length === 0) return;
     setCurrentClipIndex(0);
-    setPlaybackProgress(0);
+    setReelElapsed(0); setReelPaused(false);
     setIsPlayingAll(true);
   };
 
@@ -472,13 +487,13 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
       {/* "Play All" Continuous Highlight Reel Player Modal */}
       {isPlayingAll && resolvedClips.length > 0 && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl bg-[#11141D] border border-[#232A3B] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+          <div className="w-full max-w-2xl bg-[#11141D] border border-[#232A3B] rounded-2xl shadow-2xl overflow-y-auto flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="p-4 border-b border-[#1F2535] flex items-center justify-between bg-[#151924]">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  PLAYING REEL: {activePlaylist?.title}
+                  SIMULATED REEL: {activePlaylist?.title}
                 </span>
                 <span className="text-[11px] font-mono text-purple-400 ml-2">
                   Clip {currentClipIndex + 1} of {resolvedClips.length}
@@ -520,6 +535,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
                 &ldquo;{resolvedClips[currentClipIndex].highlightText}&rdquo;
               </blockquote>
 
+              <p className="text-xs text-slate-400" role="status">Scenario preview · {reelElapsed}s / {clipDuration}s · {reelPaused ? "Paused" : "Playing"} · no audio</p>
               {/* Audio Waveform simulation bars */}
               <div className="flex items-center gap-1 h-8 pt-2">
                 {[40, 70, 95, 60, 85, 30, 75, 100, 80, 50, 65, 90, 45, 80, 55, 70, 85].map(
@@ -549,8 +565,9 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
               </button>
 
               <div className="flex items-center gap-2">
+                <button aria-label={reelPaused ? "Play reel" : "Pause reel"} onClick={() => { if (reelElapsed >= clipDuration) { setCurrentClipIndex(0); setReelElapsed(0); } setReelPaused(!reelPaused); }} className="p-2 text-white">{reelPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}</button>
                 <button
-                  onClick={() => setCurrentClipIndex(Math.max(0, currentClipIndex - 1))}
+                  onClick={() => { setCurrentClipIndex(Math.max(0, currentClipIndex - 1)); setReelElapsed(0); }}
                   disabled={currentClipIndex === 0}
                   className="p-2 text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none rounded-lg hover:bg-[#1F2535] transition-colors"
                   title="Previous Clip"
@@ -559,11 +576,11 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
                 </button>
 
                 <button
-                  onClick={() =>
+                  onClick={() => { setReelElapsed(0);
                     setCurrentClipIndex(
                       Math.min(resolvedClips.length - 1, currentClipIndex + 1)
-                    )
-                  }
+                    );
+                  }}
                   disabled={currentClipIndex === resolvedClips.length - 1}
                   className="p-2 text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none rounded-lg hover:bg-[#1F2535] transition-colors"
                   title="Next Clip"

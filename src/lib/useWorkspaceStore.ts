@@ -8,7 +8,7 @@ import {
   getTier2Snapshot,
   saveTier2State,
   subscribeTier2,
-  defaultTier2State,
+  getTier2ServerSnapshot,
 } from "./workspaceStorage";
 import * as playlistService from "../services/playlistService";
 import * as trackerService from "../services/trackerService";
@@ -20,7 +20,7 @@ export function useWorkspaceStore() {
   const state = useSyncExternalStore(
     subscribeTier2,
     getTier2Snapshot,
-    defaultTier2State
+    getTier2ServerSnapshot
   );
 
   const playlists = state.playlists;

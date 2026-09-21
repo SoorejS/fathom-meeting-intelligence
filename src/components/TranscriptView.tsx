@@ -32,6 +32,12 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
     return transcript[0] || null;
   }, [transcript, currentTime]);
 
+  React.useEffect(() => {
+    if (activeSegmentRef.current && !searchQuery) {
+      activeSegmentRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [activeSegment?.id, searchQuery]);
+
   // Filter transcript by search query
   const filteredTranscript = useMemo(() => {
     if (!searchQuery.trim()) return transcript;

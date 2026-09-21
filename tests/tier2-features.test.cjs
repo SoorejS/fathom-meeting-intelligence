@@ -237,3 +237,27 @@ test('team calls: resolves meeting owners, visibility, and teammate filters', ()
   const updatedTeamCalls = teamService.filterMeetingsByTeammate(meetings, 'All', visibilities);
   assert.ok(updatedTeamCalls.some(m => m.id === 'm_acme_onboarding'));
 });
+
+test('workspace snapshots remain stable after writes, external changes, and unavailable storage', () => {
+  const store = load('src/lib/workspaceStorage.ts');
+  let raw = null;
+  global.window = {localStorage:{getItem:()=>raw,setItem:(_key,value)=>{raw=value;}}};
+  try {
+    const initial=store.getTier2Snapshot();
+    assert.strictEqual(store.getTier2Snapshot(),initial);
+    assert.strictEqual(store.getTier2ServerSnapshot(),store.getTier2ServerSnapshot());
+    const updated={...initial,playlists:[playlistService.createPlaylist('Persistence regression')]};
+    store.saveTier2State(updated);
+    assert.strictEqual(store.getTier2Snapshot(),updated);
+    assert.strictEqual(store.getTier2Snapshot(),updated);
+    raw=JSON.stringify({...updated,trackers:[]});
+    const external=store.getTier2Snapshot();
+    assert.equal(external.trackers.length,0);
+    assert.strictEqual(store.getTier2Snapshot(),external);
+    raw=null;
+    assert.equal(store.getTier2Snapshot().playlists.length,initialPlaylists.length);
+    window.localStorage.setItem=()=>{throw Error('Quota exceeded');};
+    store.saveTier2State(updated);
+    assert.strictEqual(store.getTier2Snapshot(),updated,'failed writes retain the latest in-memory state');
+  } finally { delete global.window; }
+});

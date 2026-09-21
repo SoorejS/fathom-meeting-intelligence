@@ -12,13 +12,15 @@ import { Meeting } from "@/types/meeting";
 import { TestCallPanel } from "./TestCallPanel";
 import { useTestCallCapture } from "@/lib/useTestCallCapture";
 import { readTestCallFragment, createTestMeeting, formatTime } from "@/lib/testCallMeeting";
-import { Users, ListMusic } from "lucide-react";
+
 import { useWorkspaceStore } from "@/lib/useWorkspaceStore";
 import { PlaylistsView } from "./PlaylistsView";
 import { TrackersView } from "./TrackersView";
 import { SettingsModal } from "./SettingsModal";
 import { UpcomingMeetingsView } from "./UpcomingMeetingsView";
+import { filterMeetingsByTeammate } from "@/services/teamService";
 import { TeamCallsView } from "./TeamCallsView";
+import { HelpFeedbackModal } from "./HelpFeedbackModal";
 
 function subscribeToUrl(callback: () => void) {
   window.addEventListener("popstate", callback);
@@ -41,7 +43,7 @@ function navigate(meetingId?: string, timestamp?: number) {
 export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string }) {
   const { meetings: savedMeetings, updateMeeting, templates, setTemplate, storageError } = useMeetingStore();
   const location = useSyncExternalStore(subscribeToUrl, () => window.location.pathname + window.location.search + window.location.hash, () => sharedMeetingId ? "/share/" + sharedMeetingId : "/");
-  const params = new URLSearchParams((location.split("?")[1] || "").split("#")[0]);
+  const params = useMemo(() => new URLSearchParams((location.split("?")[1] || "").split("#")[0]), [location]);
   const sharedCall = useMemo(() => location.startsWith("/share/test") ? readTestCallFragment(location.split("#")[1] || "") : null, [location]);
   const meetings = useMemo(() => sharedCall && !savedMeetings.some(m => m.id === sharedCall.id) ? [createTestMeeting(sharedCall), ...savedMeetings] : savedMeetings, [sharedCall, savedMeetings]);
   useEffect(() => { if (sharedCall) storeGeneratedCall(sharedCall); }, [sharedCall]);
@@ -54,8 +56,14 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   const [shareTimestamp, setShareTimestamp] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sharingMeeting, setSharingMeeting] = useState<Meeting | null>(null);
-  const [sidebarTab, setSidebarTab] = useState<string>("my-calls");
+  const [selectedTab, setSelectedTab] = useState<string>("my-calls");
+  const sidebarTab = useMemo(() => {
+    if (params.get("playlist")) return "playlists";
+    return selectedTab;
+  }, [params, selectedTab]);
 
   const {
     playlists,
@@ -88,12 +96,6 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
     toggleMeetingVisibility,
   } = useWorkspaceStore();
 
-  useEffect(() => {
-    if (params.get("playlist")) {
-      setSidebarTab("playlists");
-    }
-  }, [params]);
-
   const selectedMeeting = meetings.find((m) => m.id === selectedMeetingId) || null;
 
   const handleSelectMeeting = (meetingId: string, timestamp?: number) => {
@@ -116,9 +118,12 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
         onStartTestCall={showCapture}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
+        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         onNavigateHome={() => {
           navigate();
-          setSidebarTab("my-calls");
+          setSelectedTab("my-calls");
+          setIsMobileMenuOpen(false);
         }}
       />
 
@@ -137,16 +142,16 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
             notetakerStatus={capture.state.phase}
             activeTab={sidebarTab}
             onSelectTab={(tab) => {
-              setSidebarTab(tab);
+              setSelectedTab(tab);
               navigate();
             }}
             totalCallsCount={meetings.length}
-            teamCallsCount={meetings.filter(m => m.category === "Product" || m.category === "Engineering").length}
+            teamCallsCount={filterMeetingsByTeammate(meetings, "All", visibilities).length}
             playlists={playlists}
             trackersCount={trackers.filter(t => t.enabled).length}
             upcomingCount={upcomingMeetings.length}
             onCreatePlaylistClick={() => {
-              setSidebarTab("playlists");
+              setSelectedTab("playlists");
             }}
           />
         )}
@@ -158,12 +163,12 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
             <MeetingDetailView
               key={`${selectedMeetingId}:${selectedMeetingTimestamp}`}
               meeting={selectedMeeting}
-              summaryTemplate={templates[selectedMeeting.id] || "default"}
+              summaryTemplate={templates[selectedMeeting.id] || settings.summaries.defaultTemplate}
               onTemplateChange={template => setTemplate(selectedMeeting.id, template)}
               initialTimestamp={Math.min(selectedMeetingTimestamp, selectedMeeting.duration)}
               onBack={() => {
                 navigate();
-                setSidebarTab("my-calls");
+                setSelectedTab("my-calls");
               }}
               onShare={(timestamp) => handleShareMeeting(selectedMeeting, timestamp)}
               onUpdateMeeting={handleUpdateMeeting}
@@ -219,22 +224,70 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
               <p className="text-slate-400">
                 Explore the sales and enterprise demo recordings to see deal reviews and follow-up commitments.
               </p>
-              <button onClick={() => setSidebarTab("my-calls")} className="text-cyan-400 hover:underline">
+              <button onClick={() => setSelectedTab("my-calls")} className="text-cyan-400 hover:underline">
                 Back to My Calls
               </button>
             </div>
           ) : (
             /* Default Dashboard: My Calls */
             <MeetingsDashboard
-                activeSubTab={sidebarTab}
-                onNavigate={setSidebarTab}
+              activeSubTab={sidebarTab}
+              onNavigate={setSelectedTab}
               meetings={meetings}
               onSelectMeeting={handleSelectMeeting}
               onShareMeeting={handleShareMeeting}
+              upcomingMeetings={upcomingMeetings}
+              onToggleUpcomingNotetaker={toggleUpcomingNotetaker}
+              onStartTestCall={showCapture}
             />
           )}
         </main>
       </div>
+
+      {/* Mobile Sidebar Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden" role="dialog" aria-modal="true" aria-label="Mobile Navigation Drawer">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="relative flex flex-col w-72 max-w-[85vw] bg-[#0c1017] border-r border-slate-800 shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            <div className="p-3 border-b border-slate-800 flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Workspace Menu</span>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                aria-label="Close navigation menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <Sidebar
+                isMobileDrawer={true}
+                notetakerStatus={capture.state.phase}
+                activeTab={sidebarTab}
+                onSelectTab={(tab) => {
+                  setSelectedTab(tab);
+                  setIsMobileMenuOpen(false);
+                  navigate();
+                }}
+                totalCallsCount={meetings.length}
+                teamCallsCount={filterMeetingsByTeammate(meetings, "All", visibilities).length}
+                playlists={playlists}
+                trackersCount={trackers.filter(t => t.enabled).length}
+                upcomingCount={upcomingMeetings.length}
+                onCreatePlaylistClick={() => {
+                  setSelectedTab("playlists");
+                  setIsMobileMenuOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {captureOpen && capture.engine && <TestCallPanel state={capture.state} engine={capture.engine} onClose={() => { if (["precall","joining","permission","declined"].includes(capture.state.phase)) capture.engine?.cancel(); setCaptureOpen(false); }} onOpenMeeting={handleSelectMeeting} />}
       {/* 3. Global Modals */}
@@ -242,6 +295,12 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         meetings={meetings}
+        playlists={playlists}
+        trackers={trackers}
+        onSelectTab={(tab) => {
+          setSelectedTab(tab);
+          navigate();
+        }}
         onSelectMeeting={(id, ts) => handleSelectMeeting(id, ts)}
       />}
 
@@ -264,6 +323,12 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
         onReorderHighlightTypes={reorderHighlightTypes}
         onDeleteHighlightType={deleteHighlightType}
       />}
+
+      <HelpFeedbackModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        onOpenTestCall={showCapture}
+      />
     </div>
   );
 }

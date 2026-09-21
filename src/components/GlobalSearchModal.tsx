@@ -1,24 +1,49 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Search, X, MessageSquare, CheckSquare, FileText, ArrowRight, Video, Sparkles } from "lucide-react";
+import {
+  Search,
+  X,
+  MessageSquare,
+  CheckSquare,
+  FileText,
+  ArrowRight,
+  Video,
+  Sparkles,
+  ListMusic,
+  Bell,
+} from "lucide-react";
 import { Meeting } from "@/types/meeting";
+import { Playlist } from "@/types/playlist";
+import { Tracker } from "@/types/tracker";
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   meetings: Meeting[];
+  playlists?: Playlist[];
+  trackers?: Tracker[];
   onSelectMeeting: (meetingId: string, timestamp?: number) => void;
+  onSelectTab?: (tab: string) => void;
 }
 
-type SearchCategory = "all" | "transcripts" | "action-items" | "summaries" | "meetings" | "highlights";
+type SearchCategory =
+  | "all"
+  | "transcripts"
+  | "action-items"
+  | "summaries"
+  | "meetings"
+  | "highlights"
+  | "playlists"
+  | "trackers";
 
 interface SearchResult {
-  type: "meeting" | "transcript" | "actionItem" | "summary" | "highlight";
-  meetingId: string;
-  meetingTitle: string;
-  category: string;
-  dateFormatted: string;
+  type: "meeting" | "transcript" | "actionItem" | "summary" | "highlight" | "playlist" | "tracker";
+  meetingId?: string;
+  meetingTitle?: string;
+  targetTab?: string;
+  category?: string;
+  dateFormatted?: string;
   title: string;
   snippet: string;
   timestamp?: number;
@@ -27,11 +52,29 @@ interface SearchResult {
   owner?: string;
 }
 
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.toLowerCase() ? (
+      <mark key={i} className="bg-cyan-400/30 text-cyan-200 font-semibold px-0.5 rounded">
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
+
 export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   isOpen,
   onClose,
   meetings,
+  playlists = [],
+  trackers = [],
   onSelectMeeting,
+  onSelectTab,
 }) => {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategory>("all");
@@ -134,24 +177,73 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             snippet: t.text,
             timestamp: t.timestamp,
             timestampFormatted: t.timestampFormatted,
-            speaker: t.speaker,
           });
         }
       });
     });
 
+    // 5. Match Playlists
+    playlists.forEach((p) => {
+      if (
+        p.title.toLowerCase().includes(q) ||
+        (p.description && p.description.toLowerCase().includes(q))
+      ) {
+        matches.push({
+          type: "playlist",
+          targetTab: "playlists",
+          category: "Playlists",
+          dateFormatted: `${p.items.length} clips`,
+          title: p.title,
+          snippet: p.description
+            ? `${p.description} • Contains ${p.items.length} curated highlights`
+            : `Curated highlight reel with ${p.items.length} clips across your workspace`,
+        });
+      }
+    });
+
+    // 6. Match Keyword Trackers
+    trackers.forEach((t) => {
+      if (
+        t.name.toLowerCase().includes(q) ||
+        t.keywords.some((k) => k.toLowerCase().includes(q))
+      ) {
+        matches.push({
+          type: "tracker",
+          targetTab: "alerts",
+          category: "Trackers",
+          dateFormatted: t.enabled ? "Active" : "Disabled",
+          title: `Tracker: ${t.name}`,
+          snippet: `Keywords: [${t.keywords.join(", ")}] • ${
+            t.enabled ? "Actively scanning transcripts" : "Scanning paused"
+          }`,
+        });
+      }
+    });
+
     return matches;
-  }, [query, meetings]);
+  }, [query, meetings, playlists, trackers]);
 
   const filteredResults = useMemo(() => {
     if (activeCategory === "all") return results;
-    if (activeCategory === "highlights") return results.filter(r => r.type === "highlight");
+    if (activeCategory === "highlights") return results.filter((r) => r.type === "highlight");
     if (activeCategory === "transcripts") return results.filter((r) => r.type === "transcript");
     if (activeCategory === "action-items") return results.filter((r) => r.type === "actionItem");
     if (activeCategory === "summaries") return results.filter((r) => r.type === "summary");
     if (activeCategory === "meetings") return results.filter((r) => r.type === "meeting");
+    if (activeCategory === "playlists") return results.filter((r) => r.type === "playlist");
+    if (activeCategory === "trackers") return results.filter((r) => r.type === "tracker");
     return results;
   }, [results, activeCategory]);
+
+  const handleSelectResult = (item: SearchResult) => {
+    if (item.type === "playlist" || item.type === "tracker") {
+      if (onSelectTab) onSelectTab(item.targetTab || "my-calls");
+      onClose();
+    } else if (item.meetingId) {
+      onSelectMeeting(item.meetingId, item.timestamp);
+      onClose();
+    }
+  };
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -165,9 +257,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
     } else if (e.key === "Enter" && filteredResults[selectedIndex]) {
       e.preventDefault();
-      const item = filteredResults[selectedIndex];
-      onSelectMeeting(item.meetingId, item.timestamp);
-      onClose();
+      handleSelectResult(filteredResults[selectedIndex]);
     }
   };
 
@@ -191,7 +281,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               setSelectedIndex(0);
             }}
             placeholder="Search meetings, transcripts, actions, highlights..."
-            className="flex-1 bg-transparent text-sm text-white placeholder-slate-400 focus:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder-slate-400 focus:outline-none"
           />
           {query && (
             <button
@@ -216,6 +306,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             { id: "action-items", label: "Action Items" },
             { id: "summaries", label: "Summaries" },
             { id: "highlights", label: "Highlights" },
+            { id: "playlists", label: "Playlists" },
+            { id: "trackers", label: "Trackers" },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -239,13 +331,14 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           {!query.trim() ? (
             <div className="py-12 text-center text-slate-400 text-xs">
               <Sparkles className="w-8 h-8 text-cyan-400/50 mx-auto mb-2.5" />
-              <p className="font-medium text-slate-300">Search through all {meetings.length} meetings</p>
+              <p className="font-medium text-slate-300">
+                Search across all {meetings.length} meetings, {playlists.length} playlists, and {trackers.length} trackers
+              </p>
               <p className="text-[11px] text-slate-400 mt-1">
-                Try searching for: <span className="text-cyan-400 font-mono">&ldquo;retention&rdquo;</span>,{" "}
-                <span className="text-cyan-400 font-mono">&ldquo;Sarah&rdquo;</span>,{" "}
-                <span className="text-cyan-400 font-mono">&ldquo;Okta&rdquo;</span>,{" "}
-                <span className="text-cyan-400 font-mono">&ldquo;pgBouncer&rdquo;</span>,{" "}
-                <span className="text-cyan-400 font-mono">&ldquo;Maya&rdquo;</span>
+                Try searching for: <span className="text-cyan-400 font-mono">&ldquo;pricing&rdquo;</span>,{" "}
+                <span className="text-cyan-400 font-mono">&ldquo;security&rdquo;</span>,{" "}
+                <span className="text-cyan-400 font-mono">&ldquo;feedback&rdquo;</span>,{" "}
+                <span className="text-cyan-400 font-mono">&ldquo;Sarah&rdquo;</span>
               </p>
             </div>
           ) : filteredResults.length === 0 ? (
@@ -261,14 +354,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               if (item.type === "transcript") icon = <MessageSquare className="w-4 h-4 text-emerald-400" />;
               if (item.type === "actionItem") icon = <CheckSquare className="w-4 h-4 text-amber-400" />;
               if (item.type === "meeting") icon = <Video className="w-4 h-4 text-blue-400" />;
+              if (item.type === "playlist") icon = <ListMusic className="w-4 h-4 text-purple-400" />;
+              if (item.type === "tracker") icon = <Bell className="w-4 h-4 text-amber-400" />;
 
               return (
                 <div
-                  key={`${item.meetingId}-${item.type}-${idx}`}
-                  onClick={() => {
-                    onSelectMeeting(item.meetingId, item.timestamp);
-                    onClose();
-                  }}
+                  key={`${item.meetingId || item.targetTab}-${item.type}-${idx}`}
+                  onClick={() => handleSelectResult(item)}
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`p-3 rounded-xl cursor-pointer transition-all flex items-start gap-3 group ${
                     isSelected
@@ -282,7 +374,9 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 truncate">
-                        <span className="text-xs font-semibold text-white truncate">{item.title}</span>
+                        <span className="text-xs font-semibold text-white truncate">
+                          {highlightMatch(item.title, query)}
+                        </span>
                         {item.timestampFormatted && (
                           <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                             {item.timestampFormatted}
@@ -293,12 +387,16 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     </div>
 
                     <p className="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                      {item.snippet}
+                      {highlightMatch(item.snippet, query)}
                     </p>
 
                     <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
-                      <span className="font-medium text-slate-400">In: {item.meetingTitle}</span>
-                      <span>•</span>
+                      {item.meetingTitle && (
+                        <>
+                          <span className="font-medium text-slate-400">In: {item.meetingTitle}</span>
+                          <span>•</span>
+                        </>
+                      )}
                       <span className="px-1.5 py-0.2 rounded bg-[#1C2330] text-slate-300 font-medium">
                         {item.category}
                       </span>

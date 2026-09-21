@@ -219,9 +219,22 @@ export const TeamCallsView: React.FC<TeamCallsViewProps> = ({
                       <h2 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
                         {meeting.title}
                       </h2>
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                        <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                        <span>{meeting.dateFormatted}</span>
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                            <span>{meeting.dateFormatted}</span>
+                          </div>
+                          <span>•</span>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-slate-500" />
+                            <span>{meeting.durationFormatted}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-cyan-400 text-[11px]" title={`${meeting.highlights.length} highlights`}>
+                          <Sparkles className="w-3 h-3" />
+                          <span>{meeting.highlights.length}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -242,21 +255,31 @@ export const TeamCallsView: React.FC<TeamCallsViewProps> = ({
                         </span>
                       </div>
 
-                      {/* Interactive Visibility Toggle Button */}
-                      <button
-                        onClick={() => {
-                          onToggleVisibility(meeting.id);
-                          showToast(`Visibility toggled: ${isTeam ? "Personal" : "Team Visible"}`);
-                        }}
-                        className={`text-[10px] px-2 py-0.5 rounded font-semibold border transition-colors cursor-pointer ${
-                          isTeam
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
-                            : "bg-[#1C202C] text-slate-400 border-[#2B3244] hover:text-slate-200"
-                        }`}
-                        title="Click to toggle visibility"
-                      >
-                        {isTeam ? "Shared with Team" : "Make Team Visible"}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        {/* Interactive Visibility Toggle Button */}
+                        <button
+                          onClick={() => {
+                            onToggleVisibility(meeting.id);
+                            showToast(`Visibility toggled: ${isTeam ? "Personal" : "Team Visible"}`);
+                          }}
+                          className={`text-[10px] px-2 py-0.5 rounded font-semibold border transition-colors cursor-pointer ${
+                            isTeam
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                              : "bg-[#1C202C] text-slate-400 border-[#2B3244] hover:text-slate-200"
+                          }`}
+                          title="Click to toggle visibility"
+                        >
+                          {isTeam ? "Shared with Team" : "Make Team Visible"}
+                        </button>
+
+                        <button
+                          onClick={() => onShareMeeting(meeting)}
+                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#202738] transition-colors"
+                          title="Share Recording"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

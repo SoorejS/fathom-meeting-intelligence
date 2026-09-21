@@ -13,6 +13,7 @@ interface SidebarProps {
   onCreatePlaylistClick?: () => void;
   trackersCount?: number;
   upcomingCount?: number;
+  isMobileDrawer?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -25,7 +26,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCreatePlaylistClick,
   trackersCount,
   upcomingCount = 3,
+  isMobileDrawer = false,
 }) => {
+  const [upgradeMessage, setUpgradeMessage] = React.useState<string | null>(null);
   const navItems = [
     { id: "my-calls", label: "My Calls", icon: PhoneCall, count: totalCallsCount, primary: true },
     { id: "team-calls", label: "Team Calls", icon: Users, count: teamCallsCount },
@@ -36,7 +39,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-56 shrink-0 bg-[#0E1117] border-r border-[#232834] flex flex-col justify-between py-4 px-2.5 select-none hidden md:flex">
+    <aside
+      className={
+        isMobileDrawer
+          ? "w-full h-full flex flex-col justify-between py-4 px-3 select-none bg-[#0E1117]"
+          : "w-56 shrink-0 bg-[#0E1117] border-r border-[#232834] flex flex-col justify-between py-4 px-2.5 select-none hidden md:flex"
+      }
+    >
       {/* Top Section: Navigation Links */}
       <div className="space-y-6">
         <div className="space-y-1">
@@ -143,13 +152,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center justify-between pt-0.5 text-[10px] text-slate-400">
             <span>Free Tier</span>
             <button
-              onClick={() => alert("Upgrade dialog: Unlimited hours available with Fathom Pro")}
-              className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
+              onClick={() => {
+                setUpgradeMessage("Unlimited recording hours and enterprise intelligence available with Fathom Pro.");
+                setTimeout(() => setUpgradeMessage(null), 3000);
+              }}
+              className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors cursor-pointer"
             >
               Upgrade
             </button>
           </div>
         </div>
+
+        {/* Upgrade Toast */}
+        {upgradeMessage && (
+          <div className="p-2.5 rounded-lg bg-[#182230] border border-cyan-500/40 text-[11px] text-cyan-200 leading-snug animate-in fade-in duration-150">
+            {upgradeMessage}
+          </div>
+        )}
       </div>
     </aside>
   );

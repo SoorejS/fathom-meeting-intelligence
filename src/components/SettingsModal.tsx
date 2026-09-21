@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { WorkspaceSettings, CustomHighlightType } from "@/types/settings";
+import { WorkspaceSettings } from "@/types/settings";
 import { SummaryTemplateKey } from "@/types/meeting";
 import {
   Settings as SettingsIcon,
@@ -11,11 +11,10 @@ import {
   Share2,
   X,
   Check,
-  Plus,
+  Edit2,
   Trash2,
   ChevronUp,
   ChevronDown,
-  Sparkles,
   Shield,
   Bot,
 } from "lucide-react";
@@ -53,6 +52,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // New highlight state
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeColor, setNewTypeColor] = useState("#A855F7");
+
+  // Inline edit state for highlight types
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const notifySaved = () => {
     setSavedToast(true);
@@ -137,7 +140,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-white">Auto-Record Mode</label>
                 <p className="text-[11px] text-slate-400">
-                  Select which calendar events the Fathom Notetaker should automatically attend and record.
+                  Saved demo preference. Calendar auto-joining is not connected; test calls always require explicit approval.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                   {[
@@ -149,7 +152,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <button
                       key={mode.id}
                       onClick={() => {
-                        onUpdateRecording({ autoRecordMode: mode.id as any });
+                        onUpdateRecording({ autoRecordMode: mode.id as WorkspaceSettings["recording"]["autoRecordMode"] });
                         notifySaved();
                       }}
                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
@@ -172,7 +175,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <span>Bot Display Name</span>
                 </label>
                 <p className="text-[11px] text-slate-400">
-                  The participant name displayed when the Notetaker joins Zoom, Google Meet, or Teams.
+                  Saved display-name preference for a future conferencing integration. The test-call identity remains Soorej&apos;s Fathom Notetaker.
                 </p>
                 <div className="flex gap-2 max-w-md">
                   <input
@@ -197,19 +200,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <span>Recording Consent Policy</span>
                 </label>
                 <p className="text-[11px] text-slate-400">
-                  Choose how recording consent is handled prior to capturing microphone audio.
+                  Saved consent preference. Every browser test call still requires explicit approval before capture.
                 </p>
                 <select
                   value={settings.recording.consentPreference}
                   onChange={(e) => {
-                    onUpdateRecording({ consentPreference: e.target.value as any });
+                    onUpdateRecording({ consentPreference: e.target.value as WorkspaceSettings["recording"]["consentPreference"] });
                     notifySaved();
                   }}
                   className="w-full max-w-md px-3 py-2 bg-[#1A1E29] border border-[#2B3244] focus:border-cyan-500 rounded-lg text-white text-xs focus:outline-none cursor-pointer"
                 >
                   <option value="remember">Remember preference (Default)</option>
                   <option value="required">Require explicit consent on every call</option>
-                  <option value="disabled">Disabled (Do not prompt for consent)</option>
+                  <option value="disabled" disabled>Legacy preference (explicit consent remains required)</option>
                 </select>
               </div>
             </div>
@@ -290,15 +293,62 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     key={type.id}
                     className="flex items-center justify-between p-2.5 rounded-xl bg-[#131620] border border-[#222838] text-xs"
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-2">
                       <span
-                        className="w-3 h-3 rounded-full"
+                        className="w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: type.color }}
                       />
-                      <span className="font-semibold text-white">{type.name}</span>
+                      {editingId === type.id ? (
+                        <div className="flex items-center gap-1.5 flex-1">
+                          <input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && editingName.trim()) {
+                                onUpdateHighlightType(type.id, editingName.trim(), type.color);
+                                setEditingId(null);
+                                notifySaved();
+                              } else if (e.key === "Escape") {
+                                setEditingId(null);
+                              }
+                            }}
+                            className="px-2 py-0.5 bg-[#1A1E29] border border-cyan-500 rounded text-xs text-white focus:outline-none w-full max-w-[200px]"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => {
+                              if (editingName.trim()) {
+                                onUpdateHighlightType(type.id, editingName.trim(), type.color);
+                                setEditingId(null);
+                                notifySaved();
+                              }
+                            }}
+                            className="p-1 text-cyan-400 hover:text-white rounded hover:bg-[#202738]"
+                            title="Save"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="font-semibold text-white truncate">{type.name}</span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1">
+                      {/* Edit */}
+                      {editingId !== type.id && (
+                        <button
+                          onClick={() => {
+                            setEditingId(type.id);
+                            setEditingName(type.name);
+                          }}
+                          className="p-1 text-slate-400 hover:text-cyan-400 rounded hover:bg-[#202738]"
+                          title="Rename Category"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {/* Move Up */}
                       <button
                         onClick={() => onReorderHighlightTypes(type.id, "up")}
@@ -388,7 +438,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <button
                       key={vis.id}
                       onClick={() => {
-                        onUpdateSharing({ defaultVisibility: vis.id as any });
+                        onUpdateSharing({ defaultVisibility: vis.id as WorkspaceSettings["sharing"]["defaultVisibility"] });
                         notifySaved();
                       }}
                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${

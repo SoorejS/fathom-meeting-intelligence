@@ -3,6 +3,7 @@
 import Image from "next/image";
 import React, { useState, useMemo } from "react";
 import { Meeting } from "@/types/meeting";
+import { UpcomingMeeting } from "@/types/upcoming";
 import {
   Play,
   CheckSquare,
@@ -14,7 +15,9 @@ import {
   ArrowUp,
   PanelRightClose,
   PanelRightOpen,
-  } from "lucide-react";
+  Calendar,
+  Clock,
+} from "lucide-react";
 
 interface MeetingsDashboardProps {
   meetings: Meeting[];
@@ -22,6 +25,9 @@ interface MeetingsDashboardProps {
   onShareMeeting: (meeting: Meeting) => void;
   activeSubTab: string;
   onNavigate: (tab: string) => void;
+  upcomingMeetings?: UpcomingMeeting[];
+  onToggleUpcomingNotetaker?: (id: string) => void;
+  onStartTestCall?: () => void;
 }
 
 export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
@@ -30,6 +36,9 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
   onShareMeeting,
   activeSubTab,
   onNavigate,
+  upcomingMeetings = [],
+  onToggleUpcomingNotetaker,
+  onStartTestCall,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -181,6 +190,60 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
             </div>
           </div>
 
+          {/* Next Upcoming Call Orientation Hero Banner */}
+          {upcomingMeetings.length > 0 && activeSubTab === "my-calls" && selectedCategory === "All" && !searchQuery && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-[#111928] via-[#141A28] to-[#12151F] border border-cyan-500/30 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                      Next Up
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-500" />
+                      {upcomingMeetings[0].startTimeFormatted} ({upcomingMeetings[0].durationMinutes}m)
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white tracking-tight">{upcomingMeetings[0].title}</h3>
+                  <p className="text-[11px] text-slate-400">
+                    {upcomingMeetings[0].participants.length} participants · {upcomingMeetings[0].provider.toUpperCase()} Meeting
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 shrink-0">
+                {onToggleUpcomingNotetaker && (
+                  <button
+                    onClick={() => onToggleUpcomingNotetaker(upcomingMeetings[0].id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      upcomingMeetings[0].notetakerEnabled
+                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20"
+                        : "bg-[#181C26] text-slate-400 border-[#2A3142] hover:text-slate-200"
+                    }`}
+                    title="Toggle automatic Notetaker joining"
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        upcomingMeetings[0].notetakerEnabled ? "bg-emerald-400 animate-pulse" : "bg-slate-500"
+                      }`}
+                    />
+                    <span>Notetaker {upcomingMeetings[0].notetakerEnabled ? "ARMED" : "OFF"}</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => onNavigate("upcoming")}
+                  className="px-3 py-1.5 rounded-xl bg-[#1E2433] hover:bg-[#252E42] border border-[#2B354C] text-xs font-semibold text-slate-200 hover:text-white transition-colors cursor-pointer"
+                >
+                  View Calendar ({upcomingMeetings.length})
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Category Filter Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             {categories.map((cat) => {
@@ -212,96 +275,234 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
             })}
           </div>
 
-          {/* Meetings Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {filteredMeetings.map((meeting, index) => {
-              const isLatest = index === 0 && selectedCategory === "All" && !searchQuery;
-              return (
-                <div
-                  key={meeting.id}
-                  className={`group bg-[#15171e] hover:bg-[#1a1d26] border rounded-xl overflow-hidden transition-all duration-200 flex flex-col justify-between hover:border-cyan-500/40 hover:shadow-xl cursor-pointer relative ${
-                    isLatest ? "border-cyan-500/30 ring-1 ring-cyan-500/20" : "border-[#222530]"
-                  }`}
-                  onClick={() => onSelectMeeting(meeting.id)}
+          {/* Empty State when no meetings match */}
+          {filteredMeetings.length === 0 ? (
+            <div className="py-16 text-center space-y-3 bg-[#131620] border border-[#222838] rounded-2xl p-8">
+              <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto text-slate-400">
+                <Search className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white">No meetings match your criteria</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Try searching for another keyword or clearing the category filter to see all recorded meetings.
+              </p>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button
+                  onClick={() => {
+                    setSelectedCategory("All");
+                    setSearchQuery("");
+                  }}
+                  className="px-3.5 py-1.5 bg-[#1F2535] hover:bg-[#283145] text-xs font-semibold text-white rounded-lg transition-colors cursor-pointer"
                 >
-                  {/* Thumbnail with duration badge overlay */}
-                  <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
-                    <Image width={600} height={338}
-                      src={meeting.thumbnail}
-                      alt={meeting.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85 group-hover:opacity-100"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#15171e] via-transparent to-black/30" />
+                  Clear filters
+                </button>
+                {onStartTestCall && (
+                  <button
+                    onClick={onStartTestCall}
+                    className="px-3.5 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Record a test call
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Meetings Cards Grid with Recent vs Archive Grouping */
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <span>Today &amp; Recent Calls</span>
+                  <span className="font-normal text-[11px] text-slate-400">{Math.min(3, filteredMeetings.length)} calls</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {filteredMeetings.slice(0, 3).map((meeting, index) => {
+                    const isLatest = index === 0 && selectedCategory === "All" && !searchQuery;
+                    return (
+                      <div
+                        key={meeting.id}
+                        className={`group bg-[#15171e] hover:bg-[#1a1d26] border rounded-xl overflow-hidden transition-all duration-200 flex flex-col justify-between hover:border-cyan-500/40 hover:shadow-xl cursor-pointer relative ${
+                          isLatest ? "border-cyan-500/30 ring-1 ring-cyan-500/20" : "border-[#222530]"
+                        }`}
+                        onClick={() => onSelectMeeting(meeting.id)}
+                      >
+                        {/* Thumbnail with duration badge overlay */}
+                        <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
+                          <Image
+                            width={600}
+                            height={338}
+                            src={meeting.thumbnail}
+                            alt={meeting.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85 group-hover:opacity-100"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#15171e] via-transparent to-black/30" />
 
-                    {/* Fathom Duration Badge: Bottom Right */}
-                    <div className="absolute bottom-2.5 right-2.5 bg-black/85 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-mono text-slate-200 border border-white/10">
-                      <span>{meeting.durationFormatted}</span>
-                    </div>
+                          {/* Fathom Duration Badge: Bottom Right */}
+                          <div className="absolute bottom-2.5 right-2.5 bg-black/85 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-mono text-slate-200 border border-white/10">
+                            <span>{meeting.durationFormatted}</span>
+                          </div>
 
-                    {/* Category badge */}
-                    <div className="absolute top-2.5 left-2.5">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-black/75 backdrop-blur-md text-[#00c2ff] border border-[#00c2ff]/30">
-                        {meeting.category}
-                      </span>
-                    </div>
+                          {/* Category badge */}
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-black/75 backdrop-blur-md text-[#00c2ff] border border-[#00c2ff]/30">
+                              {meeting.category}
+                            </span>
+                          </div>
 
-                    {/* Play Button Icon Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <div className="w-11 h-11 rounded-full bg-[#00c2ff] text-black flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
-                        <Play className="w-5 h-5 fill-current ml-0.5" />
+                          {/* Play Button Icon Overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="w-11 h-11 rounded-full bg-[#00c2ff] text-black flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
+                              <Play className="w-5 h-5 fill-current ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                          <div className="space-y-1">
+                            <h2 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
+                              {meeting.title}
+                            </h2>
+                            <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                              {meeting.summary.default.overview}
+                            </p>
+                          </div>
+
+                          {/* Metadata strip */}
+                          <div className="pt-2 border-t border-[#1f222c] flex items-center justify-between text-xs text-slate-400">
+                            <div className="flex items-center gap-2 text-[11px]">
+                              <span className="flex items-center gap-1 text-amber-300" title={`${meeting.actionItems.length} action items`}>
+                                <CheckSquare className="w-3 h-3" />
+                                <span>{meeting.actionItems.length}</span>
+                              </span>
+                              <span className="flex items-center gap-1 text-cyan-300" title={`${meeting.highlights.length} highlights`}>
+                                <Sparkles className="w-3 h-3" />
+                                <span>{meeting.highlights.length}</span>
+                              </span>
+                              <span className="text-slate-400">
+                                {meeting.participants.length} speakers
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => onShareMeeting(meeting)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#20232d] transition-colors"
+                                title="Share Recording"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => onSelectMeeting(meeting.id)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-[#20232d] transition-colors"
+                                title="Open Recording"
+                              >
+                                <ArrowUpRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Section 2: Earlier Calls */}
+              {filteredMeetings.length > 3 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <span>Earlier Workspace Discussions</span>
+                    <span className="font-normal text-[11px] text-slate-400">{filteredMeetings.length - 3} calls</span>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {filteredMeetings.slice(3).map((meeting) => (
+                      <div
+                        key={meeting.id}
+                        className="group bg-[#15171e] hover:bg-[#1a1d26] border border-[#222530] rounded-xl overflow-hidden transition-all duration-200 flex flex-col justify-between hover:border-cyan-500/40 hover:shadow-xl cursor-pointer relative"
+                        onClick={() => onSelectMeeting(meeting.id)}
+                      >
+                        {/* Thumbnail with duration badge overlay */}
+                        <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
+                          <Image
+                            width={600}
+                            height={338}
+                            src={meeting.thumbnail}
+                            alt={meeting.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85 group-hover:opacity-100"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#15171e] via-transparent to-black/30" />
 
-                  {/* Card Content */}
-                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                    <div className="space-y-1">
-                      <h2 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
-                        {meeting.title}
-                      </h2>
-                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                        {meeting.summary.default.overview}
-                      </p>
-                    </div>
+                          {/* Fathom Duration Badge */}
+                          <div className="absolute bottom-2.5 right-2.5 bg-black/85 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-mono text-slate-200 border border-white/10">
+                            <span>{meeting.durationFormatted}</span>
+                          </div>
 
-                    {/* Metadata strip */}
-                    <div className="pt-2 border-t border-[#1f222c] flex items-center justify-between text-xs text-slate-400">
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <span className="flex items-center gap-1 text-amber-300">
-                          <CheckSquare className="w-3 h-3" />
-                          <span>{meeting.actionItems.length}</span>
-                        </span>
-                        <span className="flex items-center gap-1 text-cyan-300">
-                          <Sparkles className="w-3 h-3" />
-                          <span>{meeting.highlights.length}</span>
-                        </span>
-                        <span className="text-slate-400">
-                          {meeting.participants.length} speakers
-                        </span>
+                          {/* Category badge */}
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-black/75 backdrop-blur-md text-[#00c2ff] border border-[#00c2ff]/30">
+                              {meeting.category}
+                            </span>
+                          </div>
+
+                          {/* Play Button Icon Overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="w-11 h-11 rounded-full bg-[#00c2ff] text-black flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
+                              <Play className="w-5 h-5 fill-current ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                          <div className="space-y-1">
+                            <h2 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
+                              {meeting.title}
+                            </h2>
+                            <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                              {meeting.summary.default.overview}
+                            </p>
+                          </div>
+
+                          {/* Metadata strip */}
+                          <div className="pt-2 border-t border-[#1f222c] flex items-center justify-between text-xs text-slate-400">
+                            <div className="flex items-center gap-2 text-[11px]">
+                              <span className="flex items-center gap-1 text-amber-300" title={`${meeting.actionItems.length} action items`}>
+                                <CheckSquare className="w-3 h-3" />
+                                <span>{meeting.actionItems.length}</span>
+                              </span>
+                              <span className="flex items-center gap-1 text-cyan-300" title={`${meeting.highlights.length} highlights`}>
+                                <Sparkles className="w-3 h-3" />
+                                <span>{meeting.highlights.length}</span>
+                              </span>
+                              <span className="text-slate-400">
+                                {meeting.participants.length} speakers
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => onShareMeeting(meeting)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#20232d] transition-colors"
+                                title="Share Recording"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => onSelectMeeting(meeting.id)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-[#20232d] transition-colors"
+                                title="Open Recording"
+                              >
+                                <ArrowUpRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => onShareMeeting(meeting)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#20232d] transition-colors"
-                          title="Share Recording"
-                        >
-                          <Share2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => onSelectMeeting(meeting.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-[#20232d] transition-colors"
-                          title="Open Recording"
-                        >
-                          <ArrowUpRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Area: ASK FATHOM Panel (Matching Screenshot a85ae19e-c030-4304-9fda-9fc01c753c8d.png) */}
