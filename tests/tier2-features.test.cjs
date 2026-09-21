@@ -7,6 +7,7 @@ const { SEEDED_PLAYLISTS: initialPlaylists } = load('src/data/seededPlaylists.ts
 const { SEEDED_TRACKERS: initialTrackers } = load('src/data/seededTrackers.ts');
 const playlistService = load('src/services/playlistService.ts');
 const trackerService = load('src/services/trackerService.ts');
+const settingsService = load('src/services/settingsService.ts');
 
 test('playlist resolves clips against real seeded meeting and highlight records', () => {
   const p1 = initialPlaylists[0];
@@ -131,4 +132,57 @@ test('tracker lifecycle: create, update, enable/disable toggle, meeting scoping,
   const remaining = trackerService.deleteTracker(trackerList, tracker.id);
   assert.equal(remaining.length, 1);
   assert.equal(remaining[0].id, initialTrackers[0].id);
+});
+
+test('settings service: updates recording, summary, sharing, and custom highlight types', () => {
+  let settings = settingsService.defaultSettings();
+  assert.equal(settings.recording.autoRecordMode, 'external');
+  assert.equal(settings.recording.botDisplayName, 'Fathom Notetaker');
+  assert.equal(settings.summaries.defaultTemplate, 'default');
+  assert.equal(settings.summaries.autoExtractActions, true);
+  assert.equal(settings.sharing.defaultVisibility, 'team');
+  assert.equal(settings.highlights.types.length, 4);
+
+  // 1. Update Recording Settings
+  settings = settingsService.updateRecordingSettings(settings, {
+    autoRecordMode: 'all',
+    consentPreference: 'required',
+    botDisplayName: 'Acme Intelligence Bot',
+  });
+  assert.equal(settings.recording.autoRecordMode, 'all');
+  assert.equal(settings.recording.consentPreference, 'required');
+  assert.equal(settings.recording.botDisplayName, 'Acme Intelligence Bot');
+
+  // 2. Update Summaries Settings
+  settings = settingsService.updateSummarySettings(settings, {
+    defaultTemplate: 'executive',
+    autoExtractActions: false,
+  });
+  assert.equal(settings.summaries.defaultTemplate, 'executive');
+  assert.equal(settings.summaries.autoExtractActions, false);
+
+  // 3. Update Sharing Settings
+  settings = settingsService.updateSharingSettings(settings, {
+    defaultVisibility: 'private',
+  });
+  assert.equal(settings.sharing.defaultVisibility, 'private');
+
+  // 4. Highlight Types: Add, Edit, Reorder, Delete
+  settings = settingsService.addHighlightType(settings, 'Risk & Blockers', '#EF4444');
+  assert.equal(settings.highlights.types.length, 5);
+  const newType = settings.highlights.types[4];
+  assert.equal(newType.name, 'Risk & Blockers');
+  assert.equal(newType.color, '#EF4444');
+
+  // Edit
+  settings = settingsService.updateHighlightType(settings, newType.id, 'Critical Blockers', '#DC2626');
+  assert.equal(settings.highlights.types.find(t => t.id === newType.id).name, 'Critical Blockers');
+
+  // Reorder up
+  settings = settingsService.reorderHighlightTypes(settings, newType.id, 'up');
+  assert.equal(settings.highlights.types[3].id, newType.id);
+
+  // Delete
+  settings = settingsService.deleteHighlightType(settings, newType.id);
+  assert.equal(settings.highlights.types.length, 4);
 });

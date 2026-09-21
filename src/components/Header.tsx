@@ -7,9 +7,10 @@ interface HeaderProps {
   onStartTestCall: () => void;
   onOpenSearch: () => void;
   onNavigateHome: () => void;
+  onOpenSettings?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, onStartTestCall }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, onStartTestCall, onOpenSettings }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -76,7 +77,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, on
 
           {/* Settings button */}
           <button
-            onClick={() => showToast("Demo workspace: recording and calendar integrations are not connected.")}
+            onClick={() => {
+              if (onOpenSettings) onOpenSettings();
+              else showToast("Demo workspace settings");
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
             title="Settings"
           >

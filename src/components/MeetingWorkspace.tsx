@@ -16,6 +16,7 @@ import { Users, ListMusic } from "lucide-react";
 import { useWorkspaceStore } from "@/lib/useWorkspaceStore";
 import { PlaylistsView } from "./PlaylistsView";
 import { TrackersView } from "./TrackersView";
+import { SettingsModal } from "./SettingsModal";
 
 function subscribeToUrl(callback: () => void) {
   window.addEventListener("popstate", callback);
@@ -50,6 +51,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   const selectedMeetingTimestamp = Number.isFinite(rawTime) ? Math.max(0, rawTime) : 0;
   const [shareTimestamp, setShareTimestamp] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [sharingMeeting, setSharingMeeting] = useState<Meeting | null>(null);
   const [sidebarTab, setSidebarTab] = useState<string>("my-calls");
 
@@ -67,6 +69,15 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
     updateTracker,
     toggleTracker,
     deleteTracker,
+
+    settings,
+    updateRecording,
+    updateSummaries,
+    updateSharing,
+    addHighlightType,
+    updateHighlightType,
+    reorderHighlightTypes,
+    deleteHighlightType,
   } = useWorkspaceStore();
 
   useEffect(() => {
@@ -96,6 +107,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
       <Header
         onStartTestCall={showCapture}
         onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
         onNavigateHome={() => {
           navigate();
           setSidebarTab("my-calls");
@@ -233,6 +245,19 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
         meeting={sharingMeeting}
         isOpen={!!sharingMeeting}
         onClose={() => setSharingMeeting(null)}
+      />}
+
+      {isSettingsOpen && <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onUpdateRecording={updateRecording}
+        onUpdateSummaries={updateSummaries}
+        onUpdateSharing={updateSharing}
+        onAddHighlightType={addHighlightType}
+        onUpdateHighlightType={updateHighlightType}
+        onReorderHighlightTypes={reorderHighlightTypes}
+        onDeleteHighlightType={deleteHighlightType}
       />}
     </div>
   );

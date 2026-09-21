@@ -3,6 +3,7 @@
 import { useSyncExternalStore, useCallback } from "react";
 import { Playlist } from "../types/playlist";
 import { Tracker } from "../types/tracker";
+import { WorkspaceSettings } from "../types/settings";
 import {
   getTier2Snapshot,
   saveTier2State,
@@ -11,6 +12,7 @@ import {
 } from "./workspaceStorage";
 import * as playlistService from "../services/playlistService";
 import * as trackerService from "../services/trackerService";
+import * as settingsService from "../services/settingsService";
 
 export function useWorkspaceStore() {
   const state = useSyncExternalStore(
@@ -21,6 +23,7 @@ export function useWorkspaceStore() {
 
   const playlists = state.playlists;
   const trackers = state.trackers;
+  const settings = state.settings;
 
   // --- Playlist Actions ---
   const handleCreatePlaylist = useCallback((title: string, description?: string): Playlist => {
@@ -104,6 +107,49 @@ export function useWorkspaceStore() {
     saveTier2State({ ...getTier2Snapshot(), trackers: updated });
   }, []);
 
+  // --- Settings Actions ---
+  const handleUpdateRecording = useCallback((patch: Partial<WorkspaceSettings["recording"]>) => {
+    const current = getTier2Snapshot().settings;
+    const updated = settingsService.updateRecordingSettings(current, patch);
+    saveTier2State({ ...getTier2Snapshot(), settings: updated });
+  }, []);
+
+  const handleUpdateSummaries = useCallback((patch: Partial<WorkspaceSettings["summaries"]>) => {
+    const current = getTier2Snapshot().settings;
+    const updated = settingsService.updateSummarySettings(current, patch);
+    saveTier2State({ ...getTier2Snapshot(), settings: updated });
+  }, []);
+
+  const handleUpdateSharing = useCallback((patch: Partial<WorkspaceSettings["sharing"]>) => {
+    const current = getTier2Snapshot().settings;
+    const updated = settingsService.updateSharingSettings(current, patch);
+    saveTier2State({ ...getTier2Snapshot(), settings: updated });
+  }, []);
+
+  const handleAddHighlightType = useCallback((name: string, color?: string) => {
+    const current = getTier2Snapshot().settings;
+    const updated = settingsService.addHighlightType(current, name, color);
+    saveTier2State({ ...getTier2Snapshot(), settings: updated });
+  }, []);
+
+  const handleUpdateHighlightType = useCallback((id: string, name: string, color?: string) => {
+    const current = getTier2Snapshot().settings;
+    const updated = settingsService.updateHighlightType(current, id, name, color);
+    saveTier2State({ ...getTier2Snapshot(), settings: updated });
+  }, []);
+
+  const handleReorderHighlightTypes = useCallback((id: string, direction: "up" | "down") => {
+    const current = getTier2Snapshot().settings;
+    const updated = settingsService.reorderHighlightTypes(current, id, direction);
+    saveTier2State({ ...getTier2Snapshot(), settings: updated });
+  }, []);
+
+  const handleDeleteHighlightType = useCallback((id: string) => {
+    const current = getTier2Snapshot().settings;
+    const updated = settingsService.deleteHighlightType(current, id);
+    saveTier2State({ ...getTier2Snapshot(), settings: updated });
+  }, []);
+
   return {
     playlists,
     createPlaylist: handleCreatePlaylist,
@@ -118,5 +164,14 @@ export function useWorkspaceStore() {
     updateTracker: handleUpdateTracker,
     toggleTracker: handleToggleTracker,
     deleteTracker: handleDeleteTracker,
+
+    settings,
+    updateRecording: handleUpdateRecording,
+    updateSummaries: handleUpdateSummaries,
+    updateSharing: handleUpdateSharing,
+    addHighlightType: handleAddHighlightType,
+    updateHighlightType: handleUpdateHighlightType,
+    reorderHighlightTypes: handleReorderHighlightTypes,
+    deleteHighlightType: handleDeleteHighlightType,
   };
 }

@@ -1,7 +1,9 @@
 import { Playlist } from "../types/playlist";
 import { Tracker } from "../types/tracker";
+import { WorkspaceSettings } from "../types/settings";
 import { SEEDED_PLAYLISTS } from "../data/seededPlaylists";
 import { SEEDED_TRACKERS } from "../data/seededTrackers";
+import { defaultSettings } from "../services/settingsService";
 
 export const TIER2_STORAGE_KEY = "fathom-tier2-state-v1";
 
@@ -9,6 +11,7 @@ export interface Tier2State {
   version: 1;
   playlists: Playlist[];
   trackers: Tracker[];
+  settings: WorkspaceSettings;
 }
 
 export function defaultTier2State(): Tier2State {
@@ -16,6 +19,7 @@ export function defaultTier2State(): Tier2State {
     version: 1,
     playlists: SEEDED_PLAYLISTS,
     trackers: SEEDED_TRACKERS,
+    settings: defaultSettings(),
   };
 }
 
@@ -30,10 +34,12 @@ export function getTier2Snapshot(): Tier2State {
     const parsed = JSON.parse(raw);
     if (parsed && parsed.version === 1 && Array.isArray(parsed.playlists)) {
       const trackers = Array.isArray(parsed.trackers) ? parsed.trackers : SEEDED_TRACKERS;
+      const settings = parsed.settings && parsed.settings.recording ? parsed.settings : defaultSettings();
       memoryState = {
         version: 1,
         playlists: parsed.playlists,
         trackers,
+        settings,
       };
       return memoryState;
     }
