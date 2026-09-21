@@ -239,7 +239,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           {!query.trim() ? (
             <div className="py-12 text-center text-slate-400 text-xs">
               <Sparkles className="w-8 h-8 text-cyan-400/50 mx-auto mb-2.5" />
-              <p className="font-medium text-slate-300">Search through all 6 seeded meetings</p>
+              <p className="font-medium text-slate-300">Search through all {meetings.length} meetings</p>
               <p className="text-[11px] text-slate-400 mt-1">
                 Try searching for: <span className="text-cyan-400 font-mono">&ldquo;retention&rdquo;</span>,{" "}
                 <span className="text-cyan-400 font-mono">&ldquo;Sarah&rdquo;</span>,{" "}

@@ -4,19 +4,22 @@ import React from "react";
 import { PhoneCall, Users, ListMusic, Bell, DollarSign, Bot, Radio, Plus } from "lucide-react";
 
 interface SidebarProps {
+  notetakerStatus?: string;
   activeTab: string;
   onSelectTab: (tab: string) => void;
   totalCallsCount: number;
+  teamCallsCount: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
+  notetakerStatus = "ready",
   activeTab,
   onSelectTab,
-  totalCallsCount,
+  totalCallsCount, teamCallsCount,
 }) => {
   const navItems = [
     { id: "my-calls", label: "My Calls", icon: PhoneCall, count: totalCallsCount, primary: true },
-    { id: "team-calls", label: "Team Calls", icon: Users, count: 2 },
+    { id: "team-calls", label: "Team Calls", icon: Users, count: teamCallsCount },
     { id: "playlists", label: "Playlists", icon: ListMusic, count: 2 },
     { id: "alerts", label: "Alerts", icon: Bell },
     { id: "deals", label: "Deals", icon: DollarSign },
@@ -111,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <p className="text-xs font-semibold text-white truncate">Fathom Notetaker</p>
               <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
             </div>
-            <p className="text-[10px] text-slate-400 truncate">Demo capture · not connected</p>
+            <p className="text-[10px] text-slate-400 truncate">Test capture · {notetakerStatus}</p>
           </div>
         </div>
 

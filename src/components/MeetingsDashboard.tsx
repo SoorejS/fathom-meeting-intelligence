@@ -153,7 +153,7 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
             <div>
               <h1 className="text-xl font-bold text-white tracking-tight">Your meetings</h1>
               <p className="text-xs text-slate-400 mt-0.5">
-                {filteredMeetings.length} seeded meetings · Explore summaries, transcripts, and decisions
+                {filteredMeetings.length} meetings · Explore summaries, transcripts, and decisions
               </p>
             </div>
 

@@ -4,11 +4,12 @@ import React, { useState, useEffect } from "react";
 import { Search, Gift, Settings, HelpCircle, Sparkles, Check } from "lucide-react";
 
 interface HeaderProps {
+  onStartTestCall: () => void;
   onOpenSearch: () => void;
   onNavigateHome: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, onStartTestCall }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -85,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome }) 
 
           {/* Help & Feedback button */}
           <button
-            onClick={() => showToast("Explore a meeting, then switch between Summary, Transcript, and Ask Fathom.")}
+            onClick={onStartTestCall}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
             title="Help & Feedback"
           >

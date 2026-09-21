@@ -1,9 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const ts = require('typescript');
-const Module = require('node:module');
-function load(file) { const mod = new Module(file); mod._compile(ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, file); return mod.exports; }
+const load = require('./load-typescript.cjs');
 const { SEEDED_MEETINGS: meetings } = load('src/data/seededMeetings.ts');
 const { findMeetingAnswer } = load('src/lib/meetingAnswers.ts');
 test('six distinct seeded meetings with valid transcript-linked timestamps', () => {

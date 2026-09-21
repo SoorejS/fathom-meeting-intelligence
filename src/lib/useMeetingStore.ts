@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useSyncExternalStore } from "react";
 import { SEEDED_MEETINGS } from "../data/seededMeetings";
-import type { Meeting, SummaryTemplateKey } from "../types/meeting";
+import type { Meeting, SummaryTemplateKey, TestCallDescriptor } from "../types/meeting";
 import { STORAGE_KEY, decodeState, applySavedState, emptyState } from "./meetingStorage";
 
 let memory: string | null = null;
@@ -23,6 +23,12 @@ function save(state: ReturnType<typeof emptyState>) {
   catch { storageError = true; }
   listeners.forEach(listener => listener());
 }
+export function storeGeneratedCall(call: TestCallDescriptor) {
+  const latest = decodeState(snapshot(), SEEDED_MEETINGS);
+  if (latest.generated.some(item => item.id === call.id)) return;
+  latest.generated.unshift(call);
+  save(latest);
+}
 export function useMeetingStore() {
   const raw = useSyncExternalStore(subscribe, snapshot, () => null);
   const state = useMemo(() => decodeState(raw, SEEDED_MEETINGS), [raw]);
@@ -31,6 +37,7 @@ export function useMeetingStore() {
     meetings, templates: state.templates, storageError,
     updateMeeting(meeting: Meeting) {
       const latest = decodeState(snapshot(), SEEDED_MEETINGS);
+      if (meeting.testCall && !latest.generated.some(d => d.id === meeting.id)) latest.generated.unshift(meeting.testCall);
       latest.meetings[meeting.id] = {
         statuses: Object.fromEntries(meeting.actionItems.map(a => [a.id, a.status])),
         highlights: meeting.highlights.filter(h => h.creator === "You"),

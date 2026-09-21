@@ -1,5 +1,6 @@
 "use client";
 
+import { testCallFragment } from "@/lib/testCallMeeting";
 import Image from "next/image";
 import React, { useState } from "react";
 import { Meeting } from "@/types/meeting";
@@ -24,11 +25,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   if (!isOpen || !meeting) return null;
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin + "/share/" + encodeURIComponent(meeting.id) : "";
-  const shareUrl =
+  const baseUrl = typeof window !== "undefined" ? window.location.origin + "/share/" + (meeting.testCall ? "test" : encodeURIComponent(meeting.id)) : "";
+  const routeUrl =
     includeTimestamp && currentTimestamp > 0
       ? `${baseUrl}?t=${Math.floor(currentTimestamp)}`
       : `${baseUrl}`;
+
+  const shareUrl = routeUrl + (meeting.testCall ? "#" + testCallFragment(meeting.testCall) : "");
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -55,7 +58,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-white">Share Call Recording</h3>
-              <p className="text-[11px] text-slate-400">Share simulated playback, transcript & summary</p>
+              <p className="text-[11px] text-slate-400">Share meeting notes & playback position</p>
             </div>
           </div>
           <button
@@ -152,7 +155,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Footer */}
         <div className="p-3 bg-[#0e1015] border-t border-[#1f232d] text-center">
           <p className="text-[10px] text-slate-400">
-            Recipients can explore this meeting without signing in. Personal highlights and completion changes stay in your browser; the link shares the original meeting and playback position.
+            {meeting.testCall ? "This link includes the meeting title, date, duration and test scenario. Microphone audio stays private in this browser and is never included. Recipients see scenario notes with simulated playback." : "Recipients can explore this meeting without signing in. Personal highlights and completion changes stay in your browser; the link shares the original meeting and playback position."}
           </p>
         </div>
       </div>

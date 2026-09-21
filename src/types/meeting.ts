@@ -75,6 +75,7 @@ export interface AiQnAItem {
 }
 
 export interface Meeting {
+  testCall?: TestCallDescriptor;
   id: string;
   title: string;
   date: string;
@@ -90,4 +91,14 @@ export interface Meeting {
   actionItems: ActionItem[];
   highlights: Highlight[];
   aiQnA: AiQnAItem[];
+}
+
+export interface TestCallDescriptor {
+  version: 1;
+  id: string;
+  title: string;
+  date: string;
+  duration: number;
+  captureMode: "microphone" | "simulated";
+  hasLocalAudio: boolean;
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Meeting, HighlightType, SummaryTemplateKey } from "@/types/meeting";
+import { useLocalAudio } from "@/lib/useLocalAudio";
 import { MeetingPlayer } from "./MeetingPlayer";
 import { SummaryView } from "./SummaryView";
 import { TranscriptView } from "./TranscriptView";
@@ -40,6 +41,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
   onShare,
   onUpdateMeeting,
 }) => {
+  const audio = useLocalAudio(meeting.id, !!meeting.testCall?.hasLocalAudio);
   const [activeTab, setActiveTab] = useState<MainTab>("summary");
   const [currentTime, setCurrentTime] = useState<number>(initialTimestamp);
   const [copiedToast, setCopiedToast] = useState<string | null>(null);
@@ -160,8 +162,9 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
         {/* LEFT COLUMN: Player + Tab Strip + Intelligence Workspace (~58% on Desktop) */}
         <div className="min-w-0 lg:col-span-7 flex flex-col space-y-4">
           {/* 1. Video Player */}
+          {meeting.testCall && <div className="text-xs text-slate-400 rounded-lg border border-slate-700 p-3"><strong className="text-cyan-300">Test call · Scenario-generated notes</strong><p>Transcript and intelligence follow the test script, not recognized speech. {audio.url ? "Playback uses your locally saved microphone audio." : meeting.testCall.hasLocalAudio && !audio.unavailable ? "Loading local audio…" : "Playback is simulated; no local audio is available."}</p></div>}
           <MeetingPlayer
-            duration={meeting.duration}
+            audioUrl={audio.url}            duration={meeting.duration}
             currentTime={currentTime}
             onTimeUpdate={handleSeek}
             highlights={meeting.highlights}

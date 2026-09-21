@@ -14,6 +14,7 @@ import {
 import { Highlight, Participant, HighlightType } from "@/types/meeting";
 
 interface MeetingPlayerProps {
+  audioUrl?: string;
   duration: number; // in seconds
   currentTime: number;
   onTimeUpdate: (time: number) => void;
@@ -24,6 +25,7 @@ interface MeetingPlayerProps {
 }
 
 export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
+  audioUrl,
   duration,
   currentTime,
   onTimeUpdate,
@@ -31,6 +33,8 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
   currentSpeaker,
   meetingTitle,
 }) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [audioError, setAudioError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [isMuted, setIsMuted] = useState(false);
@@ -41,7 +45,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
   // Playback loop
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isPlaying && currentTime < duration) {
+    if (!audioUrl && isPlaying && currentTime < duration) {
       interval = setInterval(() => {
         const next = Math.min(duration, currentTime + 0.5 * playbackSpeed);
         if (next >= duration) setIsPlaying(false);
@@ -49,7 +53,17 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
       }, 500);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, currentTime, duration, playbackSpeed, onTimeUpdate]);
+  }, [audioUrl, isPlaying, currentTime, duration, playbackSpeed, onTimeUpdate]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+    if (Math.abs(audio.currentTime - currentTime) > 0.4) audio.currentTime = currentTime;
+    audio.playbackRate = playbackSpeed;
+    audio.muted = isMuted;
+    if (isPlaying && currentTime < duration) void audio.play().catch(() => { setIsPlaying(false); setAudioError(true); });
+    else audio.pause();
+  }, [audioUrl, isPlaying, currentTime, duration, playbackSpeed, isMuted]);
 
   const playing = isPlaying && currentTime < duration;
   const togglePlay = () => {
@@ -106,6 +120,9 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
 
   return (
     <div ref={playerRef} className="bg-[#12141a] border border-[#20232c] rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" onLoadedMetadata={() => { if (audioRef.current) audioRef.current.currentTime = currentTime; }} onTimeUpdate={() => { if (audioRef.current) onTimeUpdate(Math.min(duration, audioRef.current.currentTime)); }} onEnded={() => { setIsPlaying(false); onTimeUpdate(duration); }} onError={() => { setAudioError(true); setIsPlaying(false); }} />}
+      {audioError && <p role="alert" className="p-2 text-xs text-amber-300">Audio playback could not start. Try Play again or download your recording below.</p>}
+      {audioUrl && <a href={audioUrl} download="test-call-audio" className="px-4 py-2 text-xs text-cyan-300">Download local recording</a>}
       {/* Video Simulation Canvas Screen (Matching Fathom Reference Screenshot) */}
       <div
         className="relative aspect-video w-full bg-gradient-to-br from-[#0a0c11] via-[#121622] to-[#181d2a] flex flex-col items-center justify-center overflow-hidden group select-none cursor-pointer"
@@ -294,6 +311,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
           </button>
 
           <button
+            disabled={duration === 0}
             onClick={togglePlay}
             className="p-1.5 rounded-full bg-[#00c2ff] hover:bg-[#00b0e8] text-black transition-colors cursor-pointer shadow-md"
             title={playing ? "Pause" : "Play"}

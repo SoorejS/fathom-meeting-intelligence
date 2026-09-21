@@ -2,7 +2,7 @@
 
 ## Overview
 
-A meeting-intelligence demo that turns six realistic seeded conversations into searchable transcripts, structured summaries, action items, highlights, and grounded questions and answers. Open any meeting from the dashboard to explore the complete workflow without signing in.
+A meeting-intelligence demo that turns six realistic seeded conversations into searchable transcripts, structured summaries, action items, highlights, and grounded questions and answers. Open any meeting from the dashboard, or use Start Test Call to record a consented browser microphone test (with a clearly labeled simulated fallback) and generate a new meeting without signing in.
 
 ## Live Demo
 
@@ -18,8 +18,9 @@ Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, and Lucide icons. N
 
 ## Architecture
 
-- [MeetingWorkspace](src/components/MeetingWorkspace.tsx) coordinates the existing dashboard and detail views. [useMeetingStore](src/lib/useMeetingStore.ts) shares a versioned localStorage state between the dashboard and public share routes; saved data is validated before applying it to the seeds.
-- [Share routes](src/app/share/[meetingId]/page.tsx) are generated for all six meetings at build time. `/share/m_prod_strategy?t=155` opens the product meeting at 02:35 without authentication.
+- [MeetingWorkspace](src/components/MeetingWorkspace.tsx) coordinates the existing dashboard and detail views. [useMeetingStore](src/lib/useMeetingStore.ts) shares a versioned localStorage state between the dashboard and public share routes; saved data is validated before applying it to the seeds and generated test calls.
+- [CaptureEngine](src/lib/captureEngine.ts) coordinates consent, recording, interruption recovery, and deterministic processing. Meeting metadata and preferences use localStorage; microphone blobs use IndexedDB and never leave the browser.
+- [Share routes](src/app/share/[meetingId]/page.tsx) are generated for all six meetings at build time. `/share/m_prod_strategy?t=155` opens the product meeting at 02:35 without authentication. `/share/test` reconstructs generated scenario notes from validated URL-fragment metadata; audio is never embedded.
 - [src/components](src/components) contains the dashboard, playback simulator, transcript, summaries, action items, highlights, search, sharing, and Ask Fathom views.
 - [src/data/seededMeetings.ts](src/data/seededMeetings.ts) supplies typed meeting records to every view; [src/types/meeting.ts](src/types/meeting.ts) defines their relationships.
 - [src/lib/meetingAnswers.ts](src/lib/meetingAnswers.ts) ranks transcript excerpts, notes, actions, highlights, and participant metadata from the selected meeting. Unsupported questions receive an explicit fallback instead of invented facts.
@@ -27,14 +28,16 @@ Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, and Lucide icons. N
 
 ## Core workflows
 
-1. **Meetings dashboard:** Browse six meetings, filter by category or keyword, and sort by date or duration. Team Calls and two seeded playlist entry points provide alternate navigation. Alerts and Deals explicitly describe their demo scope.
-2. **Transcript and playback:** Play/pause the simulated timeline, seek with the scrubber or arrow keys, skip ten seconds, and cycle speeds from 1x to 2x. Transcript segments and timestamps seek the same clock and update the active speaker.
+1. **Meetings dashboard:** Start with six meetings, filter by category or keyword, and sort by date or duration. Team Calls and two seeded playlist entry points provide alternate navigation. Alerts and Deals explicitly describe their demo scope.
+2. **Transcript and playback:** Play/pause locally recorded microphone audio when available, or the explicitly simulated timeline, seek with the scrubber or arrow keys, skip ten seconds, and cycle speeds from 1x to 2x. Transcript segments and timestamps seek the same clock and update the active speaker.
 3. **Summaries:** Switch between Enhanced, Executive Brief, Sales & Deals, and Engineering Spec. Each presents a different structured view of the same meeting facts. Selection persists per meeting; copying includes the displayed key points.
 4. **Action items:** Review owners and due dates, mark items complete, and jump to the source timestamp.
 5. **Highlights:** Create highlights from transcript segments using any of the four types; they appear in the list, timeline, and global search. Change the type or remove your own highlights.
 6. **Ask Fathom:** Ask about decisions, action owners, concerns, a named speaker, or a timestamp. Deterministic retrieval returns excerpts and note extracts with clickable sources; unsupported topics receive an explicit fallback. The dashboard overview derives answers from seeded records.
 7. **Global search:** Open the header search or press Ctrl/Cmd+K. Search titles, participants, all summary templates, transcript text, action items, and highlights (including your new highlights); filter result types and open matching moments.
 8. **Sharing:** Copy a meeting URL, optionally including the current timestamp. Recipients can open it without an account. Clipboard failures produce a manual-copy fallback.
+
+9. **Test capture:** Start Test Call → join → explicitly approve or decline → watch the recording clock → End Meeting → processing → open the new call. Microphone denial, unsupported capture, empty audio, and early stops still produce usable scenario notes. A remembered permission choice never bypasses fresh approval.
 
 ## Seeded data
 
@@ -44,7 +47,9 @@ These are fictional demo records with selected transcript excerpts, not complete
 
 ## Capture decision
 
-The actual recording/capture layer was intentionally stubbed, as permitted by the assignment. Playback is a controllable timeline and speaker visualization, without recorded audio/video. Effort focused on the meeting-intelligence experience: finding information, understanding decisions, following citations, and acting on commitments.
+The external conferencing bot is intentionally stubbed, as permitted by the assignment. The interactive test-call lifecycle uses real browser microphone capture through MediaRecorder when permission and browser support allow it. Audio stays in IndexedDB and can be played or downloaded locally. Simulated capture is available explicitly and as a fallback.
+
+Transcripts and intelligence are deterministic release-readiness scenario notes, not speech recognition. Only cues reached on the actual recording clock are included; stopping early never invents later actions. Reloading interrupts capture safely and offers processing recovery. Generated meetings, action completion, highlights, and templates survive refresh. Shared test-call links contain title, date, duration, and scenario metadata, but neither audio nor personal edits. Clearing browser storage removes local recordings and edits.
 
 This product decision is separate from required **agent prompt/response capture**, retained in [.agent-logs](.agent-logs/), [.agents](.agents/), [.codex](.codex/), and [CAPTURE-TEST.md](CAPTURE-TEST.md).
 
@@ -54,7 +59,7 @@ Prioritized a populated first visit, fast client-side search, one playback clock
 
 ## Deliberately excluded
 
-Real meeting bots and capture, live transcription, calendar integrations, CRM and enterprise integrations, billing, authentication, persistent multi-user storage, and a full admin/settings system. Retrieval is deterministic and extractive, with limited keyword matching rather than unrestricted natural-language reasoning; no external LLM is called. Secondary demo controls explain their scope instead of claiming live integrations are connected.
+External meeting bots, system/video capture, live transcription, calendar integrations, CRM and enterprise integrations, billing, authentication, persistent multi-user storage, and a full admin/settings system. Retrieval is deterministic and extractive, with limited keyword matching rather than unrestricted natural-language reasoning; no external LLM is called. Secondary demo controls explain their scope instead of claiming live integrations are connected.
 
 ## Local development
 
@@ -81,6 +86,8 @@ npm start
 ## Verification
 
 See [FINAL-AUDIT.md](FINAL-AUDIT.md) for final build, browser checks, deployment evidence, and known limitations. Regression tests check all six meetings' participant/citation relationships, retrieval isolation and unsupported queries, named-speaker attribution, and storage round-trips/corruption recovery. See [FUNCTIONAL-DEPTH-AUDIT.md](FUNCTIONAL-DEPTH-AUDIT.md) for the subsequent persistence, retrieval, and public share-route pass.
+
+See [CAPTURE-LIFECYCLE-AUDIT.md](CAPTURE-LIFECYCLE-AUDIT.md) for the interactive capture implementation and its verification limits.
 
 ## Agent capture integrity
 
