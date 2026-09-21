@@ -2,6 +2,7 @@ import { Playlist } from "../types/playlist";
 import { Tracker } from "../types/tracker";
 import { WorkspaceSettings } from "../types/settings";
 import { UpcomingMeeting } from "../types/upcoming";
+import { MeetingVisibility } from "../types/team";
 import { SEEDED_PLAYLISTS } from "../data/seededPlaylists";
 import { SEEDED_TRACKERS } from "../data/seededTrackers";
 import { SEEDED_UPCOMING_MEETINGS } from "../data/seededUpcoming";
@@ -15,6 +16,7 @@ export interface Tier2State {
   trackers: Tracker[];
   settings: WorkspaceSettings;
   upcomingMeetings: UpcomingMeeting[];
+  visibilities: Record<string, MeetingVisibility>;
 }
 
 export function defaultTier2State(): Tier2State {
@@ -24,6 +26,7 @@ export function defaultTier2State(): Tier2State {
     trackers: SEEDED_TRACKERS,
     settings: defaultSettings(),
     upcomingMeetings: SEEDED_UPCOMING_MEETINGS,
+    visibilities: {},
   };
 }
 
@@ -42,6 +45,9 @@ export function getTier2Snapshot(): Tier2State {
       const upcomingMeetings = Array.isArray(parsed.upcomingMeetings)
         ? parsed.upcomingMeetings
         : SEEDED_UPCOMING_MEETINGS;
+      const visibilities = typeof parsed.visibilities === "object" && parsed.visibilities !== null
+        ? parsed.visibilities
+        : {};
 
       memoryState = {
         version: 1,
@@ -49,6 +55,7 @@ export function getTier2Snapshot(): Tier2State {
         trackers,
         settings,
         upcomingMeetings,
+        visibilities,
       };
       return memoryState;
     }

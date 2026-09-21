@@ -18,6 +18,7 @@ import { PlaylistsView } from "./PlaylistsView";
 import { TrackersView } from "./TrackersView";
 import { SettingsModal } from "./SettingsModal";
 import { UpcomingMeetingsView } from "./UpcomingMeetingsView";
+import { TeamCallsView } from "./TeamCallsView";
 
 function subscribeToUrl(callback: () => void) {
   window.addEventListener("popstate", callback);
@@ -82,6 +83,9 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
 
     upcomingMeetings,
     toggleUpcomingNotetaker,
+
+    visibilities,
+    toggleMeetingVisibility,
   } = useWorkspaceStore();
 
   useEffect(() => {
@@ -168,24 +172,13 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
             />
           ) : sidebarTab === "team-calls" ? (
             /* Team Calls Tab View */
-            <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
-              <div className="pb-4 border-b border-[#1E2431]">
-                <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-cyan-400" />
-                  <span>Team Calls</span>
-                </h1>
-                <p className="text-xs text-slate-400 mt-1">
-                  Calls recorded across the engineering, product, and sales workspace teams.
-                </p>
-              </div>
-              <MeetingsDashboard
-                activeSubTab={sidebarTab}
-                onNavigate={setSidebarTab}
-                meetings={meetings.filter((m) => m.category === "Product" || m.category === "Engineering")}
-                onSelectMeeting={handleSelectMeeting}
-                onShareMeeting={handleShareMeeting}
-              />
-            </div>
+            <TeamCallsView
+              meetings={meetings}
+              visibilities={visibilities}
+              onToggleVisibility={toggleMeetingVisibility}
+              onSelectMeeting={handleSelectMeeting}
+              onShareMeeting={handleShareMeeting}
+            />
           ) : sidebarTab === "upcoming" ? (
             /* Upcoming Calendar Meetings View */
             <UpcomingMeetingsView

@@ -10,6 +10,7 @@ const playlistService = load('src/services/playlistService.ts');
 const trackerService = load('src/services/trackerService.ts');
 const settingsService = load('src/services/settingsService.ts');
 const upcomingService = load('src/services/upcomingService.ts');
+const teamService = load('src/services/teamService.ts');
 
 test('playlist resolves clips against real seeded meeting and highlight records', () => {
   const p1 = initialPlaylists[0];
@@ -206,4 +207,33 @@ test('upcoming meetings: supports provider metadata and toggles notetaker arming
   const first = initialUpcoming[0];
   const toggled = upcomingService.toggleUpcomingNotetaker(initialUpcoming, first.id);
   assert.equal(toggled.find(m => m.id === first.id).notetakerEnabled, !first.notetakerEnabled);
+});
+
+test('team calls: resolves meeting owners, visibility, and teammate filters', () => {
+  assert.equal(teamService.TEAM_MEMBERS.length, 5);
+
+  // Owner resolution
+  const prodOwner = teamService.getMeetingOwner('m_prod_strategy');
+  assert.equal(prodOwner.name, 'Alex Rivera');
+
+  const engOwner = teamService.getMeetingOwner('m_eng_standup');
+  assert.equal(engOwner.name, 'Sarah Chen');
+
+  // Default visibility
+  assert.equal(teamService.getDefaultMeetingVisibility('m_prod_strategy'), 'team');
+  assert.equal(teamService.getDefaultMeetingVisibility('m_acme_onboarding'), 'personal');
+
+  // Teammate filtering
+  const allTeamCalls = teamService.filterMeetingsByTeammate(meetings, 'All', {});
+  assert.ok(allTeamCalls.length >= 4);
+  assert.ok(!allTeamCalls.some(m => m.id === 'm_acme_onboarding'));
+
+  const sarahCalls = teamService.filterMeetingsByTeammate(meetings, 'Sarah Chen', {});
+  assert.ok(sarahCalls.length >= 2);
+  assert.ok(sarahCalls.some(m => m.id === 'm_eng_standup'));
+
+  // Toggle visibility of m_acme_onboarding to "team"
+  const visibilities = { m_acme_onboarding: 'team' };
+  const updatedTeamCalls = teamService.filterMeetingsByTeammate(meetings, 'All', visibilities);
+  assert.ok(updatedTeamCalls.some(m => m.id === 'm_acme_onboarding'));
 });

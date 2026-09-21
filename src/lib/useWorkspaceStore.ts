@@ -13,6 +13,8 @@ import {
 import * as playlistService from "../services/playlistService";
 import * as trackerService from "../services/trackerService";
 import * as settingsService from "../services/settingsService";
+import { MeetingVisibility } from "../types/team";
+import { getDefaultMeetingVisibility } from "../services/teamService";
 
 export function useWorkspaceStore() {
   const state = useSyncExternalStore(
@@ -160,6 +162,15 @@ export function useWorkspaceStore() {
     saveTier2State({ ...getTier2Snapshot(), upcomingMeetings: updated });
   }, []);
 
+  const visibilities = state.visibilities || {};
+
+  const handleToggleMeetingVisibility = useCallback((meetingId: string) => {
+    const current = getTier2Snapshot().visibilities || {};
+    const existing = current[meetingId] || getDefaultMeetingVisibility(meetingId);
+    const next: MeetingVisibility = existing === "team" ? "personal" : "team";
+    saveTier2State({ ...getTier2Snapshot(), visibilities: { ...current, [meetingId]: next } });
+  }, []);
+
   return {
     playlists,
     createPlaylist: handleCreatePlaylist,
@@ -186,5 +197,8 @@ export function useWorkspaceStore() {
 
     upcomingMeetings,
     toggleUpcomingNotetaker: handleToggleUpcomingNotetaker,
+
+    visibilities,
+    toggleMeetingVisibility: handleToggleMeetingVisibility,
   };
 }
