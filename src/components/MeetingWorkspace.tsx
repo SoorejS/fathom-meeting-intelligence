@@ -15,6 +15,7 @@ import { readTestCallFragment, createTestMeeting, formatTime } from "@/lib/testC
 import { Users, ListMusic } from "lucide-react";
 import { useWorkspaceStore } from "@/lib/useWorkspaceStore";
 import { PlaylistsView } from "./PlaylistsView";
+import { TrackersView } from "./TrackersView";
 
 function subscribeToUrl(callback: () => void) {
   window.addEventListener("popstate", callback);
@@ -60,6 +61,12 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
     addHighlightToPlaylist,
     removeClip,
     reorderClips,
+
+    trackers,
+    createTracker,
+    updateTracker,
+    toggleTracker,
+    deleteTracker,
   } = useWorkspaceStore();
 
   useEffect(() => {
@@ -116,6 +123,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
             totalCallsCount={meetings.length}
             teamCallsCount={meetings.filter(m => m.category === "Product" || m.category === "Engineering").length}
             playlists={playlists}
+            trackersCount={trackers.filter(t => t.enabled).length}
             onCreatePlaylistClick={() => {
               setSidebarTab("playlists");
             }}
@@ -175,11 +183,28 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
                 handleSelectMeeting(meetingId, timestamp);
               }}
             />
-          ) : sidebarTab === "alerts" || sidebarTab === "deals" ? (
+          ) : sidebarTab === "alerts" ? (
+            /* Alerts & Keyword Trackers View */
+            <TrackersView
+              trackers={trackers}
+              meetings={meetings}
+              onCreateTracker={createTracker}
+              onUpdateTracker={updateTracker}
+              onToggleTracker={toggleTracker}
+              onDeleteTracker={deleteTracker}
+              onNavigateMeeting={(meetingId, timestamp) => {
+                handleSelectMeeting(meetingId, timestamp);
+              }}
+            />
+          ) : sidebarTab === "deals" ? (
             <div className="p-8 space-y-4">
-              <h1 className="text-xl font-bold">{sidebarTab === "alerts" ? "Alerts" : "Deals"}</h1>
-              <p className="text-slate-400">{sidebarTab === "alerts" ? "No alerts in this demo workspace. Live notifications are outside this demo." : "CRM integrations are outside this demo. Explore the Sales meeting for a seeded sales review."}</p>
-              <button onClick={() => setSidebarTab("my-calls")} className="text-cyan-400">Back to My Calls</button>
+              <h1 className="text-xl font-bold text-white">Deals & Pipeline</h1>
+              <p className="text-slate-400">
+                Explore the sales and enterprise demo recordings to see deal reviews and follow-up commitments.
+              </p>
+              <button onClick={() => setSidebarTab("my-calls")} className="text-cyan-400 hover:underline">
+                Back to My Calls
+              </button>
             </div>
           ) : (
             /* Default Dashboard: My Calls */

@@ -1,17 +1,21 @@
 import { Playlist } from "../types/playlist";
+import { Tracker } from "../types/tracker";
 import { SEEDED_PLAYLISTS } from "../data/seededPlaylists";
+import { SEEDED_TRACKERS } from "../data/seededTrackers";
 
 export const TIER2_STORAGE_KEY = "fathom-tier2-state-v1";
 
 export interface Tier2State {
   version: 1;
   playlists: Playlist[];
+  trackers: Tracker[];
 }
 
 export function defaultTier2State(): Tier2State {
   return {
     version: 1,
     playlists: SEEDED_PLAYLISTS,
+    trackers: SEEDED_TRACKERS,
   };
 }
 
@@ -25,8 +29,13 @@ export function getTier2Snapshot(): Tier2State {
     if (!raw) return memoryState;
     const parsed = JSON.parse(raw);
     if (parsed && parsed.version === 1 && Array.isArray(parsed.playlists)) {
-      memoryState = parsed;
-      return parsed;
+      const trackers = Array.isArray(parsed.trackers) ? parsed.trackers : SEEDED_TRACKERS;
+      memoryState = {
+        version: 1,
+        playlists: parsed.playlists,
+        trackers,
+      };
+      return memoryState;
     }
   } catch {
     // Fallback safely to memory

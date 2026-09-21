@@ -4,7 +4,9 @@ const load = require('./load-typescript.cjs');
 
 const { SEEDED_MEETINGS: meetings } = load('src/data/seededMeetings.ts');
 const { SEEDED_PLAYLISTS: initialPlaylists } = load('src/data/seededPlaylists.ts');
+const { SEEDED_TRACKERS: initialTrackers } = load('src/data/seededTrackers.ts');
 const playlistService = load('src/services/playlistService.ts');
+const trackerService = load('src/services/trackerService.ts');
 
 test('playlist resolves clips against real seeded meeting and highlight records', () => {
   const p1 = initialPlaylists[0];
@@ -67,4 +69,66 @@ test('playlist lifecycle: create, rename, add clips, reorder, remove, and delete
   const remaining = playlistService.deletePlaylist(list, pl.id);
   assert.equal(remaining.length, 1);
   assert.equal(remaining[0].id, initialPlaylists[0].id);
+});
+
+test('tracker scans transcripts for keyword matches with speaker, excerpt, and timestamp', () => {
+  const matches = trackerService.scanTranscriptMatches(initialTrackers, meetings);
+  assert.ok(matches.length > 0, 'Finds keyword matches across transcripts');
+
+  // Verify match attributes
+  for (const match of matches) {
+    const meeting = meetings.find(m => m.id === match.meetingId);
+    assert.ok(meeting, 'Match references real meeting');
+    assert.equal(match.meetingTitle, meeting.title);
+    const seg = meeting.transcript.find(t => t.id === match.segmentId);
+    assert.ok(seg, 'Match references real transcript segment');
+    assert.equal(match.speaker, seg.speaker);
+    assert.equal(match.timestamp, seg.timestamp);
+    assert.equal(match.timestampFormatted, seg.timestampFormatted);
+    assert.ok(seg.text.toLowerCase().includes(match.keyword.toLowerCase()), 'Excerpt contains keyword');
+  }
+
+  // Verify specific known mentions in seeded transcripts
+  const crmMatches = matches.filter(m => m.trackerId === 'tr_crm');
+  assert.ok(crmMatches.some(m => m.keyword.toLowerCase() === 'salesforce' || m.keyword.toLowerCase() === 'slack'));
+
+  const launchMatches = matches.filter(m => m.trackerId === 'tr_launch');
+  assert.ok(launchMatches.some(m => m.keyword.toLowerCase() === 'november' || m.keyword.toLowerCase() === 'latency'));
+});
+
+test('tracker lifecycle: create, update, enable/disable toggle, meeting scoping, and delete', () => {
+  // 1. Create tracker
+  let tracker = trackerService.createTracker('AI Summaries Feedback', ['summary', 'accuracy'], 'all');
+  assert.equal(tracker.name, 'AI Summaries Feedback');
+  assert.equal(tracker.enabled, true);
+  assert.deepEqual(tracker.keywords, ['summary', 'accuracy']);
+
+  // Initial matches
+  let matches = trackerService.scanTranscriptMatches([tracker], meetings);
+  assert.ok(matches.length > 0, 'Found summary/accuracy mentions');
+
+  // 2. Disable tracker -> should yield 0 matches
+  tracker = trackerService.toggleTrackerEnabled(tracker);
+  assert.equal(tracker.enabled, false);
+  matches = trackerService.scanTranscriptMatches([tracker], meetings);
+  assert.equal(matches.length, 0, 'Disabled tracker yields zero matches');
+
+  // 3. Re-enable and update keywords
+  tracker = trackerService.toggleTrackerEnabled(tracker);
+  tracker = trackerService.updateTracker(tracker, { keywords: ['glossary', 'medical'] });
+  assert.deepEqual(tracker.keywords, ['glossary', 'medical']);
+  matches = trackerService.scanTranscriptMatches([tracker], meetings);
+  assert.ok(matches.length > 0);
+  assert.ok(matches.every(m => m.meetingId === 'm_healthsync_feedback'), 'Matches only the medical feedback meeting');
+
+  // 4. Meeting Scoping: restrict to m_prod_strategy only
+  tracker = trackerService.updateTracker(tracker, { meetingScope: ['m_prod_strategy'] });
+  matches = trackerService.scanTranscriptMatches([tracker], meetings);
+  assert.equal(matches.length, 0, 'Scoped out meeting yields zero matches');
+
+  // 5. Delete tracker
+  const trackerList = [tracker, initialTrackers[0]];
+  const remaining = trackerService.deleteTracker(trackerList, tracker.id);
+  assert.equal(remaining.length, 1);
+  assert.equal(remaining[0].id, initialTrackers[0].id);
 });

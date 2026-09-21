@@ -11,6 +11,7 @@ interface SidebarProps {
   teamCallsCount: number;
   playlists?: { id: string; title: string }[];
   onCreatePlaylistClick?: () => void;
+  trackersCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -21,12 +22,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   teamCallsCount,
   playlists = [],
   onCreatePlaylistClick,
+  trackersCount,
 }) => {
   const navItems = [
     { id: "my-calls", label: "My Calls", icon: PhoneCall, count: totalCallsCount, primary: true },
     { id: "team-calls", label: "Team Calls", icon: Users, count: teamCallsCount },
     { id: "playlists", label: "Playlists", icon: ListMusic, count: playlists.length },
-    { id: "alerts", label: "Alerts", icon: Bell },
+    { id: "alerts", label: "Alerts", icon: Bell, count: trackersCount },
     { id: "deals", label: "Deals", icon: DollarSign },
   ];
 

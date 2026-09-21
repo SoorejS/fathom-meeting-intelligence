@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore, useCallback } from "react";
 import { Playlist } from "../types/playlist";
+import { Tracker } from "../types/tracker";
 import {
   getTier2Snapshot,
   saveTier2State,
@@ -9,6 +10,7 @@ import {
   defaultTier2State,
 } from "./workspaceStorage";
 import * as playlistService from "../services/playlistService";
+import * as trackerService from "../services/trackerService";
 
 export function useWorkspaceStore() {
   const state = useSyncExternalStore(
@@ -18,7 +20,9 @@ export function useWorkspaceStore() {
   );
 
   const playlists = state.playlists;
+  const trackers = state.trackers;
 
+  // --- Playlist Actions ---
   const handleCreatePlaylist = useCallback((title: string, description?: string): Playlist => {
     const created = playlistService.createPlaylist(title, description);
     const updated = [created, ...getTier2Snapshot().playlists];
@@ -68,6 +72,38 @@ export function useWorkspaceStore() {
     saveTier2State({ ...getTier2Snapshot(), playlists: updated });
   }, []);
 
+  // --- Tracker Actions ---
+  const handleCreateTracker = useCallback((name: string, keywords: string[], meetingScope: "all" | string[] = "all"): Tracker => {
+    const created = trackerService.createTracker(name, keywords, meetingScope);
+    const current = getTier2Snapshot().trackers;
+    saveTier2State({ ...getTier2Snapshot(), trackers: [created, ...current] });
+    return created;
+  }, []);
+
+  const handleUpdateTracker = useCallback((trackerId: string, patch: Partial<Tracker>) => {
+    const current = getTier2Snapshot().trackers;
+    const target = current.find((t) => t.id === trackerId);
+    if (!target) return;
+    const modified = trackerService.updateTracker(target, patch);
+    const updated = current.map((t) => (t.id === trackerId ? modified : t));
+    saveTier2State({ ...getTier2Snapshot(), trackers: updated });
+  }, []);
+
+  const handleToggleTracker = useCallback((trackerId: string) => {
+    const current = getTier2Snapshot().trackers;
+    const target = current.find((t) => t.id === trackerId);
+    if (!target) return;
+    const modified = trackerService.toggleTrackerEnabled(target);
+    const updated = current.map((t) => (t.id === trackerId ? modified : t));
+    saveTier2State({ ...getTier2Snapshot(), trackers: updated });
+  }, []);
+
+  const handleDeleteTracker = useCallback((trackerId: string) => {
+    const current = getTier2Snapshot().trackers;
+    const updated = trackerService.deleteTracker(current, trackerId);
+    saveTier2State({ ...getTier2Snapshot(), trackers: updated });
+  }, []);
+
   return {
     playlists,
     createPlaylist: handleCreatePlaylist,
@@ -76,5 +112,11 @@ export function useWorkspaceStore() {
     addHighlightToPlaylist: handleAddHighlightToPlaylist,
     removeClip: handleRemoveClip,
     reorderClips: handleReorderClips,
+
+    trackers,
+    createTracker: handleCreateTracker,
+    updateTracker: handleUpdateTracker,
+    toggleTracker: handleToggleTracker,
+    deleteTracker: handleDeleteTracker,
   };
 }
