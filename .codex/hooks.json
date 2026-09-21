@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 10,
+            "command": "node \"C:/Users/soore/Fathom AI - Clone/scripts/capture-codex.cjs\" --ensure"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 10,
+            "command": "node \"C:/Users/soore/Fathom AI - Clone/scripts/capture-codex.cjs\" --ensure"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 10,
+            "command": "node \"C:/Users/soore/Fathom AI - Clone/scripts/capture-codex.cjs\" --ensure"
+          }
+        ]
+      }
+    ]
+  }
+}
