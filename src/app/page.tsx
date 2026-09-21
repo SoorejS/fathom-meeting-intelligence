@@ -45,16 +45,19 @@ export default function Home() {
         }}
       />
 
-      {/* 2. Workspace Body (Sidebar + Content Canvas) */}
+      {/* 2. Workspace Body */}
       <div className="flex-1 flex overflow-hidden">
-        <Sidebar
-          activeTab={sidebarTab}
-          onSelectTab={(tab) => {
-            setSidebarTab(tab);
-            setSelectedMeetingId(null);
-          }}
-          totalCallsCount={meetings.length}
-        />
+        {/* Only show sidebar on dashboard views, not inside meeting detail */}
+        {!selectedMeeting && (
+          <Sidebar
+            activeTab={sidebarTab}
+            onSelectTab={(tab) => {
+              setSidebarTab(tab);
+              setSelectedMeetingId(null);
+            }}
+            totalCallsCount={meetings.length}
+          />
+        )}
 
         {/* Dynamic Main Workspace Area */}
         <main className="flex-1 flex flex-col overflow-hidden">

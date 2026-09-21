@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { AiQnAItem } from "@/types/meeting";
-import { Bot, Send, Sparkles, User, Play, CornerDownLeft, RefreshCw } from "lucide-react";
+import { Sparkles, Play, RefreshCw, ArrowUp, Bot, User } from "lucide-react";
 
 interface AskAiViewProps {
   aiQnA: AiQnAItem[];
@@ -24,7 +24,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
     {
       id: "msg_init",
       sender: "fathom",
-      text: `Hello! I've analyzed this entire call (${meetingTitle}). Ask me anything about decisions, action items, speaker quotes, or specific discussions.`,
+      text: `I've analyzed this entire call (${meetingTitle}). Ask me anything about decisions, action items, speaker quotes, or specific discussions.`,
     },
   ]);
   const [inputQuery, setInputQuery] = useState("");
@@ -32,10 +32,10 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const suggestedQuestions = [
-    "What did we decide about the launch?",
-    "What are the action items?",
-    "What concerns did the client raise?",
-    "Who owns the API migration?",
+    "Things I promised I'd do by this week",
+    "What were the key decisions made?",
+    "What concerns were raised?",
+    "Summarize the next steps",
   ];
 
   useEffect(() => {
@@ -46,7 +46,6 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
     const q = query.trim();
     if (!q) return;
 
-    // Append user message
     const userMsg: Message = {
       id: `u_${Date.now()}`,
       sender: "user",
@@ -56,20 +55,26 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
     setInputQuery("");
     setIsTyping(true);
 
-    // Simulate AI thinking and generate grounded answer
     setTimeout(() => {
-      // Look for fuzzy match in seeded QnA
       const normalizedQ = q.toLowerCase();
-      let matched = aiQnA.find((item) =>
-        normalizedQ.includes(item.question.toLowerCase().slice(0, 15)) ||
-        item.question.toLowerCase().includes(normalizedQ.slice(0, 15))
+      let matched = aiQnA.find(
+        (item) =>
+          normalizedQ.includes(item.question.toLowerCase().slice(0, 15)) ||
+          item.question.toLowerCase().includes(normalizedQ.slice(0, 15))
       );
 
       if (!matched) {
-        // Fallback grounded answer based on query keywords
-        if (normalizedQ.includes("action") || normalizedQ.includes("task") || normalizedQ.includes("who")) {
+        if (
+          normalizedQ.includes("promised") ||
+          normalizedQ.includes("action") ||
+          normalizedQ.includes("step")
+        ) {
           matched = aiQnA.find((item) => item.question.toLowerCase().includes("action"));
-        } else if (normalizedQ.includes("decide") || normalizedQ.includes("decision") || normalizedQ.includes("launch")) {
+        } else if (
+          normalizedQ.includes("decide") ||
+          normalizedQ.includes("decision") ||
+          normalizedQ.includes("launch")
+        ) {
           matched = aiQnA.find((item) => item.question.toLowerCase().includes("decide"));
         } else if (normalizedQ.includes("concern") || normalizedQ.includes("client")) {
           matched = aiQnA.find((item) => item.question.toLowerCase().includes("concern"));
@@ -80,7 +85,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
 
       const answerText = matched
         ? matched.answer
-        : `Based on the transcript analysis for this meeting, the participants discussed priorities, timeline milestones, and assigned owners to key deliverable tracks. You can review the synchronized transcript for the complete conversation.`;
+        : `Based on the transcript analysis for this call, participants aligned on timeline deliverables, resolved system bottlenecks, and finalized next milestones.`;
 
       const aiMsg: Message = {
         id: `f_${Date.now()}`,
@@ -97,17 +102,17 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#11151F] border border-[#202736] rounded-2xl overflow-hidden shadow-xl">
+    <div className="flex flex-col h-full space-y-3">
       {/* Header */}
-      <div className="p-3.5 border-b border-[#202736] bg-[#0E121A] flex items-center justify-between">
+      <div className="flex items-center justify-between pt-1 select-none">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-sm">
-            <Sparkles className="w-3.5 h-3.5" />
-          </div>
-          <div>
-            <span className="text-xs font-bold text-white">Ask Fathom AI</span>
-            <p className="text-[10px] text-slate-400">Grounded in meeting transcript & summary</p>
-          </div>
+          <Sparkles className="w-3.5 h-3.5 text-[#00c2ff]" />
+          <span className="text-xs font-bold text-white tracking-wider">
+            ASK FATHOM AI
+          </span>
+          <span className="text-[10px] text-slate-400">
+            • Grounded in synchronized transcript
+          </span>
         </div>
 
         <button
@@ -120,7 +125,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
               },
             ])
           }
-          className="p-1 text-slate-400 hover:text-slate-200 rounded transition-colors"
+          className="p-1 text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
           title="Reset conversation"
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -128,7 +133,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
       </div>
 
       {/* Messages Thread */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto space-y-3.5 pr-1">
         {messages.map((m) => {
           const isFathom = m.sender === "fathom";
           return (
@@ -137,27 +142,29 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
               className={`flex items-start gap-2.5 ${isFathom ? "justify-start" : "justify-end"}`}
             >
               {isFathom && (
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm">
-                  <Bot className="w-3.5 h-3.5" />
+                <div className="w-6 h-6 rounded-md bg-[#00c2ff]/20 border border-[#00c2ff]/30 flex items-center justify-center text-[#00c2ff] shrink-0 mt-0.5">
+                  <Sparkles className="w-3.5 h-3.5" />
                 </div>
               )}
 
               <div
-                className={`max-w-[85%] rounded-2xl p-3.5 space-y-2 text-xs leading-relaxed ${
+                className={`max-w-[85%] rounded-xl p-3 space-y-2 text-xs leading-relaxed ${
                   isFathom
-                    ? "bg-[#161C27] border border-[#252E40] text-slate-200"
-                    : "bg-cyan-600 text-white rounded-br-none shadow-md shadow-cyan-950/20"
+                    ? "bg-[#161820] border border-[#242734] text-slate-200"
+                    : "bg-[#00c2ff] text-black font-semibold rounded-br-none shadow-md"
                 }`}
               >
                 <p>{m.text}</p>
 
                 {/* Grounded Citation Timestamp */}
                 {m.citationTimestamp !== undefined && m.citationFormatted && (
-                  <div className="pt-2 border-t border-[#232B3B] flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-slate-400">Referenced from transcript:</span>
+                  <div className="pt-2 border-t border-[#232733] flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-slate-400 font-normal">
+                      Referenced from transcript:
+                    </span>
                     <button
                       onClick={() => onSeek(m.citationTimestamp!)}
-                      className="inline-flex items-center gap-1 text-[10px] font-mono text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 hover:border-cyan-500/40 transition-colors"
+                      className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#00c2ff] hover:text-white bg-[#00c2ff]/10 hover:bg-[#00c2ff]/20 px-2 py-0.5 rounded border border-[#00c2ff]/30 transition-colors cursor-pointer"
                       title="Jump playback to cited timestamp"
                     >
                       <Play className="w-2.5 h-2.5 fill-current" />
@@ -168,7 +175,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
               </div>
 
               {!isFathom && (
-                <div className="w-6 h-6 rounded-lg bg-[#273244] flex items-center justify-center text-slate-300 text-[9px] font-bold shrink-0 mt-0.5">
+                <div className="w-6 h-6 rounded-full bg-[#272b38] flex items-center justify-center text-slate-300 text-[9px] font-bold shrink-0 mt-0.5">
                   YOU
                 </div>
               )}
@@ -178,7 +185,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
 
         {isTyping && (
           <div className="flex items-center gap-2 text-slate-400 text-xs pl-8">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#00c2ff] animate-pulse" />
             <span>Fathom AI is reviewing transcript...</span>
           </div>
         )}
@@ -186,42 +193,41 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
       </div>
 
       {/* Suggested Quick Question Chips */}
-      <div className="px-3 py-2 bg-[#0E121A] border-t border-[#1F2636] flex items-center gap-1.5 overflow-x-auto">
-        <span className="text-[10px] text-slate-400 shrink-0 font-medium">Quick ask:</span>
+      <div className="pt-2 border-t border-[#1c1f26] flex items-center gap-1.5 overflow-x-auto select-none">
         {suggestedQuestions.map((sq, i) => (
           <button
             key={i}
             onClick={() => handleAsk(sq)}
-            className="px-2.5 py-1 rounded-full bg-[#161C26] hover:bg-[#1E2534] border border-[#273142] text-[10px] text-cyan-300 hover:text-cyan-200 transition-colors whitespace-nowrap cursor-pointer"
+            className="px-2.5 py-1 rounded-full bg-[#161820] hover:bg-[#20232d] border border-[#262a37] text-[11px] text-slate-300 hover:text-white transition-colors whitespace-nowrap cursor-pointer"
           >
             {sq}
           </button>
         ))}
       </div>
 
-      {/* Input Box */}
-      <div className="p-3 bg-[#0E121A] border-t border-[#1F2636]">
+      {/* Input Box Card */}
+      <div className="p-2.5 bg-[#161820] border border-[#242734] focus-within:border-[#00c2ff]/50 rounded-xl transition-colors">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleAsk(inputQuery);
           }}
-          className="flex items-center gap-2 bg-[#141924] border border-[#262F41] focus-within:border-cyan-500/50 rounded-xl px-3 py-1.5 transition-colors"
+          className="flex items-center gap-2"
         >
           <input
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Ask a question about this call..."
-            className="flex-1 bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none"
+            placeholder="Ask anything about this call..."
+            className="flex-1 bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none px-1"
           />
           <button
             type="submit"
             disabled={!inputQuery.trim() || isTyping}
-            className="p-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:hover:bg-cyan-500 text-black font-bold transition-all"
+            className="w-7 h-7 rounded-full bg-[#242834] hover:bg-[#00c2ff] hover:text-black text-white flex items-center justify-center disabled:opacity-30 transition-colors cursor-pointer"
             title="Send query"
           >
-            <Send className="w-3.5 h-3.5" />
+            <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
           </button>
         </form>
       </div>

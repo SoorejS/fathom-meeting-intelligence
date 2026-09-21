@@ -17,3 +17,6 @@
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Reference Screenshots (excluded from git)
+screenshot-for-fathomAI-clone/

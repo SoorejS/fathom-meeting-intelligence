@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Highlight, HighlightType } from "@/types/meeting";
-import { Sparkles, Play, ThumbsUp, AlertCircle, MessageSquare, Plus } from "lucide-react";
+import { Play } from "lucide-react";
 
 interface HighlightsViewProps {
   highlights: Highlight[];
@@ -13,7 +13,6 @@ interface HighlightsViewProps {
 export const HighlightsView: React.FC<HighlightsViewProps> = ({
   highlights,
   onSeek,
-  onOpenCreateModal,
 }) => {
   const [selectedType, setSelectedType] = useState<string>("All");
 
@@ -28,48 +27,48 @@ export const HighlightsView: React.FC<HighlightsViewProps> = ({
     switch (type) {
       case "Positive Reaction":
         return {
-          badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-          icon: <ThumbsUp className="w-3 h-3 text-emerald-400" />,
+          pill: "border-[#10b981]/30 bg-[#10b981]/15 text-[#10b981]",
+          square: "bg-[#10b981]",
+          label: "POSITIVE REACTION",
         };
       case "Needs Review":
         return {
-          badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-          icon: <AlertCircle className="w-3 h-3 text-amber-400" />,
+          pill: "border-[#f59e0b]/30 bg-[#f59e0b]/15 text-[#f59e0b]",
+          square: "bg-[#f59e0b]",
+          label: "NEEDS REVIEW",
         };
       case "Feedback":
         return {
-          badge: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-          icon: <MessageSquare className="w-3 h-3 text-purple-400" />,
+          pill: "border-[#f97316]/30 bg-[#f97316]/15 text-[#f97316]",
+          square: "bg-[#f97316]",
+          label: "FEEDBACK",
         };
       default:
         return {
-          badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-          icon: <Sparkles className="w-3 h-3 text-cyan-400" />,
+          pill: "border-[#00c2ff]/30 bg-[#00c2ff]/15 text-[#00c2ff]",
+          square: "bg-[#00c2ff]",
+          label: "HIGHLIGHT",
         };
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#11151F] border border-[#202736] rounded-2xl overflow-hidden shadow-xl">
-      {/* Header */}
-      <div className="p-3.5 border-b border-[#202736] bg-[#0E121A] flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-white">Highlights</span>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-            {highlights.length} clips
-          </span>
-        </div>
+    <div className="flex flex-col h-full space-y-3">
+      {/* Header & Filter Pills */}
+      <div className="flex items-center justify-between gap-2 pt-1 select-none">
+        <span className="text-xs font-bold text-white tracking-wider">
+          HIGHLIGHTS ({highlights.length})
+        </span>
 
-        {/* Filter Pills */}
         <div className="flex items-center gap-1 overflow-x-auto text-xs">
           {types.map((t) => (
             <button
               key={t}
               onClick={() => setSelectedType(t)}
-              className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
+              className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap cursor-pointer ${
                 selectedType === t
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#00c2ff]/20 text-[#00c2ff] border border-[#00c2ff]/40"
+                  : "text-slate-400 hover:text-slate-200 border border-[#252834] bg-[#161820]"
               }`}
             >
               {t}
@@ -79,10 +78,10 @@ export const HighlightsView: React.FC<HighlightsViewProps> = ({
       </div>
 
       {/* Highlights List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
         {filteredHighlights.length === 0 ? (
           <div className="py-12 text-center text-slate-400 text-xs">
-            <p>No highlights in this category.</p>
+            <p>No highlights logged in this category.</p>
           </div>
         ) : (
           filteredHighlights.map((h) => {
@@ -91,35 +90,29 @@ export const HighlightsView: React.FC<HighlightsViewProps> = ({
               <div
                 key={h.id}
                 onClick={() => onSeek(h.timestamp)}
-                className="p-3.5 rounded-xl bg-[#141924] border border-[#242D3E] hover:border-cyan-500/40 cursor-pointer transition-all duration-150 group space-y-2.5"
+                className="p-3 rounded-xl bg-[#161820] hover:bg-[#1a1d26] border border-[#242734] hover:border-cyan-500/30 cursor-pointer transition-all space-y-2 group"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between text-[11px]">
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium border ${style.badge}`}
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-bold tracking-wider ${style.pill}`}
                   >
-                    {style.icon}
-                    <span>{h.type}</span>
+                    <span className={`w-2 h-2 rounded-sm ${style.square}`} />
+                    <span>{style.label}</span>
                   </span>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSeek(h.timestamp);
-                    }}
-                    className="flex items-center gap-1 text-[10px] font-mono text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 transition-colors"
-                  >
+                  <span className="font-mono text-[10px] text-[#00c2ff] flex items-center gap-1 group-hover:underline">
                     <Play className="w-2.5 h-2.5 fill-current" />
                     <span>{h.timestampFormatted}</span>
-                  </button>
+                  </span>
                 </div>
 
-                <p className="text-xs text-slate-200 leading-relaxed font-medium">
+                <p className="text-xs text-slate-200 leading-relaxed italic">
                   "{h.text}"
                 </p>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1C2332]">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1f222d]">
                   <span>Logged by {h.creator}</span>
-                  <span className="text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                  <span className="text-[#00c2ff] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                     Play clip →
                   </span>
                 </div>

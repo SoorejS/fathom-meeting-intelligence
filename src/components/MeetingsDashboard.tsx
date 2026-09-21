@@ -2,7 +2,23 @@
 
 import React, { useState, useMemo } from "react";
 import { Meeting } from "@/types/meeting";
-import { Play, Calendar, Clock, CheckSquare, Sparkles, Share2, Search, ArrowUpRight, MessageSquare } from "lucide-react";
+import {
+  Play,
+  Calendar,
+  Clock,
+  CheckSquare,
+  Sparkles,
+  Share2,
+  Search,
+  ArrowUpRight,
+  MessageSquare,
+  ChevronDown,
+  ArrowUp,
+  PanelRightClose,
+  PanelRightOpen,
+  Gift,
+  Bot,
+} from "lucide-react";
 
 interface MeetingsDashboardProps {
   meetings: Meeting[];
@@ -18,8 +34,27 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<"newest" | "duration">("newest");
+  const [activeSubTab, setActiveSubTab] = useState<string>("my-calls");
+  const [isAskAiOpen, setIsAskAiOpen] = useState(true);
+  const [askAiQuery, setAskAiQuery] = useState("");
+  const [askAiAnswer, setAskAiAnswer] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const categories = ["All", "Product", "Client", "Engineering", "Sales", "Hiring", "Customer"];
+
+  const subNavTabs = [
+    { id: "my-calls", label: "My Calls" },
+    { id: "team-calls", label: "Team Calls" },
+    { id: "playlists", label: "Playlists" },
+    { id: "alerts", label: "Alerts" },
+    { id: "deals", label: "Deals" },
+  ];
+
+  const suggestedQuestions = [
+    "Things I promised I'd do by this week",
+    "Summarize my meetings from last week",
+    "Questions I struggle to answer",
+  ];
 
   const filteredMeetings = useMemo(() => {
     return meetings
@@ -44,194 +79,337 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({
       });
   }, [meetings, selectedCategory, searchQuery, sortBy]);
 
+  const handleAskAi = (prompt: string) => {
+    const q = prompt.trim();
+    if (!q) return;
+    setAskAiQuery(q);
+    setIsAiLoading(true);
+    setAskAiAnswer(null);
+
+    setTimeout(() => {
+      if (q.toLowerCase().includes("promised") || q.toLowerCase().includes("action")) {
+        setAskAiAnswer(
+          "Across your recent calls, you committed to: 1) Deploying the low-latency websocket proxy for customer real-time sync, 2) Preparing SOC2 audit report draft for Acme Corp, and 3) Finalizing candidate interview feedback by Wednesday."
+        );
+      } else if (q.toLowerCase().includes("summarize") || q.toLowerCase().includes("week")) {
+        setAskAiAnswer(
+          "Summary of recent calls: You aligned on the Q4 release roadmap (target: Nov 12), confirmed enterprise SLA sign-off with Acme Corp, resolved database shard latency issues down to 42ms, and vetted a senior backend candidate."
+        );
+      } else {
+        setAskAiAnswer(
+          "Based on your meetings history, client inquiries frequently centered around SOC2 compliance certification timing, API tier limits, and single sign-on integration timelines."
+        );
+      }
+      setIsAiLoading(false);
+    }, 600);
+  };
+
   return (
-    <div className="flex-1 overflow-y-auto bg-[#090B0F] p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Top Banner / Welcome Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1E2431]">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">My Calls</h1>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              {meetings.length} recordings
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            AI-generated summaries, action items, and transcripts synchronized automatically.
-          </p>
-        </div>
-
-        {/* Dashboard filter & sort controls */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter calls..."
-              className="pl-8 pr-3 py-1.5 bg-[#121620] border border-[#232B39] rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500/40 w-40 sm:w-48"
-            />
-          </div>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as "newest" | "duration")}
-            className="bg-[#121620] border border-[#232B39] text-xs text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500/40"
-          >
-            <option value="newest">Newest first</option>
-            <option value="duration">Longest first</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Category Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {categories.map((cat) => {
-          const count =
-            cat === "All"
-              ? meetings.length
-              : meetings.filter((m) => m.category === cat).length;
-          const isSelected = selectedCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-                isSelected
-                  ? "bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 shadow-sm shadow-cyan-950/20"
-                  : "bg-[#121620] hover:bg-[#181E2C] text-slate-400 hover:text-slate-200 border border-[#202736]"
-              }`}
-            >
-              <span>{cat}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? "bg-cyan-400/20 text-cyan-200" : "bg-[#1A202D] text-slate-400"}`}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Meetings Grid / Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {filteredMeetings.map((meeting, index) => {
-          const isLatest = index === 0 && selectedCategory === "All" && !searchQuery;
-          return (
-            <div
-              key={meeting.id}
-              className={`group bg-[#11151F] hover:bg-[#151A26] border rounded-2xl overflow-hidden transition-all duration-200 flex flex-col justify-between hover:border-cyan-500/40 hover:shadow-xl hover:shadow-cyan-950/10 cursor-pointer relative ${
-                isLatest ? "border-cyan-500/30 ring-1 ring-cyan-500/20" : "border-[#1F2635]"
-              }`}
-              onClick={() => onSelectMeeting(meeting.id)}
-            >
-              {/* Card Top: Thumbnail with Play Overlay */}
-              <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
-                <img
-                  src={meeting.thumbnail}
-                  alt={meeting.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-80 group-hover:opacity-95"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#11151F] via-transparent to-black/40" />
-
-                {/* Duration Badge */}
-                <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-mono text-slate-200 flex items-center gap-1 border border-white/10">
-                  <Clock className="w-3 h-3 text-cyan-400" />
-                  <span>{meeting.durationFormatted}</span>
-                </div>
-
-                {/* Category Badge */}
-                <div className="absolute top-2.5 left-2.5">
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-black/70 backdrop-blur-md text-cyan-300 border border-cyan-500/30">
-                    {meeting.category}
-                  </span>
-                </div>
-
-                {isLatest && (
-                  <div className="absolute top-2.5 right-2.5">
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-cyan-500 text-black shadow-lg shadow-cyan-500/40 animate-pulse">
-                      Latest Call
-                    </span>
-                  </div>
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#0e1014]">
+      {/* 1. Sub-navigation Bar (Matching Fathom Reference Screenshot) */}
+      <div className="h-11 border-b border-[#1c1f26] bg-[#111216] px-6 flex items-center justify-between shrink-0 select-none">
+        <div className="flex items-center gap-6 h-full text-xs font-semibold">
+          {subNavTabs.map((tab) => {
+            const isActive = activeSubTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSubTab(tab.id)}
+                className={`h-full flex items-center relative transition-colors cursor-pointer ${
+                  isActive ? "text-[#00c2ff]" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <span>{tab.label}</span>
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00c2ff]" />
                 )}
+              </button>
+            );
+          })}
+        </div>
 
-                {/* Play Button Icon Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div className="w-12 h-12 rounded-full bg-cyan-500 text-black flex items-center justify-center shadow-xl shadow-cyan-500/40 transform group-hover:scale-110 transition-transform">
-                    <Play className="w-5 h-5 fill-current ml-0.5" />
-                  </div>
-                </div>
+        {/* Ask Fathom Toggle */}
+        <button
+          onClick={() => setIsAskAiOpen(!isAskAiOpen)}
+          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-[#1a1d24] transition-colors cursor-pointer"
+          title={isAskAiOpen ? "Collapse Ask Fathom panel" : "Open Ask Fathom panel"}
+        >
+          {isAskAiOpen ? (
+            <>
+              <PanelRightClose className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-[11px]">Hide Ask Fathom</span>
+            </>
+          ) : (
+            <>
+              <PanelRightOpen className="w-3.5 h-3.5 text-[#00c2ff]" />
+              <span className="text-[11px] text-[#00c2ff]">Ask Fathom</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* 2. Main Body: Left Content + Right Ask Fathom Panel */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Area: Meetings Grid */}
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+          {/* Section Header: "Today" */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight">Today</h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {filteredMeetings.length} calls recorded and synchronized
+              </p>
+            </div>
+
+            {/* Filter and Sort Controls */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Filter calls..."
+                  className="pl-8 pr-3 py-1.5 bg-[#16181f] border border-[#262934] rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500/40 w-36 sm:w-44"
+                />
               </div>
 
-              {/* Card Body */}
-              <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                    <Calendar className="w-3 h-3 text-slate-400" />
-                    <span>{meeting.dateFormatted}</span>
-                  </div>
-                  <h2 className="text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
-                    {meeting.title}
-                  </h2>
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                    {meeting.summary.default.overview}
-                  </p>
-                </div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "newest" | "duration")}
+                className="bg-[#16181f] border border-[#262934] text-xs text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500/40 cursor-pointer"
+              >
+                <option value="newest">Newest first</option>
+                <option value="duration">Longest first</option>
+              </select>
+            </div>
+          </div>
 
-                {/* Intelligence Chips (Action Items, Highlights, Transcripts) */}
-                <div className="pt-2 border-t border-[#1C2331] space-y-3">
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-medium">
-                      <CheckSquare className="w-3 h-3" />
-                      <span>{meeting.actionItems.length} Actions</span>
-                    </span>
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-medium">
-                      <Sparkles className="w-3 h-3" />
-                      <span>{meeting.highlights.length} Highlights</span>
-                    </span>
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#1A212E] text-slate-400 font-medium">
-                      <MessageSquare className="w-3 h-3" />
-                      <span>{meeting.transcript.length} turns</span>
-                    </span>
-                  </div>
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {categories.map((cat) => {
+              const count =
+                cat === "All"
+                  ? meetings.length
+                  : meetings.filter((m) => m.category === cat).length;
+              const isSelected = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                    isSelected
+                      ? "bg-[#00c2ff]/15 text-[#00c2ff] border border-[#00c2ff]/40 shadow-sm"
+                      : "bg-[#16181f] hover:bg-[#1d2029] text-slate-400 hover:text-slate-200 border border-[#242733]"
+                  }`}
+                >
+                  <span>{cat}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      isSelected ? "bg-[#00c2ff]/25 text-[#00c2ff]" : "bg-[#20232d] text-slate-400"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-                  {/* Participants Avatars + Share button */}
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center -space-x-1.5">
-                      {meeting.participants.map((p) => (
-                        <div
-                          key={p.id}
-                          className={`w-6 h-6 rounded-full ${p.color} text-white flex items-center justify-center text-[9px] font-bold ring-2 ring-[#11151F]`}
-                          title={`${p.name} • ${p.role}`}
-                        >
-                          {p.initials}
-                        </div>
-                      ))}
-                      <span className="text-[11px] text-slate-400 pl-3">
-                        {meeting.participants.length} speakers
+          {/* Meetings Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {filteredMeetings.map((meeting, index) => {
+              const isLatest = index === 0 && selectedCategory === "All" && !searchQuery;
+              return (
+                <div
+                  key={meeting.id}
+                  className={`group bg-[#15171e] hover:bg-[#1a1d26] border rounded-xl overflow-hidden transition-all duration-200 flex flex-col justify-between hover:border-cyan-500/40 hover:shadow-xl cursor-pointer relative ${
+                    isLatest ? "border-cyan-500/30 ring-1 ring-cyan-500/20" : "border-[#222530]"
+                  }`}
+                  onClick={() => onSelectMeeting(meeting.id)}
+                >
+                  {/* Thumbnail with duration badge overlay */}
+                  <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
+                    <img
+                      src={meeting.thumbnail}
+                      alt={meeting.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85 group-hover:opacity-100"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#15171e] via-transparent to-black/30" />
+
+                    {/* Fathom Duration Badge: Bottom Right */}
+                    <div className="absolute bottom-2.5 right-2.5 bg-black/85 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-mono text-slate-200 border border-white/10">
+                      <span>{meeting.durationFormatted}</span>
+                    </div>
+
+                    {/* Category badge */}
+                    <div className="absolute top-2.5 left-2.5">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-black/75 backdrop-blur-md text-[#00c2ff] border border-[#00c2ff]/30">
+                        {meeting.category}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => onShareMeeting(meeting)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-[#1D2534] transition-colors"
-                        title="Share Meeting Recording"
-                      >
-                        <Share2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => onSelectMeeting(meeting.id)}
-                        className="p-1.5 rounded-lg text-slate-400 group-hover:text-cyan-400 hover:bg-[#1D2534] transition-colors"
-                        title="Open Meeting Intelligence View"
-                      >
-                        <ArrowUpRight className="w-4 h-4" />
-                      </button>
+                    {/* Play Button Icon Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="w-11 h-11 rounded-full bg-[#00c2ff] text-black flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
+                        <Play className="w-5 h-5 fill-current ml-0.5" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-1">
+                      <h2 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
+                        {meeting.title}
+                      </h2>
+                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        {meeting.summary.default.overview}
+                      </p>
+                    </div>
+
+                    {/* Metadata strip */}
+                    <div className="pt-2 border-t border-[#1f222c] flex items-center justify-between text-xs text-slate-400">
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className="flex items-center gap-1 text-amber-300">
+                          <CheckSquare className="w-3 h-3" />
+                          <span>{meeting.actionItems.length}</span>
+                        </span>
+                        <span className="flex items-center gap-1 text-cyan-300">
+                          <Sparkles className="w-3 h-3" />
+                          <span>{meeting.highlights.length}</span>
+                        </span>
+                        <span className="text-slate-400">
+                          {meeting.participants.length} speakers
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => onShareMeeting(meeting)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#20232d] transition-colors"
+                          title="Share Recording"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => onSelectMeeting(meeting.id)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-[#20232d] transition-colors"
+                          title="Open Recording"
+                        >
+                          <ArrowUpRight className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Area: ASK FATHOM Panel (Matching Screenshot a85ae19e-c030-4304-9fda-9fc01c753c8d.png) */}
+        {isAskAiOpen && (
+          <aside className="w-80 lg:w-96 border-l border-[#1c1f26] bg-[#111216] flex flex-col justify-between p-4 shrink-0 overflow-y-auto select-none animate-in slide-in-from-right-4 duration-150">
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-[#1c1f26]">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#00c2ff]" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    ASK FATHOM
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsAskAiOpen(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded"
+                >
+                  <PanelRightClose className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Promotional Gift Banner (Matching Screenshot) */}
+              <div className="p-3 rounded-xl bg-[#1c1f26]/80 border border-[#2b2e38] text-xs space-y-1">
+                <div className="flex items-start gap-2">
+                  <span className="text-base">🎁</span>
+                  <div>
+                    <span className="font-bold text-amber-300">
+                      Account-level Ask Fathom is here!
+                    </span>
+                    <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
+                      We're gifting you unlimited use until Oct 1. Limits may apply after.{" "}
+                      <span className="text-[#00c2ff] underline cursor-pointer">Learn More</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Answer Display if queried */}
+              {isAiLoading && (
+                <div className="p-3 rounded-xl bg-[#161820] border border-[#262934] text-xs text-slate-400 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#00c2ff] animate-pulse" />
+                  <span>Synthesizing intelligence across your calls...</span>
+                </div>
+              )}
+
+              {askAiAnswer && (
+                <div className="p-3.5 rounded-xl bg-[#161820] border border-[#262934] text-xs text-slate-200 space-y-2 animate-in fade-in duration-100">
+                  <div className="flex items-center gap-1.5 text-[10px] text-[#00c2ff] font-semibold">
+                    <Sparkles className="w-3 h-3" />
+                    <span>FATHOM INTELLIGENCE</span>
+                  </div>
+                  <p className="leading-relaxed">{askAiAnswer}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Section: Prompt Chips & Input Card */}
+            <div className="space-y-3 pt-4">
+              {/* Stacked Prompt Suggestions (Matching Screenshot) */}
+              <div className="space-y-1.5 flex flex-col items-end">
+                {suggestedQuestions.map((q, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleAskAi(q)}
+                    className="px-3 py-1.5 bg-[#181a22] hover:bg-[#222530] border border-[#272a37] text-[11px] text-slate-300 hover:text-white rounded-xl transition-colors text-right shadow-sm cursor-pointer"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+
+              {/* Chat Input Card */}
+              <div className="p-2.5 bg-[#161820] border border-[#262934] rounded-xl space-y-2 focus-within:border-[#00c2ff]/50 transition-colors">
+                <input
+                  type="text"
+                  value={askAiQuery}
+                  onChange={(e) => setAskAiQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAskAi(askAiQuery);
+                  }}
+                  placeholder="Ask anything..."
+                  className="w-full bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none px-1"
+                />
+
+                <div className="flex items-center justify-between pt-1 border-t border-[#20232c]">
+                  <div className="flex items-center gap-1 text-[11px] text-slate-400 bg-[#1e2029] px-2 py-0.5 rounded-md border border-[#292c38]">
+                    <span>My Calls</span>
+                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                  </div>
+
+                  <button
+                    onClick={() => handleAskAi(askAiQuery)}
+                    disabled={!askAiQuery.trim() || isAiLoading}
+                    className="w-6 h-6 rounded-full bg-[#2a2d39] hover:bg-[#00c2ff] hover:text-black text-white flex items-center justify-center transition-colors disabled:opacity-30 cursor-pointer"
+                    title="Submit"
+                  >
+                    <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                  </button>
+                </div>
               </div>
             </div>
-          );
-        })}
+          </aside>
+        )}
       </div>
     </div>
   );
