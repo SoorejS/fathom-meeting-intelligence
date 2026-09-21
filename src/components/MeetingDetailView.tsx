@@ -20,6 +20,7 @@ import {
   ThumbsUp,
   AlertCircle,
   MessageSquare,
+  ListMusic,
 } from "lucide-react";
 
 interface MeetingDetailViewProps {
@@ -30,6 +31,8 @@ interface MeetingDetailViewProps {
   onBack: () => void;
   onShare: (timestamp: number) => void;
   onUpdateMeeting: (updatedMeeting: Meeting) => void;
+  playlists?: { id: string; title: string }[];
+  onAddToPlaylist?: (meetingId: string, highlightId: string, playlistId: string) => void;
 }
 
 type MainTab = "summary" | "transcript" | "ask-ai";
@@ -40,6 +43,8 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
   onBack,
   onShare,
   onUpdateMeeting,
+  playlists,
+  onAddToPlaylist,
 }) => {
   const audio = useLocalAudio(meeting.id, !!meeting.testCall?.hasLocalAudio);
   const [activeTab, setActiveTab] = useState<MainTab>("summary");
@@ -383,12 +388,50 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
                     </div>
 
                     <p className="text-xs text-slate-300 italic line-clamp-2">&ldquo;{h.text}&rdquo;</p>
-                    {h.creator === "You" && <div className="flex gap-3 text-xs" onClick={event => event.stopPropagation()}>
-                      <select aria-label={"Type of highlight at " + h.timestampFormatted} value={h.type} className="bg-[#181b24] text-slate-200 rounded" onChange={event => onUpdateMeeting({ ...meeting, highlights: meeting.highlights.map(item => item.id === h.id ? { ...item, type: event.target.value as HighlightType } : item) })}>
-                        {["Highlight", "Positive Reaction", "Needs Review", "Feedback"].map(type => <option key={type}>{type}</option>)}
-                      </select>
-                      <button className="text-slate-400 hover:text-red-300" onClick={() => onUpdateMeeting({ ...meeting, highlights: meeting.highlights.filter(item => item.id !== h.id) })}>Remove highlight</button>
-                    </div>}
+                    
+                    <div className="flex items-center justify-between text-[11px] pt-1 border-t border-[#1f222d]" onClick={event => event.stopPropagation()}>
+                      {playlists && playlists.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <ListMusic className="w-3 h-3 text-purple-400 shrink-0" />
+                          <select
+                            aria-label={"Add highlight at " + h.timestampFormatted + " to playlist"}
+                            defaultValue=""
+                            onChange={(e) => {
+                              if (e.target.value && onAddToPlaylist) {
+                                onAddToPlaylist(meeting.id, h.id, e.target.value);
+                                e.target.value = "";
+                              }
+                            }}
+                            className="bg-[#13151D] border border-[#252A38] text-[10px] text-slate-300 rounded px-1.5 py-0.5 focus:outline-none hover:border-purple-500/40 cursor-pointer"
+                          >
+                            <option value="" disabled>+ Add to Playlist...</option>
+                            {playlists.map((pl) => (
+                              <option key={pl.id} value={pl.id}>
+                                {pl.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {h.creator === "You" && (
+                        <div className="flex gap-2 text-xs ml-auto">
+                          <select
+                            aria-label={"Type of highlight at " + h.timestampFormatted}
+                            value={h.type}
+                            className="bg-[#181b24] text-slate-200 rounded text-[10px]"
+                            onChange={event => onUpdateMeeting({ ...meeting, highlights: meeting.highlights.map(item => item.id === h.id ? { ...item, type: event.target.value as HighlightType } : item) })}
+                          >
+                            {["Highlight", "Positive Reaction", "Needs Review", "Feedback"].map(type => <option key={type}>{type}</option>)}
+                          </select>
+                          <button
+                            className="text-slate-400 hover:text-red-300 text-[10px]"
+                            onClick={() => onUpdateMeeting({ ...meeting, highlights: meeting.highlights.filter(item => item.id !== h.id) })}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}

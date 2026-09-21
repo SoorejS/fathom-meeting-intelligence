@@ -9,18 +9,23 @@ interface SidebarProps {
   onSelectTab: (tab: string) => void;
   totalCallsCount: number;
   teamCallsCount: number;
+  playlists?: { id: string; title: string }[];
+  onCreatePlaylistClick?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   notetakerStatus = "ready",
   activeTab,
   onSelectTab,
-  totalCallsCount, teamCallsCount,
+  totalCallsCount,
+  teamCallsCount,
+  playlists = [],
+  onCreatePlaylistClick,
 }) => {
   const navItems = [
     { id: "my-calls", label: "My Calls", icon: PhoneCall, count: totalCallsCount, primary: true },
     { id: "team-calls", label: "Team Calls", icon: Users, count: teamCallsCount },
-    { id: "playlists", label: "Playlists", icon: ListMusic, count: 2 },
+    { id: "playlists", label: "Playlists", icon: ListMusic, count: playlists.length },
     { id: "alerts", label: "Alerts", icon: Bell },
     { id: "deals", label: "Deals", icon: DollarSign },
   ];
@@ -75,27 +80,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center justify-between px-2.5 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             <span>Pinned Lists</span>
             <button
-              onClick={() => alert("Playlist editing is outside this demo. Explore the two seeded playlists.")}
+              onClick={() => {
+                if (onCreatePlaylistClick) onCreatePlaylistClick();
+                else onSelectTab("playlists");
+              }}
               className="hover:text-cyan-400 transition-colors"
               title="Create new playlist"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
-          <button
-            onClick={() => onSelectTab("my-calls")}
-            className="w-full text-left px-2.5 py-1.5 rounded-md text-xs text-slate-400 hover:text-slate-200 hover:bg-[#161B24] transition-colors truncate flex items-center gap-2"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>Q4 Product Alignment</span>
-          </button>
-          <button
-            onClick={() => onSelectTab("my-calls")}
-            className="w-full text-left px-2.5 py-1.5 rounded-md text-xs text-slate-400 hover:text-slate-200 hover:bg-[#161B24] transition-colors truncate flex items-center gap-2"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-            <span>Customer Discovery</span>
-          </button>
+          {playlists.slice(0, 4).map((pl, idx) => {
+            const colors = ["bg-purple-400", "bg-cyan-400", "bg-emerald-400", "bg-amber-400"];
+            return (
+              <button
+                key={pl.id}
+                onClick={() => onSelectTab("playlists")}
+                className="w-full text-left px-2.5 py-1.5 rounded-md text-xs text-slate-400 hover:text-slate-200 hover:bg-[#161B24] transition-colors truncate flex items-center gap-2"
+                title={pl.title}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${colors[idx % colors.length]}`} />
+                <span className="truncate">{pl.title}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

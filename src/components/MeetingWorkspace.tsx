@@ -13,6 +13,8 @@ import { TestCallPanel } from "./TestCallPanel";
 import { useTestCallCapture } from "@/lib/useTestCallCapture";
 import { readTestCallFragment, createTestMeeting, formatTime } from "@/lib/testCallMeeting";
 import { Users, ListMusic } from "lucide-react";
+import { useWorkspaceStore } from "@/lib/useWorkspaceStore";
+import { PlaylistsView } from "./PlaylistsView";
 
 function subscribeToUrl(callback: () => void) {
   window.addEventListener("popstate", callback);
@@ -49,6 +51,22 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sharingMeeting, setSharingMeeting] = useState<Meeting | null>(null);
   const [sidebarTab, setSidebarTab] = useState<string>("my-calls");
+
+  const {
+    playlists,
+    createPlaylist,
+    renamePlaylist,
+    deletePlaylist,
+    addHighlightToPlaylist,
+    removeClip,
+    reorderClips,
+  } = useWorkspaceStore();
+
+  useEffect(() => {
+    if (params.get("playlist")) {
+      setSidebarTab("playlists");
+    }
+  }, [params]);
 
   const selectedMeeting = meetings.find((m) => m.id === selectedMeetingId) || null;
 
@@ -97,6 +115,10 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
             }}
             totalCallsCount={meetings.length}
             teamCallsCount={meetings.filter(m => m.category === "Product" || m.category === "Engineering").length}
+            playlists={playlists}
+            onCreatePlaylistClick={() => {
+              setSidebarTab("playlists");
+            }}
           />
         )}
 
@@ -116,6 +138,8 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
               }}
               onShare={(timestamp) => handleShareMeeting(selectedMeeting, timestamp)}
               onUpdateMeeting={handleUpdateMeeting}
+              playlists={playlists}
+              onAddToPlaylist={(mId, hId, pId) => addHighlightToPlaylist(pId, mId, hId)}
             />
           ) : sidebarTab === "team-calls" ? (
             /* Team Calls Tab View */
@@ -138,40 +162,19 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
               />
             </div>
           ) : sidebarTab === "playlists" ? (
-            /* Playlists Tab View */
-            <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
-              <div className="pb-4 border-b border-[#1E2431]">
-                <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                  <ListMusic className="w-5 h-5 text-purple-400" />
-                  <span>Playlists</span>
-                </h1>
-                <p className="text-xs text-slate-400 mt-1">
-                  Curated reels of key customer quotes, product feedback, and onboarding snippets.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-[#131722] border border-[#212A3B] space-y-2">
-                  <span className="text-xs font-bold text-white">Customer Pain Points Reel</span>
-                  <p className="text-xs text-slate-400">4 highlight clips from Acme Corp and FinTech Global demos.</p>
-                  <button
-                    onClick={() => handleSelectMeeting("m_acme_onboarding", 90)}
-                    className="text-xs text-cyan-400 hover:underline inline-flex items-center gap-1 mt-2"
-                  >
-                    Play playlist →
-                  </button>
-                </div>
-                <div className="p-4 rounded-xl bg-[#131722] border border-[#212A3B] space-y-2">
-                  <span className="text-xs font-bold text-white">Q4 Product Milestones</span>
-                  <p className="text-xs text-slate-400">Alignment takeaways on November 12th launch.</p>
-                  <button
-                    onClick={() => handleSelectMeeting("m_prod_strategy", 410)}
-                    className="text-xs text-cyan-400 hover:underline inline-flex items-center gap-1 mt-2"
-                  >
-                    Play playlist →
-                  </button>
-                </div>
-              </div>
-            </div>
+            /* Full Real Playlists View */
+            <PlaylistsView
+              playlists={playlists}
+              meetings={meetings}
+              onCreatePlaylist={createPlaylist}
+              onRenamePlaylist={renamePlaylist}
+              onDeletePlaylist={deletePlaylist}
+              onRemoveClip={removeClip}
+              onReorderClips={reorderClips}
+              onNavigateMeeting={(meetingId, timestamp) => {
+                handleSelectMeeting(meetingId, timestamp);
+              }}
+            />
           ) : sidebarTab === "alerts" || sidebarTab === "deals" ? (
             <div className="p-8 space-y-4">
               <h1 className="text-xl font-bold">{sidebarTab === "alerts" ? "Alerts" : "Deals"}</h1>
