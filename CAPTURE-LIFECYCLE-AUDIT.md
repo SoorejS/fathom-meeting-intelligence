@@ -32,4 +32,10 @@ Browser-local state is not synchronized across tabs/devices. Reload interrupts m
 
 ## Public deployment
 
-Pending verification of this revision on the existing persistent Vercel alias.
+Deployed implementation commit 073718f to https://fathom-meeting-intelligence.vercel.app/ through Vercel deployment dpl_79rKwVDg2zodxwwPF383MH4e6WJg. Vercel production build passed and the stable alias was opened and tested.
+
+Public browser verification created Public release readiness verification (test_434ade21-d5eb-4613-a49d-800897e1e525), with 36.438 seconds of simulated capture. Observed Joining, Connected/Permission required, explicit approval, timer advancing from 00:00 to 00:16, manual ending, visible processing stages, and Meeting ready. The meeting appeared in My Calls and global search, with six transcript cues, two actions, and three highlights. Verified player play/pause, transcript seek to 00:10, Executive Brief, action completion, grounded quick-question decisions with 00:05/00:25 citations, highlight seek to 00:15, copied public share link opening at 00:05, and refresh preserving the meeting, template, and completed action. No error/warning console entries were reported for the public share tab.
+
+The public test used a new tab in the existing in-app browser profile, not a separate incognito profile. The local production export was tested on a distinct storage origin; it opened a copied generated share link without sender data. Desktop and 390px mobile capture-modal screenshots were inspected without clipping. Actual microphone hardware audio remains unverified; no claim of real speech transcription is made.
+
+Commands: npm run build; npm run lint; npm test; npx vercel --prod --yes; git status --short; git log --oneline -15; git ls-files screenshot-for-fathomAI-clone/; git check-ignore screenshot-for-fathomAI-clone/.
