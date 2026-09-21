@@ -24,4 +24,14 @@ The two Codex canary files still match the hashes documented in `CAPTURE-TEST.md
 
 ## Public verification
 
-Pending deployment verification; this section will be completed after opening the deployed revision.
+Deployment `dpl_776kjoBzGkaSR6vrgp5CMJov54WM` is READY at [the persistent demo](https://fathom-meeting-intelligence.vercel.app). The first upload failed with a network fetch error; a retry completed the production build and alias update.
+
+- Anonymous HTTP requests returned 200 for the dashboard and each of the six share routes.
+- Public browser flow passed: dashboard → global search → highlight result → meeting at 155 seconds → copy timestamped share link → independently opened share page at 155 seconds.
+- The independent share page was opened before creating any saved state on the public origin. It required no sign-in or developer session and displayed title, date, participants, playback, summaries, transcript, actions and highlights. This was a new in-app browser tab, not a separately launched Chrome incognito profile. The deployment-specific Vercel hostname remains protected; the stable public alias above is the reviewer URL.
+- Public play/pause advanced the clock. Source 04:35 sought to 275 seconds; the 06:50 highlight marker sought to 410. Keyboard End showed 42:20 with Play available; replay restarted the clock.
+- Public action completion, Executive Brief selection, and a Positive Reaction highlight survived reload. The created highlight also appeared as a timeline marker.
+- The API rate-limiting ownership question returned Sarah Chen, the current completed status, due date, and source 04:35. Decisions returned actual meeting notes with related citations.
+- Desktop and 390px mobile layouts were inspected. No public console errors or warnings were observed.
+
+No historical capture entries, capture hooks, or reference screenshots were changed. Screenshot files are ignored and untracked; capture logs and CAPTURE-TEST.md remain tracked. Browser-local edits are intentionally not shared across devices. Capture/playback remains simulated and retrieval remains deterministic.
