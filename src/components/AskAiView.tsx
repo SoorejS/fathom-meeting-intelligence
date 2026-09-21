@@ -2,37 +2,34 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { findMeetingAnswer } from "@/lib/meetingAnswers";
-import { AiQnAItem } from "@/types/meeting";
+import { Meeting } from "@/types/meeting";
 import { Sparkles, Play, RefreshCw, ArrowUp } from "lucide-react";
 
 interface AskAiViewProps {
-  aiQnA: AiQnAItem[];
+  meeting: Meeting;
   onSeek: (seconds: number) => void;
-  meetingTitle: string;
 }
 
 interface Message {
   id: string;
   sender: "user" | "fathom";
   text: string;
-  citationTimestamp?: number;
-  citationFormatted?: string;
-  contextSnippet?: string;
+  citations?: { timestamp: number; formatted: string; text: string }[];
 }
 
-export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitle }) => {
+export const AskAiView: React.FC<AskAiViewProps> = ({ meeting, onSeek }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "msg_init",
       sender: "fathom",
-      text: `Explore prepared answers grounded in this meeting (${meetingTitle}). Choose a question below or ask about the same topics.`,
+      text: `Ask about ${meeting.title}. Answers retrieve this meeting’s notes and transcript excerpts, with sources you can open.`,
     },
   ]);
   const [inputQuery, setInputQuery] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const suggestedQuestions = aiQnA.map((item) => item.question);
+  const suggestedQuestions = ["What did we decide?", "What are the action items?", "What concerns were raised?", "Who attended?"];
   const responseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageSequence = useRef(0);
   useEffect(() => () => { if (responseTimer.current) clearTimeout(responseTimer.current); }, []);
@@ -55,16 +52,14 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
     setIsTyping(true);
 
     responseTimer.current = setTimeout(() => {
-      const matched = findMeetingAnswer(q, aiQnA);
-      const answerText = matched?.answer || "I don't have a supported answer to that question in this meeting's prepared notes. Try one of the meeting-specific questions below or review the transcript.";
+      const matched = findMeetingAnswer(q, meeting);
+      const answerText = matched?.answer || "This meeting does not contain enough information to answer that question. Try a specific topic, participant, or timestamp from its transcript.";
 
       const aiMsg: Message = {
         id: `f_${++messageSequence.current}`,
         sender: "fathom",
         text: answerText,
-        citationTimestamp: matched?.citationTimestamp,
-        citationFormatted: matched?.citationFormatted,
-        contextSnippet: matched?.contextSnippet,
+        citations: matched?.citations,
       };
 
       setMessages((prev) => [...prev, aiMsg]);
@@ -82,7 +77,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
             ASK FATHOM AI
           </span>
           <span className="text-[10px] text-slate-400">
-            • Grounded in synchronized transcript
+            • Meeting notes & transcript sources
           </span>
         </div>
 
@@ -127,24 +122,12 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ aiQnA, onSeek, meetingTitl
                     : "bg-[#00c2ff] text-black font-semibold rounded-br-none shadow-md"
                 }`}
               >
-                <p>{m.text}</p>
+                <p className="whitespace-pre-line">{m.text}</p>
 
-                {/* Grounded Citation Timestamp */}
-                {m.citationTimestamp !== undefined && m.citationFormatted && (
-                  <div className="pt-2 border-t border-[#232733] flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-slate-400 font-normal">
-                      Referenced from transcript:
-                    </span>
-                    <button
-                      onClick={() => onSeek(m.citationTimestamp!)}
-                      className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#00c2ff] hover:text-white bg-[#00c2ff]/10 hover:bg-[#00c2ff]/20 px-2 py-0.5 rounded border border-[#00c2ff]/30 transition-colors cursor-pointer"
-                      title="Jump playback to cited timestamp"
-                    >
-                      <Play className="w-2.5 h-2.5 fill-current" />
-                      <span>{m.citationFormatted}</span>
-                    </button>
-                  </div>
-                )}
+                {m.citations?.map(citation => <button key={citation.timestamp} onClick={() => onSeek(citation.timestamp)} title={citation.text} className="inline-flex items-center gap-1 mr-2 text-cyan-400 border border-cyan-400/30 rounded px-2 py-1">
+                  <Play className="w-3 h-3" /> Source {citation.formatted}
+                </button>)}
+
               </div>
 
               {!isFathom && (

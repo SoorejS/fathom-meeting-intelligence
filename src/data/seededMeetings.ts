@@ -45,81 +45,78 @@ export const SEEDED_MEETINGS: Meeting[] = [
       },
     ],
     summary: {
-      default: {
-        title: "Standard Meeting Intelligence Summary",
-        overview:
-          "The team conducted an in-depth Q4 roadmap alignment session focused on core transcript intelligence, self-serve onboarding conversion bottlenecks, and v2 API rate-limiting architecture. Key product releases were set for early November.",
-        keyPoints: [
-          "Onboarding cohort analysis revealed a 48% increase in 7-day retention when users view a pre-generated AI summary within their first 24 hours.",
-          "Elena presented the revised two-column meeting detail interface that reduces visual clutter while placing the video scrubber and synchronized transcript side-by-side.",
-          "Sarah noted engineering tradeoffs between self-managed Redis clusters versus serverless managed cache instances for sub-100ms transcript search latency.",
-          "Marcus reported strong demand from 12 enterprise prospects for custom AI summary prompt templates and CRM bi-directional sync.",
+      "default": {
+        "title": "Standard Meeting Intelligence Summary",
+        "overview": "The team conducted an in-depth Q4 roadmap alignment session focused on core transcript intelligence, self-serve onboarding conversion bottlenecks, and v2 API rate-limiting architecture. Key product releases were set for early November.",
+        "keyPoints": [
+          "Early AI summary engagement increased 7-day retention by 48% in the onboarding cohort test.",
+          "The two-column workspace keeps recording and meeting intelligence together.",
+          "Transcript search reached 68ms; API quotas will be 1,000 queries/hour for standard and 10,000 for enterprise.",
+          "Twelve enterprise accounts are ready to test custom templates ahead of the November 12 launch."
         ],
-        decisions: [
-          "Officially locked public release date for Q4 flagship updates to November 12th.",
-          "Adopted the two-column meeting workspace layout as the primary desktop experience.",
-          "Postponed mobile native audio recording in favor of polishing the web playback and live note-taking experience.",
+        "decisions": [
+          "Lock November 12th as the public launch date.",
+          "Use the two-column redesign to place recording beside actionable meeting intelligence."
         ],
-        nextSteps: [
-          "Finalize v2 API rate-limiting and quota specifications by Friday (Sarah Chen)",
-          "Deliver interactive Figma prototype for new AI summary cards (Elena Rostova)",
-          "Prepare beta customer invitation list for the Q4 enterprise cohort (Marcus Vance)",
-          "Send updated roadmap presentation to executive steering committee (Alex Rivera)",
-        ],
+        "nextSteps": [
+          "Sarah Chen: Finalize v2 API rate-limiting and quota specifications",
+          "Elena Rostova: Deliver interactive Figma prototype for AI summary card components",
+          "Marcus Vance: Prepare beta customer invitation list for Q4 enterprise cohort",
+          "Alex Rivera: Send updated product roadmap deck to executive steering committee"
+        ]
       },
-      executive: {
-        title: "Executive Strategic Brief",
-        overview:
-          "Strategic confirmation of Q4 launch targets (Nov 12). Product metrics show 48% retention gains on early summary engagement. Infrastructure investments will prioritize sub-100ms search latency to support enterprise expansion.",
-        keyPoints: [
-          "Strong validation of core AI summary value proposition on active user retention.",
-          "Engineering runway is clear for November 12 delivery with manageable technical debt.",
-          "12 enterprise deals pending custom template feature release.",
+      "executive": {
+        "title": "Executive Brief",
+        "overview": "The team conducted an in-depth Q4 roadmap alignment session focused on core transcript intelligence, self-serve onboarding conversion bottlenecks, and v2 API rate-limiting architecture. Key product releases were set for early November.",
+        "keyPoints": [
+          "Early AI summary engagement increased 7-day retention by 48% in the onboarding cohort test.",
+          "The two-column workspace keeps recording and meeting intelligence together."
         ],
-        decisions: [
-          "November 12 target approved for public launch.",
-          "Two-column design system ratified for all meeting playback surfaces.",
+        "decisions": [
+          "Lock November 12th as the public launch date.",
+          "Use the two-column redesign to place recording beside actionable meeting intelligence."
         ],
-        nextSteps: [
-          "Roadmap executive briefing delivery by Monday (Alex Rivera)",
-          "Enterprise beta customer cohort selection (Marcus Vance)",
-        ],
+        "nextSteps": [
+          "Sarah Chen: Finalize v2 API rate-limiting and quota specifications",
+          "Elena Rostova: Deliver interactive Figma prototype for AI summary card components"
+        ]
       },
-      sales: {
-        title: "Sales & Customer Impact Brief",
-        overview:
-          "Focus on enterprise customer expectations regarding customizable summary templates and automated CRM note generation. Strong customer interest confirms roadmap alignment.",
-        keyPoints: [
-          "Sales pipeline shows $420k ARR contingent on configurable meeting summary templates and CRM logging.",
-          "Enterprise prospects emphasize SOC2 data residency compliance during onboarding demos.",
-          "Self-serve onboarding conversion jumped 48% when AI highlights are automatically previewed.",
+      "sales": {
+        "title": "Sales & Customer Impact",
+        "overview": "Customer and adoption context recorded in this meeting.",
+        "keyPoints": [
+          "Early AI summary engagement increased 7-day retention by 48% in the onboarding cohort test.",
+          "Transcript search reached 68ms; API quotas will be 1,000 queries/hour for standard and 10,000 for enterprise.",
+          "Twelve enterprise accounts are ready to test custom templates ahead of the November 12 launch."
         ],
-        decisions: [
-          "Prioritize custom prompt template toggles ahead of calendar sync expansions.",
+        "decisions": [
+          "Lock November 12th as the public launch date.",
+          "Use the two-column redesign to place recording beside actionable meeting intelligence."
         ],
-        nextSteps: [
-          "Distribute beta invitations to top 12 waiting enterprise accounts (Marcus Vance)",
-          "Create one-pager sales collateral highlighting the new two-column interface (Alex Rivera)",
-        ],
+        "nextSteps": [
+          "Sarah Chen: Finalize v2 API rate-limiting and quota specifications",
+          "Elena Rostova: Deliver interactive Figma prototype for AI summary card components",
+          "Marcus Vance: Prepare beta customer invitation list for Q4 enterprise cohort",
+          "Alex Rivera: Send updated product roadmap deck to executive steering committee"
+        ]
       },
-      engineering: {
-        title: "Engineering Technical Spec & Architecture",
-        overview:
-          "Technical alignment on transcript search indexing, video player synchronization performance, and rate-limiting middleware for v2 API endpoints.",
-        keyPoints: [
-          "Transcript search benchmark: achieved 68ms query latency using in-memory inverted indices across 5,000 meeting transcripts.",
-          "Scrubber timestamp sync precision improved from 500ms to 50ms using requestAnimationFrame audio time updates.",
-          "Connection pool exhaustion mitigated by introducing connection throttling at the edge router.",
+      "engineering": {
+        "title": "Engineering & Implementation",
+        "overview": "Technical details and implementation follow-ups recorded in this meeting.",
+        "keyPoints": [
+          "Transcript search reached 68ms; API quotas will be 1,000 queries/hour for standard and 10,000 for enterprise."
         ],
-        decisions: [
-          "Standardize video player synchronization via Web Audio / HTML5 timeupdate event callbacks.",
-          "Proceed with Redis managed cluster for transcript segment caching.",
+        "decisions": [
+          "Lock November 12th as the public launch date.",
+          "Use the two-column redesign to place recording beside actionable meeting intelligence."
         ],
-        nextSteps: [
-          "Submit v2 API rate-limiting PR by Friday afternoon (Sarah Chen)",
-          "Run load test on 200 concurrent video playback streams (Sarah Chen)",
-        ],
-      },
+        "nextSteps": [
+          "Sarah Chen: Finalize v2 API rate-limiting and quota specifications",
+          "Elena Rostova: Deliver interactive Figma prototype for AI summary card components",
+          "Marcus Vance: Prepare beta customer invitation list for Q4 enterprise cohort",
+          "Alex Rivera: Send updated product roadmap deck to executive steering committee"
+        ]
+      }
     },
     transcript: [
       {
@@ -393,53 +390,73 @@ export const SEEDED_MEETINGS: Meeting[] = [
       },
     ],
     summary: {
-      default: {
-        title: "Enterprise Onboarding & Technical Review",
-        overview:
-          "Technical kickoff meeting with Acme Corp covering Okta SSO integration, SCIM user auto-provisioning for 250 initial seats, and compliance review of zero-data retention audio agreements.",
-        keyPoints: [
-          "Acme Corp approved the technical rollout schedule for 250 sales and account management seats.",
-          "David Kim reviewed Fathom's SOC2 Type II audit and verified customer data isolation boundaries.",
-          "Jordan Miller will configure the Okta SCIM connector using the sandbox API keys provided.",
+      "default": {
+        "title": "Enterprise Onboarding & Technical Review",
+        "overview": "Technical kickoff meeting with Acme Corp covering Okta SSO integration, SCIM user auto-provisioning for 250 initial seats, and compliance review of zero-data retention audio agreements.",
+        "keyPoints": [
+          "Acme is preparing Okta SAML integration for an initial 250 sales seats.",
+          "David asked for zero-retention audio after transcription.",
+          "Audio retention options include 30, 60, 90 days, or immediate deletion after transcription.",
+          "A signed BAA addendum is required before compliance greenlights rollout."
         ],
-        decisions: [
-          "Deploy SSO enforcement starting next Tuesday morning.",
-          "Enable dedicated Slack Connect channel for real-time onboarding support.",
+        "decisions": [
+          "Zero-retention audio satisfies the compliance requirements; send the signed BAA addendum before greenlighting rollout."
         ],
-        nextSteps: [
-          "Configure Okta SCIM sync endpoint with sandbox credentials (Jordan Miller)",
-          "Share signed SOC2 Type II report and HIPAA BAA addendum (Alex Rivera)",
-          "Schedule training session for 45 managers (David Kim)",
-        ],
+        "nextSteps": [
+          "Jordan Miller: Configure Okta SCIM sync endpoint with sandbox credentials",
+          "Alex Rivera: Share signed SOC2 Type II report and HIPAA BAA addendum",
+          "David Kim: Schedule training session for 45 account managers"
+        ]
       },
-      executive: {
-        title: "Acme Corp Executive Deployment Brief",
-        overview:
-          "Acme Corp kickoff completed successfully. 250 seats committed with SSO enforcement targeted for next Tuesday.",
-        keyPoints: [
-          "Security compliance approved by David Kim.",
-          "IT provisioning pipeline established via Okta SCIM.",
+      "executive": {
+        "title": "Executive Brief",
+        "overview": "Technical kickoff meeting with Acme Corp covering Okta SSO integration, SCIM user auto-provisioning for 250 initial seats, and compliance review of zero-data retention audio agreements.",
+        "keyPoints": [
+          "Acme is preparing Okta SAML integration for an initial 250 sales seats.",
+          "David asked for zero-retention audio after transcription."
         ],
-        decisions: ["Go-live confirmed for next Tuesday 9:00 AM."],
-        nextSteps: ["Sign BAA addendum and execute security checklist (Alex Rivera)"],
-      },
-      sales: {
-        title: "Account Expansion Opportunities",
-        overview: "Initial 250 seats deployed with potential expansion to 1,200 seats across Acme Europe in Q1.",
-        keyPoints: ["Acme requested pricing quotes for European data localization add-on."],
-        decisions: ["Tier 1 support package granted for first 90 days."],
-        nextSteps: ["Send Q1 expansion quote to Jordan Miller (Marcus Vance)"],
-      },
-      engineering: {
-        title: "Security & SAML Configuration Notes",
-        overview: "Technical specifications for Okta SAML 2.0 assertions and SCIM user provisioning.",
-        keyPoints: [
-          "SAML entity ID: https://fathom.video/saml/acme-corp",
-          "Attribute mappings verified for email, firstName, department, and role.",
+        "decisions": [
+          "Zero-retention audio satisfies the compliance requirements; send the signed BAA addendum before greenlighting rollout."
         ],
-        decisions: ["Enforce PKCE OAuth flow for all client browser extensions."],
-        nextSteps: ["Monitor initial webhook synchronization test (Alex Rivera)"],
+        "nextSteps": [
+          "Jordan Miller: Configure Okta SCIM sync endpoint with sandbox credentials",
+          "Alex Rivera: Share signed SOC2 Type II report and HIPAA BAA addendum"
+        ]
       },
+      "sales": {
+        "title": "Sales & Customer Impact",
+        "overview": "Customer and adoption context recorded in this meeting.",
+        "keyPoints": [
+          "Acme is preparing Okta SAML integration for an initial 250 sales seats.",
+          "David asked for zero-retention audio after transcription.",
+          "Audio retention options include 30, 60, 90 days, or immediate deletion after transcription.",
+          "A signed BAA addendum is required before compliance greenlights rollout."
+        ],
+        "decisions": [
+          "Zero-retention audio satisfies the compliance requirements; send the signed BAA addendum before greenlighting rollout."
+        ],
+        "nextSteps": [
+          "Jordan Miller: Configure Okta SCIM sync endpoint with sandbox credentials",
+          "Alex Rivera: Share signed SOC2 Type II report and HIPAA BAA addendum",
+          "David Kim: Schedule training session for 45 account managers"
+        ]
+      },
+      "engineering": {
+        "title": "Engineering & Implementation",
+        "overview": "Technical details and implementation follow-ups recorded in this meeting.",
+        "keyPoints": [
+          "Acme is preparing Okta SAML integration for an initial 250 sales seats.",
+          "Audio retention options include 30, 60, 90 days, or immediate deletion after transcription."
+        ],
+        "decisions": [
+          "Zero-retention audio satisfies the compliance requirements; send the signed BAA addendum before greenlighting rollout."
+        ],
+        "nextSteps": [
+          "Jordan Miller: Configure Okta SCIM sync endpoint with sandbox credentials",
+          "Alex Rivera: Share signed SOC2 Type II report and HIPAA BAA addendum",
+          "David Kim: Schedule training session for 45 account managers"
+        ]
+      }
     },
     transcript: [
       {
@@ -636,55 +653,76 @@ export const SEEDED_MEETINGS: Meeting[] = [
       },
     ],
     summary: {
-      default: {
-        title: "Standup & Connection Pooling Post-Mortem",
-        overview:
-          "Engineering review covering root cause analysis of Sunday's spike in database connection latency, rollout of pgBouncer connection pooling, and performance benchmarks for frontend transcript scrubbing.",
-        keyPoints: [
-          "Root cause identified: unindexed meeting participant join query caused temporary connection pool exhaustion in us-east-1.",
-          "Dev Patel added composite index on (meeting_id, user_id) reducing p99 query latency from 840ms to 14ms.",
-          "Liam O'Connor configured automated alerts for RDS connection pool threshold exceeding 75%.",
-          "Priya Sharma optimized client-side transcript virtualized list, reducing memory footprint by 62%.",
+      "default": {
+        "title": "Standup & Connection Pooling Post-Mortem",
+        "overview": "Engineering review covering root cause analysis of Sunday's spike in database connection latency, rollout of pgBouncer connection pooling, and performance benchmarks for frontend transcript scrubbing.",
+        "keyPoints": [
+          "An unindexed meeting-participants query caused the database connection incident.",
+          "A composite index reduced p99 query latency from 840ms to 14ms.",
+          "Grafana alerts trigger PagerDuty when RDS connections exceed 75% capacity.",
+          "Transcript virtualization keeps calls with over 2,000 segments scrolling at 60fps."
         ],
-        decisions: [
-          "Merge pgBouncer connection proxy configuration to main staging pipeline.",
-          "Enforce mandatory composite index lint check on all new Postgres migration PRs.",
+        "decisions": [
+          "A composite index was pushed to fix the unindexed meeting participants query.",
+          "PagerDuty will trigger when RDS connections cross 75% capacity."
         ],
-        nextSteps: [
-          "Deploy connection pooling fix with pgBouncer to staging (Dev Patel)",
-          "Add Grafana alert threshold for replica lag > 500ms (Liam O'Connor)",
-          "Refactor meeting detail player scrubbing latency (Priya Sharma)",
-        ],
+        "nextSteps": [
+          "Dev Patel: Deploy connection pooling fix with pgBouncer to staging",
+          "Liam O'Connor: Add Grafana alert threshold for replica lag > 500ms",
+          "Priya Sharma: Refactor meeting detail player scrubbing latency"
+        ]
       },
-      executive: {
-        title: "Engineering Reliability Summary",
-        overview:
-          "Platform health is 100% restored. Connection pooling fixes deployed with zero customer impact, and query performance improved 60x.",
-        keyPoints: [
-          "p99 database query latency dropped to 14ms.",
-          "Automated safeguards installed to prevent repeat connection saturation.",
+      "executive": {
+        "title": "Executive Brief",
+        "overview": "Engineering review covering root cause analysis of Sunday's spike in database connection latency, rollout of pgBouncer connection pooling, and performance benchmarks for frontend transcript scrubbing.",
+        "keyPoints": [
+          "An unindexed meeting-participants query caused the database connection incident.",
+          "A composite index reduced p99 query latency from 840ms to 14ms."
         ],
-        decisions: ["Architecture improvements approved for production release tonight."],
-        nextSteps: ["Monitor deployment through European morning traffic (Sarah Chen)"],
-      },
-      sales: {
-        title: "Uptime & System Stability Impact",
-        overview: "Platform uptime metrics maintain 99.98% availability with enhanced query response times.",
-        keyPoints: ["No user transcript data was affected during the brief latency spike."],
-        decisions: ["System status page updated with resolved notification."],
-        nextSteps: ["Share reliability summary with enterprise success teams."],
-      },
-      engineering: {
-        title: "Technical Incident Post-Mortem Report",
-        overview: "Post-mortem investigation for incident INC-492: Postgres connection saturation under peak load.",
-        keyPoints: [
-          "Connection pool max: 400 connections saturated by long-running sequential scans.",
-          "Remediation: Created index idx_participants_meeting_user on participants table.",
-          "pgBouncer pool mode: transaction mode with default_pool_size=50.",
+        "decisions": [
+          "A composite index was pushed to fix the unindexed meeting participants query.",
+          "PagerDuty will trigger when RDS connections cross 75% capacity."
         ],
-        decisions: ["Transition all service connections to pgBouncer proxy layer."],
-        nextSteps: ["Deploy pgBouncer daemon set in Kubernetes cluster (Liam O'Connor)"],
+        "nextSteps": [
+          "Dev Patel: Deploy connection pooling fix with pgBouncer to staging",
+          "Liam O'Connor: Add Grafana alert threshold for replica lag > 500ms"
+        ]
       },
+      "sales": {
+        "title": "Sales & Customer Impact",
+        "overview": "No sales-specific discussion is recorded; the meeting context and follow-ups are shown below.",
+        "keyPoints": [
+          "An unindexed meeting-participants query caused the database connection incident."
+        ],
+        "decisions": [
+          "A composite index was pushed to fix the unindexed meeting participants query.",
+          "PagerDuty will trigger when RDS connections cross 75% capacity."
+        ],
+        "nextSteps": [
+          "Dev Patel: Deploy connection pooling fix with pgBouncer to staging",
+          "Liam O'Connor: Add Grafana alert threshold for replica lag > 500ms",
+          "Priya Sharma: Refactor meeting detail player scrubbing latency"
+        ]
+      },
+      "engineering": {
+        "title": "Engineering & Implementation",
+        "overview": "Technical details and implementation follow-ups recorded in this meeting.",
+        "keyPoints": [
+          "An unindexed meeting-participants query caused the database connection incident.",
+          "A composite index reduced p99 query latency from 840ms to 14ms.",
+          "Grafana alerts trigger PagerDuty when RDS connections exceed 75% capacity.",
+          "Transcript virtualization keeps calls with over 2,000 segments scrolling at 60fps."
+        ],
+        "decisions": [
+          "A composite index was pushed to fix the unindexed meeting participants query.",
+          "PagerDuty will trigger when RDS connections cross 75% capacity."
+        ],
+        "nextSteps": [
+          "Dev Patel: Deploy connection pooling fix with pgBouncer to staging",
+          "Liam O'Connor: Add Grafana alert threshold for replica lag > 500ms",
+          "Priya Sharma: Refactor meeting detail player scrubbing latency"
+        ]
+      }
     },
     transcript: [
       {
@@ -845,45 +883,66 @@ export const SEEDED_MEETINGS: Meeting[] = [
       },
     ],
     summary: {
-      default: {
-        title: "Enterprise Demo & Security Verification",
-        overview:
-          "Comprehensive product demonstration for FinTech Global leadership demonstrating automated meeting summarization, CRM integration into Salesforce, and enterprise data encryption standards.",
-        keyPoints: [
-          "Rachel Hayes expressed strong interest in Fathom's automated action item extraction and direct sync to Salesforce tasks.",
-          "Demonstrated real-time custom vocabulary mapping for complex financial instruments and derivatives terminology.",
-          "Reviewed banking-grade AES-256 encryption at rest and TLS 1.3 in transit.",
+      "default": {
+        "title": "Enterprise Demo & Security Verification",
+        "overview": "Comprehensive product demonstration for FinTech Global leadership demonstrating automated meeting summarization, CRM integration into Salesforce, and enterprise data encryption standards.",
+        "keyPoints": [
+          "Financial advisors spend nearly two hours daily writing summaries and entering follow-ups.",
+          "Rachel identified reliable client action-item capture as a productivity opportunity.",
+          "The demo covered speaker separation, commitment detection, and structured CRM summaries."
         ],
-        decisions: [
-          "FinTech Global requested a custom proposal for 500 Enterprise seats with SSO.",
-          "Targeting a 30-day proof of concept beginning early next month.",
+        "decisions": [
+          "The demo covers structured summaries and CRM follow-ups. No purchase commitment is recorded in this excerpt."
         ],
-        nextSteps: [
-          "Send custom proposal for 500 Enterprise seats with SSO (Marcus Vance)",
-          "Provide compliance checklist for EU financial regulatory compliance (Alex Rivera)",
+        "nextSteps": [
+          "Marcus Vance: Send custom proposal for 500 Enterprise seats with SSO",
+          "Alex Rivera: Provide compliance checklist for EU financial regulatory compliance"
+        ]
+      },
+      "executive": {
+        "title": "Executive Brief",
+        "overview": "Comprehensive product demonstration for FinTech Global leadership demonstrating automated meeting summarization, CRM integration into Salesforce, and enterprise data encryption standards.",
+        "keyPoints": [
+          "Financial advisors spend nearly two hours daily writing summaries and entering follow-ups.",
+          "Rachel identified reliable client action-item capture as a productivity opportunity."
         ],
+        "decisions": [
+          "The demo covers structured summaries and CRM follow-ups. No purchase commitment is recorded in this excerpt."
+        ],
+        "nextSteps": [
+          "Marcus Vance: Send custom proposal for 500 Enterprise seats with SSO",
+          "Alex Rivera: Provide compliance checklist for EU financial regulatory compliance"
+        ]
       },
-      executive: {
-        title: "FinTech Global Deal Summary",
-        overview: "High-probability 500-seat enterprise deal ($180k ARR) advancing to proof-of-concept phase.",
-        keyPoints: ["CIO signed off on technical architecture; legal review pending."],
-        decisions: ["POC start date scheduled for October 5th."],
-        nextSteps: ["Deliver security whitepaper and custom quote (Marcus Vance)"],
+      "sales": {
+        "title": "Sales & Customer Impact",
+        "overview": "Customer and adoption context recorded in this meeting.",
+        "keyPoints": [
+          "Rachel identified reliable client action-item capture as a productivity opportunity.",
+          "The demo covered speaker separation, commitment detection, and structured CRM summaries."
+        ],
+        "decisions": [
+          "The demo covers structured summaries and CRM follow-ups. No purchase commitment is recorded in this excerpt."
+        ],
+        "nextSteps": [
+          "Marcus Vance: Send custom proposal for 500 Enterprise seats with SSO",
+          "Alex Rivera: Provide compliance checklist for EU financial regulatory compliance"
+        ]
       },
-      sales: {
-        title: "Commercial Terms & Proposal Plan",
-        overview: "Enterprise contract structure with annual upfront billing and premier support SLA.",
-        keyPoints: ["500 seats at $30/user/mo with volume tiering discount."],
-        decisions: ["Include 3 custom AI summary prompt templates in base package."],
-        nextSteps: ["Issue formal quote via DocuSign (Marcus Vance)"],
-      },
-      engineering: {
-        title: "Salesforce & Webhook Integration Spec",
-        overview: "Integration walkthrough for Salesforce REST API v58.0 and event streaming.",
-        keyPoints: ["Supports standard Task and Event object auto-creation with idempotency keys."],
-        decisions: ["Enable mutual TLS authentication for webhook delivery."],
-        nextSteps: ["Provision sandbox integration credentials (Alex Rivera)"],
-      },
+      "engineering": {
+        "title": "Engineering & Implementation",
+        "overview": "Technical details and implementation follow-ups recorded in this meeting.",
+        "keyPoints": [
+          "Financial advisors spend nearly two hours daily writing summaries and entering follow-ups."
+        ],
+        "decisions": [
+          "The demo covers structured summaries and CRM follow-ups. No purchase commitment is recorded in this excerpt."
+        ],
+        "nextSteps": [
+          "Marcus Vance: Send custom proposal for 500 Enterprise seats with SSO",
+          "Alex Rivera: Provide compliance checklist for EU financial regulatory compliance"
+        ]
+      }
     },
     transcript: [
       {
@@ -1011,47 +1070,68 @@ export const SEEDED_MEETINGS: Meeting[] = [
       },
     ],
     summary: {
-      default: {
-        title: "Technical Interview Assessment",
-        overview:
-          "Technical architecture interview with Maya Lin for the Senior Frontend Lead role. Discussion focused on real-time canvas rendering, WebRTC audio synchronization, and state management at scale.",
-        keyPoints: [
-          "Candidate demonstrated deep mastery of Web Audio API, requestAnimationFrame loops, and custom media scrubber synchronization.",
-          "Walked through past experience scaling a collaborative whiteboard application to 100,000 daily active users.",
-          "Strong communication style with thoughtful questions about team culture and engineering roadmap.",
+      "default": {
+        "title": "Technical Interview Assessment",
+        "overview": "Technical architecture interview with Maya Lin for the Senior Frontend Lead role. Discussion focused on real-time canvas rendering, WebRTC audio synchronization, and state management at scale.",
+        "keyPoints": [
+          "Maya described synchronizing speech-to-text tokens at playback speeds from 0.5x to 3x.",
+          "Sarah asked how transcript paragraph clicks synchronize playback.",
+          "Maya separated user seeks from continuous time updates using one authoritative timestamp clock.",
+          "The transcript excerpt does not record a final hiring decision."
         ],
-        decisions: [
-          "Both interviewers recommend advancing candidate to the final leadership round.",
+        "decisions": [
+          "The technical discussion favored a single authoritative timestamp clock. No final hiring decision is recorded in this excerpt."
         ],
-        nextSteps: [
-          "Submit interview scorecard and feedback in Lever (Sarah Chen)",
-          "Coordinate take-home architectural follow-up discussion (Alex Rivera)",
+        "nextSteps": [
+          "Sarah Chen: Submit interview scorecard and feedback in Lever",
+          "Alex Rivera: Coordinate take-home architectural follow-up discussion"
+        ]
+      },
+      "executive": {
+        "title": "Executive Brief",
+        "overview": "Technical architecture interview with Maya Lin for the Senior Frontend Lead role. Discussion focused on real-time canvas rendering, WebRTC audio synchronization, and state management at scale.",
+        "keyPoints": [
+          "Maya described synchronizing speech-to-text tokens at playback speeds from 0.5x to 3x.",
+          "Sarah asked how transcript paragraph clicks synchronize playback."
         ],
-      },
-      executive: {
-        title: "Candidate Hiring Summary",
-        overview: "Strong hire recommendation for Maya Lin. Exceptional technical depth in frontend performance and media synchronization.",
-        keyPoints: ["Level: Staff / Lead Frontend Engineer. Exceeded bar on system design."],
-        decisions: ["Proceed with offer formulation prep."],
-        nextSteps: ["Schedule final founder chat (Alex Rivera)"],
-      },
-      sales: {
-        title: "Team Growth Impact",
-        overview: "Candidate will lead frontend development for enterprise custom workflows and CRM sync interfaces.",
-        keyPoints: ["Start date projected for mid-October if offer accepted."],
-        decisions: ["Fast-track interview loop."],
-        nextSteps: ["Complete reference checks."],
-      },
-      engineering: {
-        title: "Technical Competency Evaluation",
-        overview: "Evaluation of system design, performance profiling, and state synchronization.",
-        keyPoints: [
-          "Scored 5/5 on performance optimization and WebGL / Canvas concepts.",
-          "Clear understanding of React concurrent mode and optimistic UI updates.",
+        "decisions": [
+          "The technical discussion favored a single authoritative timestamp clock. No final hiring decision is recorded in this excerpt."
         ],
-        decisions: ["Hire recommendation unanimously approved."],
-        nextSteps: ["Log scorecard entries in Lever (Sarah Chen)"],
+        "nextSteps": [
+          "Sarah Chen: Submit interview scorecard and feedback in Lever",
+          "Alex Rivera: Coordinate take-home architectural follow-up discussion"
+        ]
       },
+      "sales": {
+        "title": "Sales & Customer Impact",
+        "overview": "No sales-specific discussion is recorded; the meeting context and follow-ups are shown below.",
+        "keyPoints": [
+          "Maya described synchronizing speech-to-text tokens at playback speeds from 0.5x to 3x."
+        ],
+        "decisions": [
+          "The technical discussion favored a single authoritative timestamp clock. No final hiring decision is recorded in this excerpt."
+        ],
+        "nextSteps": [
+          "Sarah Chen: Submit interview scorecard and feedback in Lever",
+          "Alex Rivera: Coordinate take-home architectural follow-up discussion"
+        ]
+      },
+      "engineering": {
+        "title": "Engineering & Implementation",
+        "overview": "Technical details and implementation follow-ups recorded in this meeting.",
+        "keyPoints": [
+          "Maya described synchronizing speech-to-text tokens at playback speeds from 0.5x to 3x.",
+          "Sarah asked how transcript paragraph clicks synchronize playback.",
+          "Maya separated user seeks from continuous time updates using one authoritative timestamp clock."
+        ],
+        "decisions": [
+          "The technical discussion favored a single authoritative timestamp clock. No final hiring decision is recorded in this excerpt."
+        ],
+        "nextSteps": [
+          "Sarah Chen: Submit interview scorecard and feedback in Lever",
+          "Alex Rivera: Coordinate take-home architectural follow-up discussion"
+        ]
+      }
     },
     transcript: [
       {
@@ -1200,45 +1280,67 @@ export const SEEDED_MEETINGS: Meeting[] = [
       },
     ],
     summary: {
-      default: {
-        title: "Customer Feedback Discovery",
-        overview:
-          "Monthly customer check-in with HealthSync medical leadership discussing clinical team usage, medical jargon transcription fidelity, and high-contrast accessibility requirements.",
-        keyPoints: [
-          "HealthSync clinicians report saving an average of 90 minutes per practitioner each week.",
-          "Dr. Thorne requested ability to input customized medical glossaries for rare pharmaceutical brand names.",
-          "Elena demonstrated the new high-contrast transcript mode designed for clinical clinic lighting.",
+      "default": {
+        "title": "Customer Feedback Discovery",
+        "overview": "Monthly customer check-in with HealthSync medical leadership discussing clinical team usage, medical jargon transcription fidelity, and high-contrast accessibility requirements.",
+        "keyPoints": [
+          "Doctors report saving 90 minutes per week on consultation notes.",
+          "The high-contrast transcript is legible in clinic examination rooms.",
+          "Cardiology expansion depends on a custom glossary for rare drug brand names."
         ],
-        decisions: [
-          "Add custom team glossary support to the Q4 roadmap.",
-          "Provide one-click PDF transcript export for EHR document attachments.",
+        "decisions": [
+          "Cardiology onboarding is conditional on adding a custom glossary for rare drug brand names."
         ],
-        nextSteps: [
-          "Explore specialized medical vocabulary dictionary feature (Alex Rivera)",
-          "Create design mockup for high-contrast transcript export (Elena Rostova)",
+        "nextSteps": [
+          "Alex Rivera: Explore specialized medical vocabulary dictionary feature",
+          "Elena Rostova: Create design mockup for high-contrast transcript export"
+        ]
+      },
+      "executive": {
+        "title": "Executive Brief",
+        "overview": "Monthly customer check-in with HealthSync medical leadership discussing clinical team usage, medical jargon transcription fidelity, and high-contrast accessibility requirements.",
+        "keyPoints": [
+          "Doctors report saving 90 minutes per week on consultation notes.",
+          "The high-contrast transcript is legible in clinic examination rooms."
         ],
+        "decisions": [
+          "Cardiology onboarding is conditional on adding a custom glossary for rare drug brand names."
+        ],
+        "nextSteps": [
+          "Alex Rivera: Explore specialized medical vocabulary dictionary feature",
+          "Elena Rostova: Create design mockup for high-contrast transcript export"
+        ]
       },
-      executive: {
-        title: "HealthSync Customer Health Brief",
-        overview: "HealthSync NPS is 10/10. Clinicians saving 90 minutes weekly per doctor. Expansion planned for cardiology clinic.",
-        keyPoints: ["Glossary feature is key catalyst for 3x seat expansion."],
-        decisions: ["Approve custom dictionary feature in next sprint."],
-        nextSteps: ["Send glossary technical spec draft (Alex Rivera)"],
+      "sales": {
+        "title": "Sales & Customer Impact",
+        "overview": "Customer and adoption context recorded in this meeting.",
+        "keyPoints": [
+          "Doctors report saving 90 minutes per week on consultation notes.",
+          "Cardiology expansion depends on a custom glossary for rare drug brand names."
+        ],
+        "decisions": [
+          "Cardiology onboarding is conditional on adding a custom glossary for rare drug brand names."
+        ],
+        "nextSteps": [
+          "Alex Rivera: Explore specialized medical vocabulary dictionary feature",
+          "Elena Rostova: Create design mockup for high-contrast transcript export"
+        ]
       },
-      sales: {
-        title: "Healthcare Vertical Insights",
-        overview: "Significant opportunity in outpatient clinics and private practices needing HIPAA-compliant transcription.",
-        keyPoints: ["HealthSync offered to act as reference customer for healthcare webinars."],
-        decisions: ["Coordinate joint case study publication."],
-        nextSteps: ["Draft case study outline (Marcus Vance)"],
-      },
-      engineering: {
-        title: "Custom Vocabulary Ingestion Spec",
-        overview: "Design for uploading CSV/JSON terminology lists to bias speech-to-text acoustic models.",
-        keyPoints: ["Phonetic boosting supported via custom language model adaptation."],
-        decisions: ["Validate terminology upload API with 10,000 medical terms."],
-        nextSteps: ["Benchmark speech recognition accuracy on pharmacology test set (Sarah Chen)"],
-      },
+      "engineering": {
+        "title": "Engineering & Implementation",
+        "overview": "Technical details and implementation follow-ups recorded in this meeting.",
+        "keyPoints": [
+          "The high-contrast transcript is legible in clinic examination rooms.",
+          "Cardiology expansion depends on a custom glossary for rare drug brand names."
+        ],
+        "decisions": [
+          "Cardiology onboarding is conditional on adding a custom glossary for rare drug brand names."
+        ],
+        "nextSteps": [
+          "Alex Rivera: Explore specialized medical vocabulary dictionary feature",
+          "Elena Rostova: Create design mockup for high-contrast transcript export"
+        ]
+      }
     },
     transcript: [
       {

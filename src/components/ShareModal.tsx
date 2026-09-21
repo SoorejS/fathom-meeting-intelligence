@@ -24,11 +24,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   if (!isOpen || !meeting) return null;
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin + "/share/" + encodeURIComponent(meeting.id) : "";
   const shareUrl =
     includeTimestamp && currentTimestamp > 0
-      ? `${baseUrl}?meeting=${encodeURIComponent(meeting.id)}&t=${Math.floor(currentTimestamp)}`
-      : `${baseUrl}?meeting=${encodeURIComponent(meeting.id)}`;
+      ? `${baseUrl}?t=${Math.floor(currentTimestamp)}`
+      : `${baseUrl}`;
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -152,7 +152,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Footer */}
         <div className="p-3 bg-[#0e1015] border-t border-[#1f232d] text-center">
           <p className="text-[10px] text-slate-400">
-            Recipients can explore the demo playback, transcripts, and seeded action items without signing in.
+            Recipients can explore this meeting without signing in. Personal highlights and completion changes stay in your browser; the link shares the original meeting and playback position.
           </p>
         </div>
       </div>

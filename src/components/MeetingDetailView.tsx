@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Meeting, HighlightType } from "@/types/meeting";
+import { Meeting, HighlightType, SummaryTemplateKey } from "@/types/meeting";
 import { MeetingPlayer } from "./MeetingPlayer";
 import { SummaryView } from "./SummaryView";
 import { TranscriptView } from "./TranscriptView";
@@ -23,6 +23,8 @@ import {
 
 interface MeetingDetailViewProps {
   meeting: Meeting;
+  summaryTemplate: SummaryTemplateKey;
+  onTemplateChange: (template: SummaryTemplateKey) => void;
   initialTimestamp?: number;
   onBack: () => void;
   onShare: (timestamp: number) => void;
@@ -32,7 +34,7 @@ interface MeetingDetailViewProps {
 type MainTab = "summary" | "transcript" | "ask-ai";
 
 export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
-  meeting,
+  meeting, summaryTemplate, onTemplateChange,
   initialTimestamp = 0,
   onBack,
   onShare,
@@ -79,7 +81,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
 
   const handleAddHighlight = (timestamp: number, text: string, type: HighlightType) => {
     const newHighlight = {
-      id: `hl_${Date.now()}`,
+      id: `hl_${crypto.randomUUID()}`,
       meetingId: meeting.id,
       timestamp,
       timestampFormatted: `${Math.floor(timestamp / 60)
@@ -212,7 +214,7 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
           {/* 3. Tab Content Area Scrolling Beneath Video */}
           <div className="min-h-[420px] flex-1">
             {activeTab === "summary" && (
-              <SummaryView summaryTemplates={meeting.summary} />
+              <SummaryView summaryTemplates={meeting.summary} activeTemplate={summaryTemplate} setActiveTemplate={onTemplateChange} />
             )}
 
             {activeTab === "transcript" && (
@@ -226,9 +228,8 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
 
             {activeTab === "ask-ai" && (
               <AskAiView
-                aiQnA={meeting.aiQnA}
+                meeting={meeting}
                 onSeek={handleSeek}
-                meetingTitle={meeting.title}
               />
             )}
           </div>
@@ -379,6 +380,12 @@ export const MeetingDetailView: React.FC<MeetingDetailViewProps> = ({
                     </div>
 
                     <p className="text-xs text-slate-300 italic line-clamp-2">&ldquo;{h.text}&rdquo;</p>
+                    {h.creator === "You" && <div className="flex gap-3 text-xs" onClick={event => event.stopPropagation()}>
+                      <select aria-label={"Type of highlight at " + h.timestampFormatted} value={h.type} className="bg-[#181b24] text-slate-200 rounded" onChange={event => onUpdateMeeting({ ...meeting, highlights: meeting.highlights.map(item => item.id === h.id ? { ...item, type: event.target.value as HighlightType } : item) })}>
+                        {["Highlight", "Positive Reaction", "Needs Review", "Feedback"].map(type => <option key={type}>{type}</option>)}
+                      </select>
+                      <button className="text-slate-400 hover:text-red-300" onClick={() => onUpdateMeeting({ ...meeting, highlights: meeting.highlights.filter(item => item.id !== h.id) })}>Remove highlight</button>
+                    </div>}
                   </div>
                 );
               })}

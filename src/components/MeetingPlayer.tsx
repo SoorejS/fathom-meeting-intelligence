@@ -43,7 +43,9 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
     let interval: NodeJS.Timeout;
     if (isPlaying && currentTime < duration) {
       interval = setInterval(() => {
-        onTimeUpdate(Math.min(duration, currentTime + 0.5 * playbackSpeed));
+        const next = Math.min(duration, currentTime + 0.5 * playbackSpeed);
+        if (next >= duration) setIsPlaying(false);
+        onTimeUpdate(next);
       }, 500);
     }
     return () => clearInterval(interval);
@@ -148,34 +150,34 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
           <div className="flex items-center gap-1 h-4 pt-0.5">
             <span
               className={`w-1 bg-[#00c2ff] rounded-full transition-all ${
-                isPlaying ? "h-4 animate-wave-1" : "h-1 opacity-40"
+                playing ? "h-4 animate-wave-1" : "h-1 opacity-40"
               }`}
             />
             <span
               className={`w-1 bg-[#00c2ff] rounded-full transition-all ${
-                isPlaying ? "h-3 animate-wave-2" : "h-1 opacity-40"
+                playing ? "h-3 animate-wave-2" : "h-1 opacity-40"
               }`}
             />
             <span
               className={`w-1 bg-[#00c2ff] rounded-full transition-all ${
-                isPlaying ? "h-5 animate-wave-3" : "h-1 opacity-40"
+                playing ? "h-5 animate-wave-3" : "h-1 opacity-40"
               }`}
             />
             <span
               className={`w-1 bg-[#00c2ff] rounded-full transition-all ${
-                isPlaying ? "h-3.5 animate-wave-4" : "h-1 opacity-40"
+                playing ? "h-3.5 animate-wave-4" : "h-1 opacity-40"
               }`}
             />
             <span
               className={`w-1 bg-[#00c2ff] rounded-full transition-all ${
-                isPlaying ? "h-2 animate-wave-2" : "h-1 opacity-40"
+                playing ? "h-2 animate-wave-2" : "h-1 opacity-40"
               }`}
             />
           </div>
         </div>
 
         {/* Big center translucent play button when paused (Matching Screenshot) */}
-        {!isPlaying && (
+        {!playing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/25 pointer-events-none">
             <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
               <Play className="w-7 h-7 fill-white ml-1 text-white" />
@@ -199,7 +201,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
           aria-valuemax={duration}
           aria-valuenow={Math.floor(currentTime)}
           tabIndex={0}
-          onKeyDown={(event) => { if (["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) { event.preventDefault(); if (event.key === "Home") onTimeUpdate(0); else if (event.key === "End") onTimeUpdate(duration); else skipSeconds(event.key === "ArrowRight" ? 10 : -10); } }}
+          onKeyDown={(event) => { if (["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) { event.preventDefault(); if (event.key === "Home") onTimeUpdate(0); else if (event.key === "End") { setIsPlaying(false); onTimeUpdate(duration); } else skipSeconds(event.key === "ArrowRight" ? 10 : -10); } }}
           ref={timelineRef}
           onClick={handleTimelineClick}
           onMouseMove={handleTimelineHover}
@@ -296,7 +298,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
             className="p-1.5 rounded-full bg-[#00c2ff] hover:bg-[#00b0e8] text-black transition-colors cursor-pointer shadow-md"
             title={playing ? "Pause" : "Play"}
           >
-            {isPlaying ? (
+            {playing ? (
               <Pause className="w-3.5 h-3.5 fill-current" />
             ) : (
               <Play className="w-3.5 h-3.5 fill-current ml-0.5" />

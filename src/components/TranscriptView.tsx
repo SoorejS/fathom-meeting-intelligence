@@ -75,13 +75,14 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
             <div
               key={segment.id}
               ref={isActive ? activeSegmentRef : null}
+              aria-current={isActive ? "true" : undefined}
               className="group flex items-start gap-2.5 relative"
             >
               {/* Left Gutter: Circular Cyan '+' Button on Hover */}
               <div className="w-7 shrink-0 flex items-center justify-center pt-2">
                 <button
                   onClick={() => setHighlightModalSegment(segment)}
-                  className="w-6 h-6 rounded-full border border-[#00c2ff] bg-[#00c2ff]/10 text-[#00c2ff] hover:bg-[#00c2ff] hover:text-black flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
+                  className="w-6 h-6 rounded-full border border-[#00c2ff] bg-[#00c2ff]/10 text-[#00c2ff] hover:bg-[#00c2ff] hover:text-black flex items-center justify-center transition-all opacity-60 sm:opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer shadow-md"
                   title="Create Highlight from this moment"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />

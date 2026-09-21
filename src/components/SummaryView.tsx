@@ -7,18 +7,17 @@ import {
   Copy,
   Check,
   ChevronDown,
-  Settings,
-  Edit2,
   Undo2,
   FileText,
 } from "lucide-react";
 
 interface SummaryViewProps {
   summaryTemplates: SummaryTemplates;
+  activeTemplate: SummaryTemplateKey;
+  setActiveTemplate: (template: SummaryTemplateKey) => void;
 }
 
-export const SummaryView: React.FC<SummaryViewProps> = ({ summaryTemplates }) => {
-  const [activeTemplate, setActiveTemplate] = useState<SummaryTemplateKey>("default");
+export const SummaryView: React.FC<SummaryViewProps> = ({ summaryTemplates, activeTemplate, setActiveTemplate }) => {
   const [copied, setCopied] = useState(false);
   const [bannerToast, setBannerToast] = useState<string | null>(null);
 
@@ -36,6 +35,9 @@ export const SummaryView: React.FC<SummaryViewProps> = ({ summaryTemplates }) =>
 ${currentSummary.title}
 
 ${currentSummary.overview}
+
+Key Points:
+${currentSummary.keyPoints.map(kp => `• ${kp}`).join("\n")}
 
 Next Steps:
 ${currentSummary.nextSteps.map((ns) => `• ${ns}`).join("\n")}
@@ -77,21 +79,8 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-1.5 pointer-events-none" />
             </div>
 
-            <button
-              onClick={() => showBannerToast("Choose a summary template from the dropdown. Custom template editing is outside this demo.")}
-              className="px-2 py-1.5 border-l border-[#272b38] hover:bg-[#202430] text-slate-400 hover:text-white transition-colors cursor-pointer"
-              title="Template settings"
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </button>
           </div>
 
-          {/* Mode Pill: [✨ Auto ▾] */}
-          <div className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#181a22] border border-[#272b38] text-xs font-semibold text-white hover:bg-[#202430] transition-colors cursor-pointer">
-            <Sparkles className="w-3 h-3 text-[#00c2ff]" />
-            <span>Auto</span>
-            <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
-          </div>
         </div>
 
         {/* Copy Summary Button */}
@@ -118,29 +107,16 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
       <div className="p-2.5 rounded-xl bg-[#151720] border border-[#272b38] flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2 text-slate-300">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-medium">Customized summary generated</span>
+          <span className="font-medium">Structured from meeting notes</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => showBannerToast("Future recording preferences are outside this seeded demo.")}
-            className="px-2.5 py-1 rounded-md border border-[#00c2ff]/40 hover:bg-[#00c2ff]/10 text-[#00c2ff] text-[11px] font-semibold transition-colors cursor-pointer"
-          >
-            Apply to Future Summaries
-          </button>
 
-          <button
-            onClick={() => showBannerToast("Summary editing is outside this demo. Try another prepared template.")}
-            className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#202430] transition-colors"
-            title="Edit Summary"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
 
           <button
             onClick={() => { setActiveTemplate("default"); showBannerToast("Restored the Enhanced template"); }}
             className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#202430] transition-colors"
-            title="Undo Changes"
+            title="Reset to Enhanced template"
           >
             <Undo2 className="w-3.5 h-3.5" />
           </button>

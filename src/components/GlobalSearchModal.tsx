@@ -11,10 +11,10 @@ interface GlobalSearchModalProps {
   onSelectMeeting: (meetingId: string, timestamp?: number) => void;
 }
 
-type SearchCategory = "all" | "transcripts" | "action-items" | "summaries" | "meetings";
+type SearchCategory = "all" | "transcripts" | "action-items" | "summaries" | "meetings" | "highlights";
 
 interface SearchResult {
-  type: "meeting" | "transcript" | "actionItem" | "summary";
+  type: "meeting" | "transcript" | "actionItem" | "summary" | "highlight";
   meetingId: string;
   meetingTitle: string;
   category: string;
@@ -82,7 +82,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         });
       }
 
-      m.summary.default.keyPoints.forEach((kp) => {
+      [...new Set(Object.values(m.summary).flatMap(s => [s.overview, ...s.keyPoints, ...s.decisions, ...s.nextSteps]))].filter(text => text !== overview).forEach((kp) => {
         if (kp.toLowerCase().includes(q)) {
           matches.push({
             type: "summary",
@@ -114,6 +114,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         }
       });
 
+      m.highlights.forEach(h => {
+        if ((h.text + " " + h.type + " " + h.creator).toLowerCase().includes(q)) matches.push({
+          type: "highlight", meetingId: m.id, meetingTitle: m.title, category: m.category,
+          dateFormatted: m.dateFormatted, title: h.type + " at " + h.timestampFormatted,
+          snippet: h.text, timestamp: h.timestamp, timestampFormatted: h.timestampFormatted,
+        });
+      });
       // 4. Match Transcripts
       m.transcript.forEach((t) => {
         if (t.text.toLowerCase().includes(q) || t.speaker.toLowerCase().includes(q)) {
@@ -138,6 +145,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   const filteredResults = useMemo(() => {
     if (activeCategory === "all") return results;
+    if (activeCategory === "highlights") return results.filter(r => r.type === "highlight");
     if (activeCategory === "transcripts") return results.filter((r) => r.type === "transcript");
     if (activeCategory === "action-items") return results.filter((r) => r.type === "actionItem");
     if (activeCategory === "summaries") return results.filter((r) => r.type === "summary");
@@ -182,7 +190,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Search all meetings, transcripts, action items, summaries..."
+            placeholder="Search meetings, transcripts, actions, highlights..."
             className="flex-1 bg-transparent text-sm text-white placeholder-slate-400 focus:outline-none"
           />
           {query && (
@@ -207,6 +215,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             { id: "transcripts", label: "Transcripts" },
             { id: "action-items", label: "Action Items" },
             { id: "summaries", label: "Summaries" },
+            { id: "highlights", label: "Highlights" },
           ].map((cat) => (
             <button
               key={cat.id}
