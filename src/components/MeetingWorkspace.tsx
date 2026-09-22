@@ -50,7 +50,8 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   useEffect(() => { if (sharedCall) storeGeneratedCall(sharedCall); }, [sharedCall]);
   const capture = useTestCallCapture();
   const [captureOpen, setCaptureOpen] = useState(false);
-  const showCapture = () => { if (["ready", "complete", "declined"].includes(capture.state.phase)) capture.engine?.open(); setCaptureOpen(true); };
+  const [captureMinimized, setCaptureMinimized] = useState(false);
+  const showCapture = () => { if (["ready", "complete", "declined"].includes(capture.state.phase)) capture.engine?.open(); setCaptureOpen(true); setCaptureMinimized(false); };
   const selectedMeetingId = params.get("meeting") || (location.startsWith("/share/") ? sharedCall?.id || sharedMeetingId : null);
 
   const [shareTimestamp, setShareTimestamp] = useState(0);
@@ -141,7 +142,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
       />
 
       <div className="flex items-center justify-between gap-2 border-b border-slate-800 bg-[#10151d] px-4 py-2 text-xs">
-        <button onClick={() => { if (capture.state.phase === "ready") capture.engine?.open(); setCaptureOpen(true); }} className="text-slate-300 truncate" aria-label="Open Notetaker status">Notetaker · {capture.state.phase === "ready" || capture.state.phase === "precall" ? "Ready" : capture.state.phase === "permission" ? "Permission required" : capture.state.phase === "recording" ? "Recording " + formatTime(capture.state.elapsed) : capture.state.phase === "complete" ? "Complete" : capture.state.phase}</button>
+        <button onClick={() => { if (capture.state.phase === "ready") capture.engine?.open(); setCaptureOpen(true); setCaptureMinimized(false); }} className="text-slate-300 truncate" aria-label="Open Notetaker status">Notetaker · {capture.state.phase === "ready" || capture.state.phase === "precall" ? "Ready" : capture.state.phase === "permission" ? "Permission required" : capture.state.phase === "recording" ? "Recording " + formatTime(capture.state.elapsed) : capture.state.phase === "complete" ? "Complete" : capture.state.phase}</button>
         <button onClick={showCapture} className="shrink-0 text-cyan-300 hover:text-white font-semibold">{["ready","precall","complete","declined"].includes(capture.state.phase) ? "Start Test Call" : "View Test Call"}</button>
       </div>
       {capture.persistenceFailed && <p role="alert" className="p-2 text-xs text-amber-300">Capture recovery cannot be saved in this browser. Keep this page open until processing completes.</p>}
@@ -309,7 +310,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
         </div>
       )}
 
-      {captureOpen && capture.engine && <TestCallPanel state={capture.state} engine={capture.engine} onClose={() => { if (["precall","joining","permission","declined"].includes(capture.state.phase)) capture.engine?.cancel(); setCaptureOpen(false); }} onOpenMeeting={handleSelectMeeting} />}
+      {captureOpen && capture.engine && <TestCallPanel minimized={captureMinimized} onMinimize={() => setCaptureMinimized(true)} onRestore={() => setCaptureMinimized(false)} state={capture.state} engine={capture.engine} onClose={() => { if (["precall","joining","permission","declined"].includes(capture.state.phase)) capture.engine?.cancel(); setCaptureOpen(false); }} onOpenMeeting={handleSelectMeeting} />}
       {/* 3. Global Modals */}
       {isSearchOpen && <GlobalSearchModal
         isOpen={isSearchOpen}

@@ -37,7 +37,7 @@ Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, and Lucide icons. N
 7. **Global search:** Open the header search or press Ctrl/Cmd+K. Search titles, participants, dates, all summary templates, transcript text, action items, highlights (including your new highlights), playlists, and trackers. Filter result types, navigate with the keyboard, and open the exact entity or matching moment.
 8. **Sharing:** Copy a meeting URL, optionally including the current timestamp. Recipients can open it without an account. Clipboard failures produce a manual-copy fallback. Seeded meeting links use the public deployment and work without saved browser data. Invalid links show a recovery page; malformed or out-of-range timestamps show a notice and start at 00:00.
 
-9. **Test capture:** Start Test Call → join → explicitly approve or decline → watch the recording clock → End Meeting → processing → open the new call. Microphone denial, unsupported capture, empty audio, and early stops still produce usable scenario notes. A remembered permission choice never bypasses fresh approval.
+9. **Test capture:** A compact floating Notetaker keeps the meeting workspace usable. Drag its header (or use arrow keys; Home resets position), minimize to the live recording pill, and restore without restarting capture or losing panel scroll position. Start Test Call → join → explicitly approve or decline → watch the recording clock → End Meeting → processing → open the new call. Microphone denial, unsupported capture, empty audio, and early stops still produce usable scenario notes. A remembered permission choice never bypasses fresh approval.
 
 ## Seeded data
 
