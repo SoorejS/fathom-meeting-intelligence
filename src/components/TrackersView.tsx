@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 
 interface TrackersViewProps {
+  selectedTrackerId: string;
+  onSelectTracker: (id: string) => void;
   trackers: Tracker[];
   meetings: Meeting[];
   onCreateTracker: (name: string, keywords: string[], meetingScope?: "all" | string[]) => void;
@@ -32,6 +34,8 @@ interface TrackersViewProps {
 
 export const TrackersView: React.FC<TrackersViewProps> = ({
   trackers,
+  selectedTrackerId,
+  onSelectTracker: setSelectedTrackerId,
   meetings,
   onCreateTracker,
   onUpdateTracker,
@@ -39,7 +43,6 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
   onDeleteTracker,
   onNavigateMeeting,
 }) => {
-  const [selectedTrackerId, setSelectedTrackerId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Create Modal State
@@ -147,7 +150,8 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
 
   // Helper to highlight keyword inside excerpt text
   const renderHighlightedExcerpt = (excerpt: string, keyword: string) => {
-    const regex = new RegExp(`(${keyword})`, "gi");
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
     const parts = excerpt.split(regex);
     return parts.map((part, index) =>
       part.toLowerCase() === keyword.toLowerCase() ? (
@@ -301,7 +305,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
               <span>
                 {selectedTrackerId === "all"
                   ? "All Keyword Alert Matches"
-                  : trackers.find((t) => t.id === selectedTrackerId)?.name || "Tracker Matches"}
+                  : trackers.find((t) => t.id === selectedTrackerId)?.name || "Tracker unavailable in this browser"}
               </span>
             </h1>
             <p className="text-xs text-slate-400">

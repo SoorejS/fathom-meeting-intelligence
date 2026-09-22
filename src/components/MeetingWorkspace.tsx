@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useSyncExternalStore, useMemo, useEffect } from "react";
+import { readPlaybackTimestamp } from "@/lib/shareLinks";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { MeetingsDashboard } from "@/components/MeetingsDashboard";
@@ -51,8 +52,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   const [captureOpen, setCaptureOpen] = useState(false);
   const showCapture = () => { if (["ready", "complete", "declined"].includes(capture.state.phase)) capture.engine?.open(); setCaptureOpen(true); };
   const selectedMeetingId = params.get("meeting") || (location.startsWith("/share/") ? sharedCall?.id || sharedMeetingId : null);
-  const rawTime = Number(params.get("t") || 0);
-  const selectedMeetingTimestamp = Number.isFinite(rawTime) ? Math.max(0, rawTime) : 0;
+
   const [shareTimestamp, setShareTimestamp] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -61,11 +61,13 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   const [sharingMeeting, setSharingMeeting] = useState<Meeting | null>(null);
   const [selectedTab, setSelectedTab] = useState<string>("my-calls");
   const sidebarTab = useMemo(() => {
-    if (params.get("playlist")) return "playlists";
+    if (params.has("playlist")) return "playlists";
+    if (params.has("tracker")) return "alerts";
     return selectedTab;
   }, [params, selectedTab]);
 
   const {
+    storageError: workspaceStorageError,
     playlists,
     createPlaylist,
     renamePlaylist,
@@ -97,6 +99,17 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   } = useWorkspaceStore();
 
   const selectedMeeting = meetings.find((m) => m.id === selectedMeetingId) || null;
+
+  const playbackStart = readPlaybackTimestamp(params.get("t"), selectedMeeting?.duration || 0);
+  const selectedMeetingTimestamp = playbackStart.seconds;
+  const selectEntity = (tab: "playlists" | "alerts", id: string) => {
+    setSelectedTab(tab);
+    setIsMobileMenuOpen(false);
+    const url = new URL("/", window.location.origin);
+    if (id && id !== "all") url.searchParams.set(tab === "playlists" ? "playlist" : "tracker", id);
+    window.history.pushState({}, "", url);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
 
   const handleSelectMeeting = (meetingId: string, timestamp?: number) => {
     navigate(meetingId, timestamp);
@@ -133,7 +146,8 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
       </div>
       {capture.persistenceFailed && <p role="alert" className="p-2 text-xs text-amber-300">Capture recovery cannot be saved in this browser. Keep this page open until processing completes.</p>}
       {location.startsWith("/share/test") && !sharedCall && <p role="alert" className="p-3 text-amber-300 text-sm">This test-call link is incomplete or invalid. Ask the sender to copy the full link, including everything after #.</p>}
-      {storageError && <p role="status" className="p-2 text-amber-300 text-xs">Browser storage is unavailable. Changes are retained only until this page closes.</p>}
+      {(storageError || workspaceStorageError) && <p role="status" className="p-2 text-amber-300 text-xs">Browser storage is unavailable. Changes are retained only until this page closes.</p>}
+      {selectedMeeting && playbackStart.invalid && <p role="status" className="p-2 text-amber-300 text-xs">The playback timestamp is invalid or outside this meeting. Playback starts at 00:00.</p>}
       {/* 2. Workspace Body */}
       <div className="flex-1 flex overflow-hidden">
         {/* Only show sidebar on dashboard views, not inside meeting detail */}
@@ -148,6 +162,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
             totalCallsCount={meetings.length}
             teamCallsCount={filterMeetingsByTeammate(meetings, "All", visibilities).length}
             playlists={playlists}
+            onSelectPlaylist={id => selectEntity("playlists", id)}
             trackersCount={trackers.filter(t => t.enabled).length}
             upcomingCount={upcomingMeetings.length}
             onCreatePlaylistClick={() => {
@@ -194,6 +209,8 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
           ) : sidebarTab === "playlists" ? (
             /* Full Real Playlists View */
             <PlaylistsView
+              selectedPlaylistId={params.get("playlist") ?? undefined}
+              onSelectPlaylist={id => selectEntity("playlists", id)}
               playlists={playlists}
               meetings={meetings}
               onCreatePlaylist={createPlaylist}
@@ -208,6 +225,8 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
           ) : sidebarTab === "alerts" ? (
             /* Alerts & Keyword Trackers View */
             <TrackersView
+              selectedTrackerId={params.get("tracker") || "all"}
+              onSelectTracker={id => selectEntity("alerts", id)}
               trackers={trackers}
               meetings={meetings}
               onCreateTracker={createTracker}
@@ -277,6 +296,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
                 totalCallsCount={meetings.length}
                 teamCallsCount={filterMeetingsByTeammate(meetings, "All", visibilities).length}
                 playlists={playlists}
+                onSelectPlaylist={id => selectEntity("playlists", id)}
                 trackersCount={trackers.filter(t => t.enabled).length}
                 upcomingCount={upcomingMeetings.length}
                 onCreatePlaylistClick={() => {
@@ -297,10 +317,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
         meetings={meetings}
         playlists={playlists}
         trackers={trackers}
-        onSelectTab={(tab) => {
-          setSelectedTab(tab);
-          navigate();
-        }}
+        onSelectEntity={selectEntity}
         onSelectMeeting={(id, ts) => handleSelectMeeting(id, ts)}
       />}
 

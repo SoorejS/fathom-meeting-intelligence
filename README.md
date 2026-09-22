@@ -34,8 +34,8 @@ Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, and Lucide icons. N
 4. **Action items:** Review owners and due dates, mark items complete, and jump to the source timestamp.
 5. **Highlights:** Create highlights from transcript segments using any of the four types; they appear in the list, timeline, and global search. Change the type or remove your own highlights.
 6. **Ask Fathom:** Ask about decisions, action owners, concerns, a named speaker, or a timestamp. Deterministic retrieval returns excerpts and note extracts with clickable sources; unsupported topics receive an explicit fallback. The dashboard overview derives answers from seeded records.
-7. **Global search:** Open the header search or press Ctrl/Cmd+K. Search titles, participants, all summary templates, transcript text, action items, and highlights (including your new highlights); filter result types and open matching moments.
-8. **Sharing:** Copy a meeting URL, optionally including the current timestamp. Recipients can open it without an account. Clipboard failures produce a manual-copy fallback.
+7. **Global search:** Open the header search or press Ctrl/Cmd+K. Search titles, participants, dates, all summary templates, transcript text, action items, highlights (including your new highlights), playlists, and trackers. Filter result types, navigate with the keyboard, and open the exact entity or matching moment.
+8. **Sharing:** Copy a meeting URL, optionally including the current timestamp. Recipients can open it without an account. Clipboard failures produce a manual-copy fallback. Seeded meeting links use the public deployment and work without saved browser data. Invalid links show a recovery page; malformed or out-of-range timestamps show a notice and start at 00:00.
 
 9. **Test capture:** Start Test Call → join → explicitly approve or decline → watch the recording clock → End Meeting → processing → open the new call. Microphone denial, unsupported capture, empty audio, and early stops still produce usable scenario notes. A remembered permission choice never bypasses fresh approval.
 
@@ -88,6 +88,8 @@ npm start
 See [FINAL-AUDIT.md](FINAL-AUDIT.md) for final build, browser checks, deployment evidence, and known limitations. Regression tests check all six meetings' participant/citation relationships, retrieval isolation and unsupported queries, named-speaker attribution, and storage round-trips/corruption recovery. See [FUNCTIONAL-DEPTH-AUDIT.md](FUNCTIONAL-DEPTH-AUDIT.md) for the subsequent persistence, retrieval, and public share-route pass.
 
 See [CAPTURE-LIFECYCLE-AUDIT.md](CAPTURE-LIFECYCLE-AUDIT.md) for the interactive capture implementation and its verification limits.
+
+The focused integrity regression suite additionally checks search coverage and entity IDs, public share timestamps, saved playlist order and membership, settings recovery, and deletion without reseeding removed objects. The existing versioned browser stores remain in use; custom workspace links require the same browser, while seeded meeting share links are public.
 
 See [WALKTHROUGH-VERIFICATION.md](WALKTHROUGH-VERIFICATION.md) for the final Tier 2 regression pass, public browser checks, mobile checks, and remaining demo limitations.
 

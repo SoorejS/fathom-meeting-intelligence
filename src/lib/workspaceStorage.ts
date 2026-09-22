@@ -7,6 +7,7 @@ import { SEEDED_PLAYLISTS } from "../data/seededPlaylists";
 import { SEEDED_TRACKERS } from "../data/seededTrackers";
 import { SEEDED_UPCOMING_MEETINGS } from "../data/seededUpcoming";
 import { defaultSettings } from "../services/settingsService";
+import { record, readPlaylists, readTrackers, readSettings } from "./workspaceValidation";
 
 export const TIER2_STORAGE_KEY = "fathom-tier2-state-v1";
 
@@ -30,11 +31,37 @@ export function defaultTier2State(): Tier2State {
   };
 }
 
+export function decodeTier2State(raw: string | null): Tier2State {
+  const defaults = defaultTier2State();
+  try {
+    const value = record(JSON.parse(raw || "null"));
+    if (value.version !== 1) return defaults;
+    const visibilities: Tier2State["visibilities"] = {};
+    for (const [id, visibility] of Object.entries(record(value.visibilities))) {
+      if (visibility === "personal" || visibility === "team") visibilities[id] = visibility;
+    }
+    // Only the Notetaker toggle is editable; preserve authoritative meeting metadata.
+    const savedUpcoming = Array.isArray(value.upcomingMeetings) ? value.upcomingMeetings.map(record) : [];
+    return {
+      version: 1,
+      playlists: readPlaylists(value.playlists, defaults.playlists),
+      trackers: readTrackers(value.trackers, defaults.trackers),
+      settings: readSettings(value.settings),
+      upcomingMeetings: defaults.upcomingMeetings.map(meeting => {
+        const saved = savedUpcoming.find(item => item.id === meeting.id);
+        return typeof saved?.notetakerEnabled === "boolean" ? { ...meeting, notetakerEnabled: saved.notetakerEnabled } : meeting;
+      }),
+      visibilities,
+    };
+  } catch { return defaults; }
+}
+
 let memoryState: Tier2State = defaultTier2State();
 const serverSnapshot = defaultTier2State();
 export const getTier2ServerSnapshot = () => serverSnapshot;
 let cachedRaw: string | null | undefined;
 let storageUnavailable = false;
+export const isTier2StorageUnavailable = () => storageUnavailable;
 const listeners = new Set<() => void>();
 
 export function getTier2Snapshot(): Tier2State {
@@ -44,28 +71,7 @@ export function getTier2Snapshot(): Tier2State {
     // React requires the same snapshot reference until the stored value changes.
     if (raw === cachedRaw) return memoryState;
     cachedRaw = raw;
-    if (!raw) { memoryState = defaultTier2State(); return memoryState; }
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.version === 1 && Array.isArray(parsed.playlists)) {
-      const trackers = Array.isArray(parsed.trackers) ? parsed.trackers : SEEDED_TRACKERS;
-      const settings = parsed.settings && parsed.settings.recording ? parsed.settings : defaultSettings();
-      const upcomingMeetings = Array.isArray(parsed.upcomingMeetings)
-        ? parsed.upcomingMeetings
-        : SEEDED_UPCOMING_MEETINGS;
-      const visibilities = typeof parsed.visibilities === "object" && parsed.visibilities !== null
-        ? parsed.visibilities
-        : {};
-
-      memoryState = {
-        version: 1,
-        playlists: parsed.playlists,
-        trackers,
-        settings,
-        upcomingMeetings,
-        visibilities,
-      };
-      return memoryState;
-    }
+    memoryState = decodeTier2State(raw);
   } catch {
     // Fallback safely to memory
   }

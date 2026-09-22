@@ -9,6 +9,7 @@ interface SidebarProps {
   onSelectTab: (tab: string) => void;
   totalCallsCount: number;
   teamCallsCount: number;
+  onSelectPlaylist: (id: string) => void;
   playlists?: { id: string; title: string }[];
   onCreatePlaylistClick?: () => void;
   trackersCount?: number;
@@ -23,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   totalCallsCount,
   teamCallsCount,
   playlists = [],
+  onSelectPlaylist,
   onCreatePlaylistClick,
   trackersCount,
   upcomingCount = 3,
@@ -109,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             return (
               <button
                 key={pl.id}
-                onClick={() => onSelectTab("playlists")}
+                onClick={() => onSelectPlaylist(pl.id)}
                 className="w-full text-left px-2.5 py-1.5 rounded-md text-xs text-slate-400 hover:text-slate-200 hover:bg-[#161B24] transition-colors truncate flex items-center gap-2"
                 title={pl.title}
               >

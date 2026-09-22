@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 
 interface PlaylistsViewProps {
+  selectedPlaylistId?: string;
+  onSelectPlaylist: (id: string) => void;
   playlists: Playlist[];
   meetings: Meeting[];
   onCreatePlaylist: (title: string, description?: string) => Playlist;
@@ -37,6 +39,8 @@ interface PlaylistsViewProps {
 
 export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
   playlists,
+  selectedPlaylistId,
+  onSelectPlaylist: setSelectedPlaylistId,
   meetings,
   onCreatePlaylist,
   onRenamePlaylist,
@@ -45,9 +49,6 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
   onReorderClips,
   onNavigateMeeting,
 }) => {
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>(
-    playlists[0]?.id || ""
-  );
 
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -59,6 +60,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
   const [renameDescription, setRenameDescription] = useState("");
 
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [shareError, setShareError] = useState(false);
 
   // "Play All" Modal Player State
   const [isPlayingAll, setIsPlayingAll] = useState(false);
@@ -67,7 +69,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
   const [reelPaused, setReelPaused] = useState(false);
 
   const activePlaylist = useMemo(() => {
-    return playlists.find((p) => p.id === selectedPlaylistId) || playlists[0] || null;
+    return selectedPlaylistId ? playlists.find((p) => p.id === selectedPlaylistId) || null : playlists[0] || null;
   }, [playlists, selectedPlaylistId]);
 
   const resolvedClips: ResolvedClip[] = useMemo(() => {
@@ -105,14 +107,15 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
     setIsRenameOpen(false);
   };
 
-  const handleSharePlaylist = () => {
+  const handleSharePlaylist = async () => {
     if (!activePlaylist) return;
     const url = `${window.location.origin}/?playlist=${activePlaylist.id}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-    }
-    setShareSuccess(true);
-    setTimeout(() => setShareSuccess(false), 3000);
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareError(false);
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 3000);
+    } catch { setShareSuccess(false); setShareError(true); }
   };
 
   const handleStartPlayAll = () => {
@@ -214,6 +217,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
                     onClick={() => {
                       if (confirm(`Delete playlist "${activePlaylist.title}"?`)) {
                         onDeletePlaylist(activePlaylist.id);
+                        setSelectedPlaylistId("");
                       }
                     }}
                     className="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-[#1C202C] transition-colors"
@@ -254,12 +258,14 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
                   ) : (
                     <>
                       <Share2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Share</span>
+                      <span>Copy workspace link</span>
                     </>
                   )}
                 </button>
               </div>
             </div>
+            <p className="px-6 py-2 text-xs text-slate-400">Workspace links open this playlist. Custom playlists and edits are saved only in this browser.</p>
+            {shareError && <p role="alert" className="px-6 py-2 text-xs text-amber-300">Clipboard unavailable. Copy this workspace link: {`${typeof window !== "undefined" ? window.location.origin : ""}/?playlist=${activePlaylist.id}`}</p>}
 
             {/* Clips List */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
@@ -365,7 +371,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = ({
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center p-8 text-slate-500 text-xs">
-            Select or create a playlist to view clips.
+            {selectedPlaylistId ? "This playlist is unavailable in this browser. Select another playlist or create one." : "Select or create a playlist to view clips."}
           </div>
         )}
       </div>

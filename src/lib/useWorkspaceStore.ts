@@ -9,6 +9,7 @@ import {
   saveTier2State,
   subscribeTier2,
   getTier2ServerSnapshot,
+  isTier2StorageUnavailable,
 } from "./workspaceStorage";
 import * as playlistService from "../services/playlistService";
 import * as trackerService from "../services/trackerService";
@@ -172,6 +173,7 @@ export function useWorkspaceStore() {
   }, []);
 
   return {
+    storageError: isTier2StorageUnavailable(),
     playlists,
     createPlaylist: handleCreatePlaylist,
     renamePlaylist: handleRenamePlaylist,

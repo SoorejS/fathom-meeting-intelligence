@@ -1,6 +1,6 @@
 "use client";
 
-import { testCallFragment } from "@/lib/testCallMeeting";
+import { meetingShareUrl } from "@/lib/shareLinks";
 import Image from "next/image";
 import React, { useState } from "react";
 import { Meeting } from "@/types/meeting";
@@ -25,13 +25,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   if (!isOpen || !meeting) return null;
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin + "/share/" + (meeting.testCall ? "test" : encodeURIComponent(meeting.id)) : "";
-  const routeUrl =
-    includeTimestamp && currentTimestamp > 0
-      ? `${baseUrl}?t=${Math.floor(currentTimestamp)}`
-      : `${baseUrl}`;
-
-  const shareUrl = routeUrl + (meeting.testCall ? "#" + testCallFragment(meeting.testCall) : "");
+  const shareUrl = meetingShareUrl(meeting, includeTimestamp ? currentTimestamp : undefined);
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);

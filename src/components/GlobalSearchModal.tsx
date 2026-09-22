@@ -17,6 +17,8 @@ import { Meeting } from "@/types/meeting";
 import { Playlist } from "@/types/playlist";
 import { Tracker } from "@/types/tracker";
 
+import { searchWorkspace, type SearchCategory, type SearchResult } from "@/lib/workspaceSearch";
+
 interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -24,32 +26,7 @@ interface GlobalSearchModalProps {
   playlists?: Playlist[];
   trackers?: Tracker[];
   onSelectMeeting: (meetingId: string, timestamp?: number) => void;
-  onSelectTab?: (tab: string) => void;
-}
-
-type SearchCategory =
-  | "all"
-  | "transcripts"
-  | "action-items"
-  | "summaries"
-  | "meetings"
-  | "highlights"
-  | "playlists"
-  | "trackers";
-
-interface SearchResult {
-  type: "meeting" | "transcript" | "actionItem" | "summary" | "highlight" | "playlist" | "tracker";
-  meetingId?: string;
-  meetingTitle?: string;
-  targetTab?: string;
-  category?: string;
-  dateFormatted?: string;
-  title: string;
-  snippet: string;
-  timestamp?: number;
-  timestampFormatted?: string;
-  speaker?: string;
-  owner?: string;
+  onSelectEntity: (tab: "playlists" | "alerts", id: string) => void;
 }
 
 function highlightMatch(text: string, query: string): React.ReactNode {
@@ -74,7 +51,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   playlists = [],
   trackers = [],
   onSelectMeeting,
-  onSelectTab,
+  onSelectEntity,
 }) => {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategory>("all");
@@ -87,141 +64,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
     }
   }, [isOpen]);
 
-  // Search indexing across meetings, summaries, transcripts, and action items
-  const results = useMemo<SearchResult[]>(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-
-    const matches: SearchResult[] = [];
-
-    meetings.forEach((m) => {
-      // 1. Match Meeting Title & Participants
-      const participantMatch = m.participants.find((p) => p.name.toLowerCase().includes(q));
-      if (m.title.toLowerCase().includes(q) || participantMatch) {
-        matches.push({
-          type: "meeting",
-          meetingId: m.id,
-          meetingTitle: m.title,
-          category: m.category,
-          dateFormatted: m.dateFormatted,
-          title: m.title,
-          snippet: participantMatch
-            ? `Participant match: ${participantMatch.name} (${participantMatch.role})`
-            : `${m.participants.length} participants • ${m.durationFormatted} duration`,
-        });
-      }
-
-      // 2. Match Summaries (Overview & Key points)
-      const overview = m.summary.default.overview;
-      if (overview.toLowerCase().includes(q)) {
-        matches.push({
-          type: "summary",
-          meetingId: m.id,
-          meetingTitle: m.title,
-          category: m.category,
-          dateFormatted: m.dateFormatted,
-          title: `Summary Overview`,
-          snippet: overview,
-        });
-      }
-
-      [...new Set(Object.values(m.summary).flatMap(s => [s.overview, ...s.keyPoints, ...s.decisions, ...s.nextSteps]))].filter(text => text !== overview).forEach((kp) => {
-        if (kp.toLowerCase().includes(q)) {
-          matches.push({
-            type: "summary",
-            meetingId: m.id,
-            meetingTitle: m.title,
-            category: m.category,
-            dateFormatted: m.dateFormatted,
-            title: `Key Discussion Point`,
-            snippet: kp,
-          });
-        }
-      });
-
-      // 3. Match Action Items
-      m.actionItems.forEach((ai) => {
-        if (ai.text.toLowerCase().includes(q) || ai.owner.toLowerCase().includes(q)) {
-          matches.push({
-            type: "actionItem",
-            meetingId: m.id,
-            meetingTitle: m.title,
-            category: m.category,
-            dateFormatted: m.dateFormatted,
-            title: `Action Item: ${ai.text}`,
-            snippet: `Assigned to ${ai.owner} (${ai.status}) • at ${ai.sourceTimestampFormatted}`,
-            timestamp: ai.sourceTimestamp,
-            timestampFormatted: ai.sourceTimestampFormatted,
-            owner: ai.owner,
-          });
-        }
-      });
-
-      m.highlights.forEach(h => {
-        if ((h.text + " " + h.type + " " + h.creator).toLowerCase().includes(q)) matches.push({
-          type: "highlight", meetingId: m.id, meetingTitle: m.title, category: m.category,
-          dateFormatted: m.dateFormatted, title: h.type + " at " + h.timestampFormatted,
-          snippet: h.text, timestamp: h.timestamp, timestampFormatted: h.timestampFormatted,
-        });
-      });
-      // 4. Match Transcripts
-      m.transcript.forEach((t) => {
-        if (t.text.toLowerCase().includes(q) || t.speaker.toLowerCase().includes(q)) {
-          matches.push({
-            type: "transcript",
-            meetingId: m.id,
-            meetingTitle: m.title,
-            category: m.category,
-            dateFormatted: m.dateFormatted,
-            title: `${t.speaker} at ${t.timestampFormatted}`,
-            snippet: t.text,
-            timestamp: t.timestamp,
-            timestampFormatted: t.timestampFormatted,
-          });
-        }
-      });
-    });
-
-    // 5. Match Playlists
-    playlists.forEach((p) => {
-      if (
-        p.title.toLowerCase().includes(q) ||
-        (p.description && p.description.toLowerCase().includes(q))
-      ) {
-        matches.push({
-          type: "playlist",
-          targetTab: "playlists",
-          category: "Playlists",
-          dateFormatted: `${p.items.length} clips`,
-          title: p.title,
-          snippet: p.description
-            ? `${p.description} • Contains ${p.items.length} curated highlights`
-            : `Curated highlight reel with ${p.items.length} clips across your workspace`,
-        });
-      }
-    });
-
-    // 6. Match Keyword Trackers
-    trackers.forEach((t) => {
-      if (
-        t.name.toLowerCase().includes(q) ||
-        t.keywords.some((k) => k.toLowerCase().includes(q))
-      ) {
-        matches.push({
-          type: "tracker",
-          targetTab: "alerts",
-          category: "Trackers",
-          dateFormatted: t.enabled ? "Active" : "Disabled",
-          title: `Tracker: ${t.name}`,
-          snippet: `Keywords: [${t.keywords.join(", ")}] • ${
-            t.enabled ? "Actively scanning transcripts" : "Scanning paused"
-          }`,
-        });
-      }
-    });
-
-    return matches;
-  }, [query, meetings, playlists, trackers]);
+  const results = useMemo(() => searchWorkspace(query, meetings, playlists, trackers), [query, meetings, playlists, trackers]);
 
   const filteredResults = useMemo(() => {
     if (activeCategory === "all") return results;
@@ -237,7 +80,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   const handleSelectResult = (item: SearchResult) => {
     if (item.type === "playlist" || item.type === "tracker") {
-      if (onSelectTab) onSelectTab(item.targetTab || "my-calls");
+      if (item.targetTab && item.entityId) onSelectEntity(item.targetTab, item.entityId);
       onClose();
     } else if (item.meetingId) {
       onSelectMeeting(item.meetingId, item.timestamp);
@@ -249,6 +92,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       onClose();
+    } else if (e.target !== inputRef.current) {
+      return;
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex((prev) => (prev < filteredResults.length - 1 ? prev + 1 : prev));
@@ -260,6 +105,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
       handleSelectResult(filteredResults[selectedIndex]);
     }
   };
+
+  useEffect(() => {
+    document.getElementById(`search-result-${selectedIndex}`)?.scrollIntoView({ block: "nearest" });
+  }, [selectedIndex]);
 
   if (!isOpen) return null;
 
@@ -273,6 +122,11 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         <div className="flex items-center px-4 py-3.5 border-b border-[#232B3B] gap-3">
           <Search className="w-5 h-5 text-cyan-400 shrink-0" />
           <input
+            role="combobox"
+            aria-label="Search workspace"
+            aria-controls="search-results"
+            aria-expanded={true}
+            aria-activedescendant={filteredResults[selectedIndex] ? `search-result-${selectedIndex}` : undefined}
             ref={inputRef}
             type="text"
             value={query}
@@ -285,7 +139,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           />
           {query && (
             <button
-              onClick={() => setQuery("")}
+              aria-label="Clear search"
+              onClick={() => { setQuery(""); setSelectedIndex(0); inputRef.current?.focus(); }}
               className="p-1 text-slate-400 hover:text-white rounded-md transition-colors"
             >
               <X className="w-4 h-4" />
@@ -311,6 +166,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           ].map((cat) => (
             <button
               key={cat.id}
+              aria-pressed={activeCategory === cat.id}
               onClick={() => {
                 setActiveCategory(cat.id as SearchCategory);
                 setSelectedIndex(0);
@@ -327,7 +183,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         </div>
 
         {/* Results List */}
-        <div className="flex-1 overflow-y-auto p-2 divide-y divide-[#1D2433]">
+        <div id="search-results" role="listbox" aria-label="Search results" className="flex-1 overflow-y-auto p-2 divide-y divide-[#1D2433]">
           {!query.trim() ? (
             <div className="py-12 text-center text-slate-400 text-xs">
               <Sparkles className="w-8 h-8 text-cyan-400/50 mx-auto mb-2.5" />
@@ -359,7 +215,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
               return (
                 <div
-                  key={`${item.meetingId || item.targetTab}-${item.type}-${idx}`}
+                  role="option"
+                  id={`search-result-${idx}`}
+                  aria-selected={isSelected}
+                  key={`${item.meetingId || item.entityId}-${item.type}-${idx}`}
                   onClick={() => handleSelectResult(item)}
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`p-3 rounded-xl cursor-pointer transition-all flex items-start gap-3 group ${
@@ -375,7 +234,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 truncate">
                         <span className="text-xs font-semibold text-white truncate">
-                          {highlightMatch(item.title, query)}
+                          {highlightMatch(item.title, query.trim())}
                         </span>
                         {item.timestampFormatted && (
                           <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
@@ -387,7 +246,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     </div>
 
                     <p className="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                      {highlightMatch(item.snippet, query)}
+                      {highlightMatch(item.snippet, query.trim())}
                     </p>
 
                     <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
