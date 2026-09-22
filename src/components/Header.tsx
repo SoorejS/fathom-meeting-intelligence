@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Search, Gift, Settings, HelpCircle, Sparkles, Check, Menu, Bot } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Search, Gift, Settings, LifeBuoy, Star, Menu, Video, BookOpen, HelpCircle, Code, Download, LogOut } from "lucide-react";
 
 interface HeaderProps {
   onStartTestCall: () => void;
@@ -10,201 +10,53 @@ interface HeaderProps {
   onOpenSettings?: () => void;
   onOpenHelp?: () => void;
   onToggleMobileMenu?: () => void;
+  settingsActive?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  onOpenSearch,
-  onNavigateHome,
-  onStartTestCall,
-  onOpenSettings,
-  onOpenHelp,
-  onToggleMobileMenu,
-}) => {
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+export function FathomMark({ className = "w-6 h-7" }: { className?: string }) {
+  return <svg aria-hidden="true" className={className} viewBox="0 0 28 32" fill="none"><path d="M5 5L23 14M5 15L15 20M5 25L7 26" stroke="#00b9e9" strokeWidth="7" strokeLinecap="round" /></svg>;
+}
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
+export const Header: React.FC<HeaderProps> = ({ onOpenSearch, onNavigateHome, onStartTestCall, onOpenSettings, onOpenHelp, onToggleMobileMenu, settingsActive }) => {
+  const [popover, setPopover] = useState<"profile" | "refer" | "points" | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        onOpenSearch();
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); onOpenSearch(); }
+      if (e.key === "Escape") setPopover(null);
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const onPointer = (e: PointerEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setPopover(null); };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onPointer);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("pointerdown", onPointer); };
   }, [onOpenSearch]);
-
-  return (
-    <>
-      <header className="h-14 border-b border-[#202227] bg-[#111215] px-2 sm:px-4 shrink-0 flex items-center justify-between sticky top-0 z-30 select-none">
-        {/* Left: Brand Logo & Wordmark + Adjacent Search Bar */}
-        <div className="flex items-center gap-2 sm:gap-6">
-          {/* Mobile Navigation Toggle */}
-          {onToggleMobileMenu && (
-            <button
-              onClick={onToggleMobileMenu}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#1e2026] md:hidden cursor-pointer"
-              title="Open Navigation Menu"
-              aria-label="Toggle navigation menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          )}
-
-          <button
-            onClick={onNavigateHome}
-            className="flex items-center gap-2 group text-left cursor-pointer focus:outline-none"
-            title="Return to My Calls"
-          >
-            <span className="text-base sm:text-xl font-black text-white tracking-wider">FATHOM</span>
-            {/* 3 cyan slanted pills logo mark */}
-            <div className="hidden sm:flex items-center gap-[3px] -rotate-12 translate-y-[-1px]">
-              <span className="w-1.5 h-4 bg-[#00c2ff] rounded-full"></span>
-              <span className="w-1.5 h-3.5 bg-[#00c2ff] rounded-full"></span>
-              <span className="w-1.5 h-2 bg-[#00c2ff] rounded-full"></span>
-            </div>
-          </button>
-
-          {/* Search Bar adjacent to Logo */}
-          <button
-            onClick={onOpenSearch}
-            className="flex items-center gap-2.5 px-3 py-1.5 bg-[#1e2026] hover:bg-[#252830] border border-[#2b2e38] hover:border-cyan-500/40 rounded-lg text-xs text-slate-400 transition-all duration-150 w-9 sm:w-52 md:w-64 group cursor-pointer"
-            title="Search recordings (⌘K)"
-          >
-            <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400 transition-colors shrink-0" />
-            <span className="hidden sm:block truncate text-slate-300 flex-1 text-left">Search Call Recordings</span>
-            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono text-slate-400 bg-[#14151a] border border-[#2d303a] rounded">
-              ⌘K
-            </kbd>
-          </button>
-        </div>
-
-        {/* Right: Record Test Call, Refer, Settings, Help & Feedback, Points badge, Profile Avatar */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Dedicated Record Test Call Button */}
-          <button
-            onClick={onStartTestCall}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:text-cyan-300 text-xs font-semibold transition-all cursor-pointer"
-            title="Launch interactive practice call"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            <Bot className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Record Test Call</span>
-          </button>
-
-          {/* Refer button */}
-          <button
-            onClick={() => showToast("Referrals are outside this demo.")}
-            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
-            title="Refer & Earn"
-          >
-            <Gift className="w-4 h-4 text-slate-400" />
-            <span>Refer</span>
-          </button>
-
-          {/* Settings button */}
-          <button
-            onClick={() => {
-              if (onOpenSettings) onOpenSettings();
-              else showToast("Demo workspace settings");
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
-            title="Settings"
-          >
-            <Settings className="w-4 h-4 text-slate-400" />
-            <span className="hidden sm:inline">Settings</span>
-          </button>
-
-          {/* Help & Feedback button */}
-          <button
-            onClick={() => {
-              if (onOpenHelp) onOpenHelp();
-              else showToast("Help & documentation");
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-[#1e2026] rounded-lg transition-colors cursor-pointer"
-            title="Help & Feedback"
-          >
-            <HelpCircle className="w-4 h-4 text-slate-400" />
-            <span className="hidden md:inline">Help &amp; Feedback</span>
-          </button>
-
-          {/* Gold Star Points Badge */}
-          <button
-            onClick={() => showToast("Demo workspace — billing and rewards are not enabled.")}
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-[#1e2026] hover:bg-[#252830] border border-amber-500/30 rounded-full text-xs font-bold text-amber-400 transition-colors cursor-pointer"
-            title="30 Points"
-          >
-            <span className="text-amber-400">★</span>
-            <span className="text-slate-100">30</span>
-          </button>
-
-          {/* Profile Avatar (Coral/Orange circle 'S') */}
-          <div className="relative ml-1">
-            <button
-              onClick={() => setProfileOpen(!profileOpen)}
-              className="w-7 h-7 rounded-full bg-[#e85a38] text-white flex items-center justify-center text-xs font-bold ring-1 ring-white/20 hover:ring-cyan-400 transition-all cursor-pointer focus:outline-none"
-              title="Demo Reviewer (reviewer@example.com)"
-            >
-              S
-            </button>
-
-            {profileOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#16181d] border border-[#2a2d37] rounded-xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                <div className="px-3.5 py-2 border-b border-[#22252c]">
-                  <p className="text-xs font-semibold text-white">Demo Reviewer</p>
-                  <p className="text-[11px] text-slate-400 truncate">reviewer@example.com</p>
-                  <div className="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <Sparkles className="w-2.5 h-2.5" />
-                    <span>Fathom Pro Workspace</span>
-                  </div>
-                </div>
-                <div className="py-1 text-xs text-slate-300">
-                  <button
-                    onClick={() => {
-                      setProfileOpen(false);
-                      showToast("Workspace: Personal Calls");
-                    }}
-                    className="w-full text-left px-3.5 py-2 hover:bg-[#1e222a] transition-colors"
-                  >
-                    Personal Calls
-                  </button>
-                  <button
-                    onClick={() => {
-                      setProfileOpen(false);
-                      showToast("Workspace: Engineering Team");
-                    }}
-                    className="w-full text-left px-3.5 py-2 hover:bg-[#1e222a] transition-colors"
-                  >
-                    Engineering Team
-                  </button>
-                  <button
-                    onClick={() => {
-                      setProfileOpen(false);
-                      showToast("This public demo does not require sign-in.");
-                    }}
-                    className="w-full text-left px-3.5 py-2 hover:bg-[#1e222a] text-rose-400 transition-colors"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 bg-[#161B24] border border-cyan-500/40 text-white text-xs px-4 py-2.5 rounded-lg shadow-xl shadow-cyan-950/40 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <Check className="w-3.5 h-3.5 text-cyan-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-    </>
-  );
+  const act = (action?: () => void) => { setPopover(null); action?.(); };
+  const toggle = (value: typeof popover) => setPopover(popover === value ? null : value);
+  return <header className="fathom-header">
+    <div className="flex items-center gap-3 sm:gap-7 min-w-0">
+      {onToggleMobileMenu && <button onClick={onToggleMobileMenu} className="md:hidden p-1 text-neutral-400" aria-label="Toggle navigation menu"><Menu size={21} /></button>}
+      <button onClick={onNavigateHome} className="flex items-center gap-2 shrink-0" aria-label="FATHOM" title="Return to My Calls"><span className="text-xl sm:text-[30px] font-medium tracking-[-1px] text-white">FATHOM</span><FathomMark className="w-5 sm:w-6 h-7" /></button>
+      <button onClick={onOpenSearch} className="header-search" aria-label="Search Call Recordings" title="Search recordings (Ctrl/⌘ K)"><Search size={17} /><span className="hidden sm:inline truncate">Search Call Recordings</span></button>
+    </div>
+    <div ref={menuRef} className="flex items-center gap-1 sm:gap-2 relative shrink-0">
+      <button onClick={() => toggle("refer")} aria-expanded={popover === "refer"} className="header-action hidden lg:flex"><Gift size={23} /><span>Refer</span></button>
+      <button onClick={() => act(onOpenSettings)} aria-label="Settings" className={`header-action ${settingsActive ? "bg-white/10 text-white" : ""}`}><Settings size={23} /><span className="hidden lg:inline">Settings</span></button>
+      <button onClick={() => act(onOpenHelp)} aria-label="Help & Feedback" className="header-action"><LifeBuoy size={23} /><span className="hidden lg:inline">Help &amp; Feedback</span></button>
+      <button onClick={() => toggle("points")} aria-expanded={popover === "points"} className="hidden sm:flex items-center gap-1 px-2 text-[#ffca28] font-bold text-xl" aria-label="30 Points"><Star size={23} fill="currentColor" /><span>30</span></button>
+      <button onClick={() => toggle("profile")} aria-label="Profile menu" aria-expanded={popover === "profile"} className="w-9 h-9 rounded-full bg-[#ff5120] text-white text-lg ml-1">S</button>
+      {popover === "profile" && <div className="header-popover w-72 py-2" aria-label="Profile options">
+        <button onClick={() => act(onStartTestCall)}><Video size={16} />Start Test Call</button>
+        <button onClick={() => act(onOpenHelp)}><BookOpen size={16} />Tutorial</button>
+        <button onClick={() => act(onOpenHelp)}><HelpCircle size={16} />FAQs</button>
+        <button onClick={() => act(onOpenHelp)}><Code size={16} />Developers</button>
+        <div className="my-2 border-t border-white/10" />
+        <p className="px-4 py-2 text-xs text-neutral-400">Browser demo · no account required. Audio and preferences stay on this device.</p>
+        <button onClick={() => act(onOpenHelp)}><Download size={16} />About this demo</button>
+        <button onClick={() => act(onNavigateHome)}><LogOut size={16} />Back to My Calls</button>
+        <div className="border-t border-white/10 px-4 pt-3 pb-1 mt-2"><p className="text-xs text-neutral-400">Viewing as</p><p>Demo Reviewer</p></div>
+      </div>}
+      {popover === "refer" && <div className="header-popover w-80 p-5 text-center"><Gift className="mx-auto mb-3 text-cyan-400" size={28}/><h2 className="text-lg font-semibold text-cyan-400">REFERRAL CODE</h2><p className="text-sm text-neutral-300 mt-3">Referral rewards are not connected in this demo. You can share any meeting using its Share button.</p></div>}
+      {popover === "points" && <div className="header-popover w-72 p-5 !bg-[#ffca28] !text-[#28251a] text-center"><Star className="mx-auto mb-3" size={32} fill="currentColor"/><h2 className="text-xl font-semibold">You have 30 points</h2><p className="text-sm mt-3">Reference preview only. Rewards and prize drawings are not active in this demo.</p></div>}
+    </div>
+  </header>;
 };

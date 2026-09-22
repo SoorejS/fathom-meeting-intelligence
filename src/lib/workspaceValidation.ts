@@ -40,7 +40,7 @@ export function readSettings(value: unknown): WorkspaceSettings {
   const s = record(value), r = record(s.recording), summary = record(s.summaries), h = record(s.highlights), sharing = record(s.sharing);
   const types = Array.isArray(h.types) ? unique(h.types.filter((item): item is CustomHighlightType => {
     const t = record(item);
-    return text(t.id) && text(t.name) && text(t.color) && text(t.bgColor) && text(t.borderColor) && finite(t.order);
+    return text(t.id) && text(t.name) && t.name.length <= 80 && text(t.color) && /^#[0-9a-f]{6}$/i.test(t.color) && text(t.bgColor) && text(t.borderColor) && finite(t.order);
   })) : defaults.highlights.types;
   return {
     recording: {
@@ -52,7 +52,7 @@ export function readSettings(value: unknown): WorkspaceSettings {
       defaultTemplate: choice(summary.defaultTemplate, ["default", "executive", "sales", "engineering"], defaults.summaries.defaultTemplate),
       autoExtractActions: typeof summary.autoExtractActions === "boolean" ? summary.autoExtractActions : defaults.summaries.autoExtractActions,
     },
-    highlights: { types },
+    highlights: { types: types.length ? types : defaults.highlights.types },
     sharing: { defaultVisibility: choice(sharing.defaultVisibility, ["private", "team", "public"], defaults.sharing.defaultVisibility) },
   };
 }

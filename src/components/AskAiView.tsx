@@ -128,7 +128,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ meeting, onSeek }) => {
               <div
                 className={`max-w-[85%] rounded-xl p-3 space-y-2 text-xs leading-relaxed ${
                   isFathom
-                    ? "bg-[#161820] border border-[#242734] text-slate-200"
+                    ? "bg-[#252527] border border-[#343436] text-slate-200"
                     : "bg-[#00c2ff] text-black font-semibold rounded-br-none shadow-md"
                 }`}
               >
@@ -141,7 +141,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ meeting, onSeek }) => {
               </div>
 
               {!isFathom && (
-                <div className="w-6 h-6 rounded-full bg-[#272b38] flex items-center justify-center text-slate-300 text-[9px] font-bold shrink-0 mt-0.5">
+                <div className="w-6 h-6 rounded-full bg-[#303033] flex items-center justify-center text-slate-300 text-[9px] font-bold shrink-0 mt-0.5">
                   YOU
                 </div>
               )}
@@ -159,13 +159,13 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ meeting, onSeek }) => {
       </div>
 
       {/* Suggested Quick Question Chips */}
-      <div className="pt-2 border-t border-[#1c1f26] flex items-center gap-1.5 overflow-x-auto select-none">
+      <div className="pt-2 border-t border-[#343436] flex items-center gap-1.5 overflow-x-auto select-none">
         {suggestedQuestions.map((sq, i) => (
           <button
             key={i}
             disabled={isTyping}
             onClick={() => handleAsk(sq)}
-            className="px-2.5 py-1 rounded-full bg-[#161820] hover:bg-[#20232d] border border-[#262a37] text-[11px] text-slate-300 hover:text-white transition-colors whitespace-nowrap cursor-pointer"
+            className="px-2.5 py-1 rounded-full bg-[#252527] hover:bg-[#303033] border border-[#343436] text-[11px] text-slate-300 hover:text-white transition-colors whitespace-nowrap cursor-pointer"
           >
             {sq}
           </button>
@@ -173,7 +173,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ meeting, onSeek }) => {
       </div>
 
       {/* Input Box Card */}
-      <div className="p-2.5 bg-[#161820] border border-[#242734] focus-within:border-[#00c2ff]/50 rounded-xl transition-colors">
+      <div className="p-2.5 bg-[#252527] border border-[#343436] focus-within:border-[#00c2ff]/50 rounded-xl transition-colors">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -191,7 +191,7 @@ export const AskAiView: React.FC<AskAiViewProps> = ({ meeting, onSeek }) => {
           <button
             type="submit"
             disabled={!inputQuery.trim() || isTyping}
-            className="w-7 h-7 rounded-full bg-[#242834] hover:bg-[#00c2ff] hover:text-black text-white flex items-center justify-center disabled:opacity-30 transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full bg-[#303033] hover:bg-[#00c2ff] hover:text-black text-white flex items-center justify-center disabled:opacity-30 transition-colors cursor-pointer"
             title="Send query"
           >
             <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />

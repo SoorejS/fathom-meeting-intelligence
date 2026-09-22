@@ -42,9 +42,9 @@ export const ActionItemsView: React.FC<ActionItemsViewProps> = ({
   const completedCount = actionItems.filter((i) => i.status === "completed").length;
 
   return (
-    <div className="flex flex-col h-full bg-[#11151F] border border-[#202736] rounded-2xl overflow-hidden shadow-xl">
+    <div className="flex flex-col h-full bg-[#191919] border border-[#343436] rounded-2xl overflow-hidden shadow-xl">
       {/* Header Bar */}
-      <div className="p-3.5 border-b border-[#202736] bg-[#0E121A] flex items-center justify-between gap-3">
+      <div className="p-3.5 border-b border-[#343436] bg-[#191919] flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-white">Action Items</span>
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">
@@ -57,7 +57,7 @@ export const ActionItemsView: React.FC<ActionItemsViewProps> = ({
 
         <div className="flex items-center gap-2">
           {/* Status filter buttons */}
-          <div className="flex items-center gap-0.5 bg-[#171D2A] border border-[#262F41] rounded-lg p-0.5 text-xs">
+          <div className="flex items-center gap-0.5 bg-[#252527] border border-[#343436] rounded-lg p-0.5 text-xs">
             {(["all", "open", "completed"] as const).map((st) => (
               <button
                 key={st}
@@ -86,13 +86,13 @@ export const ActionItemsView: React.FC<ActionItemsViewProps> = ({
 
       {/* Inline Quick Add Form */}
       {isAdding && (
-        <form onSubmit={handleCreate} className="p-3.5 bg-[#161C28] border-b border-[#252E3E] space-y-2.5 animate-in fade-in duration-100">
+        <form onSubmit={handleCreate} className="p-3.5 bg-[#252527] border-b border-[#343436] space-y-2.5 animate-in fade-in duration-100">
           <input
             type="text"
             value={newText}
             onChange={(e) => setNewText(e.target.value)}
             placeholder="Action item task description..."
-            className="w-full px-3 py-1.5 bg-[#0F131C] border border-[#273244] rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+            className="w-full px-3 py-1.5 bg-[#191919] border border-[#343436] rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
             autoFocus
           />
           <div className="flex items-center gap-2">
@@ -101,14 +101,14 @@ export const ActionItemsView: React.FC<ActionItemsViewProps> = ({
               value={newOwner}
               onChange={(e) => setNewOwner(e.target.value)}
               placeholder="Assignee (e.g. Sarah Chen)"
-              className="flex-1 px-3 py-1 bg-[#0F131C] border border-[#273244] rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+              className="flex-1 px-3 py-1 bg-[#191919] border border-[#343436] rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
             />
             <input
               type="text"
               value={newDueDate}
               onChange={(e) => setNewDueDate(e.target.value)}
               placeholder="Due date (e.g. Friday)"
-              className="w-36 px-3 py-1 bg-[#0F131C] border border-[#273244] rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+              className="w-36 px-3 py-1 bg-[#191919] border border-[#343436] rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
             />
             <button
               type="submit"
@@ -134,8 +134,8 @@ export const ActionItemsView: React.FC<ActionItemsViewProps> = ({
                 key={item.id}
                 className={`p-3.5 rounded-xl border transition-all duration-150 flex items-start gap-3 group ${
                   isCompleted
-                    ? "bg-[#10141D]/60 border-[#1E2533] opacity-75"
-                    : "bg-[#141924] border-[#242D3E] hover:border-cyan-500/40"
+                    ? "bg-[#191919]/60 border-[#343436] opacity-75"
+                    : "bg-[#252527] border-[#343436] hover:border-cyan-500/40"
                 }`}
               >
                 {/* Toggle Checkbox */}

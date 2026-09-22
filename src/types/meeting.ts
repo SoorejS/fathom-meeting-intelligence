@@ -35,7 +35,8 @@ export interface ActionItem {
   sourceTimestampFormatted: string;
 }
 
-export type HighlightType = "Highlight" | "Positive Reaction" | "Needs Review" | "Feedback";
+// Highlight labels include the user-configured categories stored in workspace settings.
+export type HighlightType = string;
 
 export interface Highlight {
   id: string;

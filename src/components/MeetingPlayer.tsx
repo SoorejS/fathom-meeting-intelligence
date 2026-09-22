@@ -119,13 +119,13 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div ref={playerRef} className="bg-[#12141a] border border-[#20232c] rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+    <div ref={playerRef} className="bg-[#252527] border border-[#343436] rounded-2xl overflow-hidden flex flex-col shadow-2xl">
       {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" onLoadedMetadata={() => { if (audioRef.current) audioRef.current.currentTime = currentTime; }} onTimeUpdate={() => { if (audioRef.current) onTimeUpdate(Math.min(duration, audioRef.current.currentTime)); }} onEnded={() => { setIsPlaying(false); onTimeUpdate(duration); }} onError={() => { setAudioError(true); setIsPlaying(false); }} />}
       {audioError && <p role="alert" className="p-2 text-xs text-amber-300">Audio playback could not start. Try Play again or download your recording below.</p>}
       {audioUrl && <a href={audioUrl} download="test-call-audio" className="px-4 py-2 text-xs text-cyan-300">Download local recording</a>}
       {/* Video Simulation Canvas Screen (Matching Fathom Reference Screenshot) */}
       <div
-        className="relative aspect-video w-full bg-gradient-to-br from-[#0a0c11] via-[#121622] to-[#181d2a] flex flex-col items-center justify-center overflow-hidden group select-none cursor-pointer"
+        className="relative aspect-video w-full bg-gradient-to-br from-[#191919] via-[#252527] to-[#252527] flex flex-col items-center justify-center overflow-hidden group select-none cursor-pointer"
         onClick={togglePlay}
       >
         {/* Subtle dot-matrix overlay */}
@@ -149,7 +149,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
               {currentSpeaker?.initials || "EB"}
             </div>
             {/* Speaking mic indicator badge */}
-            <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[#11141b] border border-[#2b3345] text-[#00c2ff] shadow-md">
+            <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[#191919] border border-[#343436] text-[#00c2ff] shadow-md">
               <Mic className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -210,7 +210,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
       </div>
 
       {/* Scrubber Timeline Bar with Highlight Pips (Matching Screenshot) */}
-      <div className="px-4 pt-2.5 pb-1 bg-[#0f1116]">
+      <div className="px-4 pt-2.5 pb-1 bg-[#191919]">
         <div
           role="slider"
           aria-label="Playback position"
@@ -223,7 +223,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
           onClick={handleTimelineClick}
           onMouseMove={handleTimelineHover}
           onMouseLeave={() => setHoverTime(null)}
-          className="relative h-2 bg-[#232733] hover:h-2.5 rounded-full cursor-pointer transition-all duration-150 group/timeline"
+          className="relative h-2 bg-[#303033] hover:h-2.5 rounded-full cursor-pointer transition-all duration-150 group/timeline"
         >
           {/* Played progress */}
           <div
@@ -268,7 +268,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
       </div>
 
       {/* Player Bottom Controls (Matching Live Fathom 6b0e6e8c-3a51-4773-b1bd-bc28ac4ab733.png) */}
-      <div className="px-3 py-2 bg-[#0f1116] flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300">
+      <div className="px-3 py-2 bg-[#191919] flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300">
         {/* Left: Speaker label + Volume + Time */}
         <div className="flex items-center gap-3">
           {/* Speaker label tag on bottom-left: ll Speaker Name (Demo) */}
@@ -336,7 +336,7 @@ export const MeetingPlayer: React.FC<MeetingPlayerProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={cycleSpeed}
-            className="px-2 py-0.5 rounded bg-[#1c202b] hover:bg-[#252a39] border border-[#2b3142] text-[11px] font-mono text-slate-300 hover:text-white transition-colors cursor-pointer"
+            className="px-2 py-0.5 rounded bg-[#303033] hover:bg-[#303033] border border-[#343436] text-[11px] font-mono text-slate-300 hover:text-white transition-colors cursor-pointer"
             title="Cycle playback speed"
           >
             {playbackSpeed}x

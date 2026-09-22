@@ -168,10 +168,10 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#090B0F]">
+    <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#191919]">
       {/* Left / Sidebar Column: Configured Trackers List */}
-      <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-[#1E2431] bg-[#0E1117] flex flex-col shrink-0">
-        <div className="p-4 border-b border-[#1E2431] flex items-center justify-between">
+      <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-[#343436] bg-[#191919] flex flex-col shrink-0">
+        <div className="p-4 border-b border-[#343436] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell className="w-5 h-5 text-amber-400" />
             <h2 className="text-sm font-bold text-white tracking-wide">
@@ -188,20 +188,20 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
         </div>
 
         {/* Filter All option */}
-        <div className="p-3 border-b border-[#1E2431]/60">
+        <div className="p-3 border-b border-[#343436]/60">
           <button
             onClick={() => setSelectedTrackerId("all")}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
               selectedTrackerId === "all"
-                ? "bg-[#1C2230] text-amber-300 border border-amber-500/30"
-                : "text-slate-300 hover:bg-[#141822] border border-transparent"
+                ? "bg-[#303033] text-amber-300 border border-amber-500/30"
+                : "text-slate-300 hover:bg-[#252527] border border-transparent"
             }`}
           >
             <span className="flex items-center gap-2">
               <Filter className="w-3.5 h-3.5" />
               <span>All Trackers</span>
             </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#252C3D] text-slate-300">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#303033] text-slate-300">
               {allMatches.length} matches
             </span>
           </button>
@@ -221,8 +221,8 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                 onClick={() => setSelectedTrackerId(tracker.id)}
                 className={`p-3 rounded-xl border transition-all cursor-pointer space-y-2 ${
                   isSelected
-                    ? "bg-[#181D29] border-amber-500/40 shadow-sm"
-                    : "bg-[#12151D] border-[#1F2430] hover:bg-[#151922] hover:border-slate-700"
+                    ? "bg-[#252527] border-amber-500/40 shadow-sm"
+                    : "bg-[#252527] border-[#343436] hover:bg-[#252527] hover:border-slate-700"
                 }`}
               >
                 {/* Tracker Top Row */}
@@ -248,7 +248,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                     {/* Edit */}
                     <button
                       onClick={() => handleOpenEdit(tracker)}
-                      className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#202738]"
+                      className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#303033]"
                       title="Edit tracker"
                     >
                       <Edit2 className="w-3 h-3" />
@@ -260,7 +260,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                           onDeleteTracker(tracker.id);
                         }
                       }}
-                      className="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-[#202738]"
+                      className="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-[#303033]"
                       title="Delete tracker"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -273,7 +273,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                   {tracker.keywords.map((kw) => (
                     <span
                       key={kw}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#1D2332] text-slate-300 border border-[#2B3346]"
+                      className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#303033] text-slate-300 border border-[#343436]"
                     >
                       {kw}
                     </span>
@@ -281,11 +281,11 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                 </div>
 
                 {/* Match Counter Footer */}
-                <div className="flex items-center justify-between text-[11px] pt-1 text-slate-400 border-t border-[#1C212E]">
+                <div className="flex items-center justify-between text-[11px] pt-1 text-slate-400 border-t border-[#343436]">
                   <span className={tracker.enabled ? "text-slate-400" : "text-slate-500 italic"}>
                     {tracker.enabled ? "Scanning active" : "Paused"}
                   </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#202738] text-amber-400 font-semibold">
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#303033] text-amber-400 font-semibold">
                     {trackerMatchesCount} {trackerMatchesCount === 1 ? "hit" : "hits"}
                   </span>
                 </div>
@@ -298,7 +298,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
       {/* Right Column: Search Bar & Matches Feed */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Feed Header */}
-        <div className="p-4 sm:p-6 border-b border-[#1E2431] bg-[#10131B] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-4 sm:p-6 border-b border-[#343436] bg-[#191919] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
               <Bell className="w-5 h-5 text-amber-400" />
@@ -321,7 +321,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
               placeholder="Search transcript hits..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#1A1E29] border border-[#2B3244] focus:border-amber-500 rounded-lg text-white placeholder-slate-500 focus:outline-none"
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#303033] border border-[#343436] focus:border-amber-500 rounded-lg text-white placeholder-slate-500 focus:outline-none"
             />
           </div>
         </div>
@@ -329,7 +329,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
         {/* Matches Feed */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
           {filteredMatches.length === 0 ? (
-            <div className="p-10 rounded-2xl border border-dashed border-[#242C3D] bg-[#0E121A] text-center max-w-lg mx-auto my-12 space-y-3">
+            <div className="p-10 rounded-2xl border border-dashed border-[#343436] bg-[#191919] text-center max-w-lg mx-auto my-12 space-y-3">
               <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center">
                 <Tag className="w-5 h-5" />
               </div>
@@ -342,7 +342,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
             filteredMatches.map((match, idx) => (
               <div
                 key={`${match.trackerId}-${match.segmentId}-${match.keyword}-${idx}`}
-                className="p-4 rounded-xl bg-[#12151D] border border-[#1E2330] hover:border-amber-500/40 hover:bg-[#151924] transition-all space-y-2.5 group"
+                className="p-4 rounded-xl bg-[#252527] border border-[#343436] hover:border-amber-500/40 hover:bg-[#252527] transition-all space-y-2.5 group"
               >
                 {/* Match Metadata Row */}
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -353,7 +353,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                     </span>
 
                     {/* Matched Keyword Pill */}
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#1C2232] border border-[#2B344B] text-cyan-300">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#303033] border border-[#343436] text-cyan-300">
                       Keyword: &quot;{match.keyword}&quot;
                     </span>
 
@@ -401,7 +401,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
       {/* Create Tracker Modal */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#131620] border border-[#222838] rounded-2xl shadow-2xl p-6 space-y-4">
+          <div className="w-full max-w-md bg-[#252527] border border-[#343436] rounded-2xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Bell className="w-4 h-4 text-amber-400" />
@@ -423,7 +423,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                   placeholder="e.g. Executive Objections or Competitor Mentions"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#1A1E29] border border-[#2B3244] focus:border-amber-500 rounded-lg text-white placeholder-slate-500 focus:outline-none"
+                  className="w-full px-3 py-2 text-xs bg-[#303033] border border-[#343436] focus:border-amber-500 rounded-lg text-white placeholder-slate-500 focus:outline-none"
                 />
               </div>
 
@@ -441,12 +441,12 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                         handleAddKeyword();
                       }
                     }}
-                    className="flex-1 px-3 py-2 text-xs bg-[#1A1E29] border border-[#2B3244] focus:border-amber-500 rounded-lg text-white placeholder-slate-500 focus:outline-none"
+                    className="flex-1 px-3 py-2 text-xs bg-[#303033] border border-[#343436] focus:border-amber-500 rounded-lg text-white placeholder-slate-500 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddKeyword}
-                    className="px-3 py-2 text-xs font-semibold text-white bg-[#222A3B] hover:bg-[#2A344A] rounded-lg transition-colors"
+                    className="px-3 py-2 text-xs font-semibold text-white bg-[#303033] hover:bg-[#303033] rounded-lg transition-colors"
                   >
                     Add
                   </button>
@@ -499,7 +499,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
       {/* Edit Tracker Modal */}
       {isEditOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#131620] border border-[#222838] rounded-2xl shadow-2xl p-6 space-y-4">
+          <div className="w-full max-w-md bg-[#252527] border border-[#343436] rounded-2xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Edit2 className="w-4 h-4 text-amber-400" />
@@ -520,7 +520,7 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#1A1E29] border border-[#2B3244] focus:border-amber-500 rounded-lg text-white focus:outline-none"
+                  className="w-full px-3 py-2 text-xs bg-[#303033] border border-[#343436] focus:border-amber-500 rounded-lg text-white focus:outline-none"
                 />
               </div>
 
@@ -538,12 +538,12 @@ export const TrackersView: React.FC<TrackersViewProps> = ({
                         handleAddEditKeyword();
                       }
                     }}
-                    className="flex-1 px-3 py-2 text-xs bg-[#1A1E29] border border-[#2B3244] focus:border-amber-500 rounded-lg text-white focus:outline-none"
+                    className="flex-1 px-3 py-2 text-xs bg-[#303033] border border-[#343436] focus:border-amber-500 rounded-lg text-white focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddEditKeyword}
-                    className="px-3 py-2 text-xs font-semibold text-white bg-[#222A3B] hover:bg-[#2A344A] rounded-lg transition-colors"
+                    className="px-3 py-2 text-xs font-semibold text-white bg-[#303033] hover:bg-[#303033] rounded-lg transition-colors"
                   >
                     Add
                   </button>

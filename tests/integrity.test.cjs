@@ -110,3 +110,32 @@ test('corrupted, partial and old workspace storage recover without crashing or r
   assert.deepEqual(restored.upcomingMeetings, defaultTier2State().upcomingMeetings);
   assert.doesNotThrow(() => searchWorkspace('test', meetings, restored.playlists, restored.trackers));
 });
+
+test('configured highlight labels persist, remain searchable and resolve in playlists', () => {
+  const m = meetings[0], segment = m.transcript[0], state = emptyState();
+  state.meetings[m.id] = {statuses:{}, highlights:[{id:'custom-category',meetingId:m.id,timestamp:segment.timestamp,timestampFormatted:segment.timestampFormatted,type:'Customer insight',text:segment.text,creator:'You'}]};
+  const current = applySavedState(meetings, decodeState(JSON.stringify(state), meetings));
+  assert.equal(current[0].highlights[0].type, 'Customer insight');
+  assert.ok(searchWorkspace('Customer insight', current).some(r => r.type === 'highlight'));
+  const reel = pl.addHighlightToPlaylist(pl.createPlaylist('Custom highlights'), m.id, 'custom-category');
+  assert.equal(pl.resolvePlaylistClips(reel, current)[0].highlightType, 'Customer insight');
+  for (const invalid of ['', ' '.repeat(5), 'x'.repeat(81), {label:'unsafe'}]) {
+    state.meetings[m.id].highlights[0].type = invalid;
+    assert.equal(decodeState(JSON.stringify(state), meetings).meetings[m.id].highlights.length, 0);
+  }
+});
+
+test('damaged highlight settings retain usable default categories', () => {
+  const restored = decodeTier2State(JSON.stringify({version:1,settings:{highlights:{types:[{id:'bad',name:'Broken',color:'invalid',bgColor:'x',borderColor:'x',order:0}]}}}));
+  assert.ok(restored.settings.highlights.types.length > 0);
+  assert.equal(restored.settings.highlights.types[0].name, 'Highlight');
+});
+
+test('support answers select the relevant help article instead of matching generic words', () => {
+  const {answerSupportQuestion} = load('src/lib/supportAnswers.ts');
+  assert.match(answerSupportQuestion('How do playlists work?'), /Playlists allow/);
+  assert.match(answerSupportQuestion('How do keyword trackers work?'), /Trackers automatically/);
+  assert.match(answerSupportQuestion('Where is microphone audio stored?'), /IndexedDB/);
+  assert.match(answerSupportQuestion('Can I customize summary templates?'), /Enhanced/);
+  assert.match(answerSupportQuestion('What is the weather tomorrow?'), /Choose Help center/);
+});

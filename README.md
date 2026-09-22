@@ -96,3 +96,5 @@ See [WALKTHROUGH-VERIFICATION.md](WALKTHROUGH-VERIFICATION.md) for the final Tie
 ## Agent capture integrity
 
 The native Codex canaries belong to two different full session IDs, documented in [CAPTURE-TEST.md](CAPTURE-TEST.md). Original logs and all development commits are retained. The final audit also documents an inherited Antigravity response discrepancy; no claim is made that the earlier capture history was perfectly append-only. Historical log content is preserved verbatim, including original links. Reference screenshots and generated local build/deployment artifacts are excluded from the repository.
+
+See [FIDELITY-AUDIT.md](FIDELITY-AUDIT.md) for the screenshot-driven final pass: horizontal library navigation, neutral Fathom styling, full-page settings, the support widget, custom highlight persistence, and desktop/tablet/mobile verification. The current regression suite contains 31 passing tests.

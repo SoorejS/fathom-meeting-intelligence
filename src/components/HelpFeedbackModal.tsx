@@ -1,13 +1,12 @@
 "use client";
 
+import { FAQS, answerSupportQuestion } from "@/lib/supportAnswers";
 import React, { useState, useMemo } from "react";
 import {
-  HelpCircle,
+  ArrowLeft,
   Search,
-  X,
   BookOpen,
   MessageSquare,
-  LifeBuoy,
   Check,
   Star,
   Sparkles,
@@ -24,55 +23,19 @@ interface HelpFeedbackModalProps {
   onOpenTestCall?: () => void;
 }
 
-type HelpTab = "docs" | "feedback" | "support";
-
-interface FAQItem {
-  question: string;
-  category: "notetaker" | "playlists" | "trackers" | "summaries";
-  answer: string;
-}
-
-const FAQS: FAQItem[] = [
-  {
-    category: "notetaker",
-    question: "How does the Fathom Notetaker work?",
-    answer:
-      "This workspace runs consented browser test calls. Microphone audio stays local when available, with a labeled simulated fallback. Transcript, summary, actions, and highlights follow a deterministic scenario; no conferencing bot or speech recognition service is connected.",
-  },
-  {
-    category: "notetaker",
-    question: "Is microphone audio stored on external servers?",
-    answer:
-      "In this public preview workspace, recorded audio stays strictly in your browser using local IndexedDB/Blob storage. No audio is ever uploaded to external third-party servers.",
-  },
-  {
-    category: "playlists",
-    question: "What are Playlists and how do I create one?",
-    answer:
-      "Playlists allow you to curate key highlights and video moments across multiple meetings into a simulated reel preview. Navigate to Playlists in the sidebar or use '+ Add to Playlist' on any highlight in a meeting.",
-  },
-  {
-    category: "trackers",
-    question: "How do Keyword Trackers work?",
-    answer:
-      "Trackers automatically scan all transcript segments across your workspace for target keywords (such as pricing, security, blockers, or competitors). When a match occurs, you can click directly to the exact second in the discussion.",
-  },
-  {
-    category: "summaries",
-    question: "Can I customize the summary template?",
-    answer:
-      "Yes. In any meeting detail view, toggle between 'Default', 'Executive', 'Sales', and 'Technical' templates. You can also configure the default template in Settings > Summaries.",
-  },
-];
+type HelpTab = "conversation" | "ai" | "docs" | "feedback" | "support";
 
 export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
   isOpen,
   onClose,
   onOpenTestCall,
 }) => {
-  const [activeTab, setActiveTab] = useState<HelpTab>("docs");
+  const [activeTab, setActiveTab] = useState<HelpTab>("conversation");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFaqIndex, setExpandedFaqIndex] = useState<number | null>(0);
+
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiAnswer, setAiAnswer] = useState("");
 
   // Feedback Form State
   const [feedbackType, setFeedbackType] = useState<"idea" | "bug" | "other">("idea");
@@ -117,100 +80,42 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
   return (
     <div
       role="dialog"
-      aria-modal="true"
       aria-label="Help and feedback"
-      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+      className="support-widget"
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="w-full max-w-2xl bg-[#11141D] border border-[#232A3B] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150">
-        {/* Modal Header */}
-        <div className="p-4 border-b border-[#1F2535] flex items-center justify-between bg-[#151924]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-              <HelpCircle className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white">Help &amp; Feedback</h2>
-              <p className="text-[11px] text-slate-400">
-                Documentation, live support simulation, and feature feedback
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#202738] transition-colors"
-            title="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex border-b border-[#1F2535] bg-[#0E1118] px-4">
-          <button
-            onClick={() => setActiveTab("docs")}
-            className={`flex items-center gap-2 py-3 px-4 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
-              activeTab === "docs"
-                ? "border-cyan-400 text-cyan-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Documentation &amp; FAQ</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("feedback")}
-            className={`flex items-center gap-2 py-3 px-4 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
-              activeTab === "feedback"
-                ? "border-cyan-400 text-cyan-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Submit Feedback</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("support")}
-            className={`flex items-center gap-2 py-3 px-4 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
-              activeTab === "support"
-                ? "border-cyan-400 text-cyan-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <LifeBuoy className="w-3.5 h-3.5" />
-            <span>Simulated Support</span>
-          </button>
-        </div>
-
+      <div className="flex flex-col min-h-0 h-full overflow-hidden">
+        <div className="px-5 py-5 flex items-center justify-between shrink-0"><div className="flex items-center gap-3"><Sparkles size={25} className="text-cyan-500"/><div><h2 className="font-semibold text-base">Fathom Support</h2><p className="text-xs text-slate-500">We&apos;re here to help!</p></div></div><button onClick={onClose} aria-label="Close help" className="p-2 text-slate-500 hover:text-black"><ChevronDown size={22}/></button></div>
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="px-5 pb-5 overflow-y-auto flex-1 min-h-0 space-y-6">
+          {activeTab === "conversation" && <div className="pt-4"><p className="text-xs text-slate-500 mb-2">Fathom Support Bot</p><p className="text-base">Hey there 👋 How can we help you today?</p><div className="flex flex-col items-end gap-3 mt-6"><button onClick={() => setActiveTab("ai")} className="support-choice">🤖 Ask AI - INSTANT</button><button onClick={() => setActiveTab("support")} className="support-choice">✉️ Open a Ticket</button><button onClick={() => setActiveTab("feedback")} className="support-choice">💡 Share Feedback</button></div></div>}
+          {activeTab !== "conversation" && activeTab !== "docs" && <button className="flex items-center gap-1 text-xs text-slate-500" onClick={() => setActiveTab("conversation")}><ArrowLeft size={14}/>Conversation</button>}
+          {activeTab === "ai" && <div className="space-y-4"><h3 className="font-semibold">Ask AI</h3><p className="text-sm text-slate-500">Answers from this demo&apos;s help articles.</p><form onSubmit={e => {e.preventDefault();setAiAnswer(answerSupportQuestion(aiQuery));}} className="space-y-3"><input aria-label="Ask support AI" value={aiQuery} onChange={e => setAiQuery(e.target.value)} placeholder="How do I create a playlist?" className="w-full rounded-lg border border-slate-200 p-3 text-sm"/><button disabled={!aiQuery.trim()} className="support-choice disabled:opacity-40">Ask question</button></form>{aiAnswer && <p role="status" className="text-sm leading-relaxed bg-slate-50 rounded-lg p-4">{aiAnswer}</p>}</div>}
           {/* TAB 1: Documentation & FAQ */}
           {activeTab === "docs" && (
             <div className="space-y-4">
               {/* Search Bar */}
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search articles and FAQs..."
-                  className="w-full pl-9 pr-4 py-2 bg-[#171B26] border border-[#262E40] rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
 
               {/* Quick Feature Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3 bg-[#141822] border border-[#232938] rounded-xl space-y-1">
+              <div className="grid grid-cols-1 gap-3">
+                <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
                   <div className="flex items-center gap-1.5 text-cyan-400 text-xs font-semibold">
                     <Bot className="w-3.5 h-3.5" />
                     <span>Practice Call</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
+                  <p className="text-[11px] text-slate-500 leading-snug">
                     Test recording cues, simulated participant notes, and consent gates.
                   </p>
                   {onOpenTestCall && (
@@ -227,22 +132,22 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                   )}
                 </div>
 
-                <div className="p-3 bg-[#141822] border border-[#232938] rounded-xl space-y-1">
+                <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
                   <div className="flex items-center gap-1.5 text-purple-400 text-xs font-semibold">
                     <ListMusic className="w-3.5 h-3.5" />
                     <span>Highlight Reels</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
+                  <p className="text-[11px] text-slate-500 leading-snug">
                     Collect important takeaways in a timed, simulated reel preview.
                   </p>
                 </div>
 
-                <div className="p-3 bg-[#141822] border border-[#232938] rounded-xl space-y-1">
+                <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
                   <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold">
                     <Bell className="w-3.5 h-3.5" />
                     <span>Keyword Alerts</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
+                  <p className="text-[11px] text-slate-500 leading-snug">
                     Scan transcripts for pricing, objections, or project milestones.
                   </p>
                 </div>
@@ -250,7 +155,7 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
 
               {/* Accordion FAQ List */}
               <div className="space-y-2 pt-2">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Frequently Asked Questions
                 </h3>
                 {filteredFaqs.map((faq, idx) => {
@@ -258,21 +163,21 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                   return (
                     <div
                       key={idx}
-                      className="border border-[#222838] bg-[#141822] rounded-xl overflow-hidden transition-colors"
+                      className="border border-slate-200 bg-white rounded-xl overflow-hidden transition-colors"
                     >
                       <button
                         onClick={() => setExpandedFaqIndex(isExpanded ? null : idx)}
-                        className="w-full px-4 py-3 flex items-center justify-between text-left text-xs font-semibold text-white hover:text-cyan-300 transition-colors cursor-pointer"
+                        className="w-full px-4 py-3 flex items-center justify-between text-left text-xs font-semibold text-slate-900 hover:text-cyan-300 transition-colors cursor-pointer"
                       >
                         <span>{faq.question}</span>
                         <ChevronDown
-                          className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                          className={`w-3.5 h-3.5 text-slate-500 transition-transform ${
                             isExpanded ? "rotate-180 text-cyan-400" : ""
                           }`}
                         />
                       </button>
                       {isExpanded && (
-                        <div className="px-4 pb-3 text-xs text-slate-300 leading-relaxed border-t border-[#1C2230] pt-2">
+                        <div className="px-4 pb-3 text-xs text-slate-700 leading-relaxed border-t border-slate-200 pt-2">
                           {faq.answer}
                         </div>
                       )}
@@ -291,15 +196,15 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                   <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
                     <Check className="w-6 h-6 stroke-[3]" />
                   </div>
-                  <h4 className="text-sm font-bold text-white">Thank You for Your Feedback!</h4>
-                  <p className="text-xs text-slate-400 max-w-sm">
+                  <h4 className="text-sm font-bold text-slate-900">Thank You for Your Feedback!</h4>
+                  <p className="text-xs text-slate-500 max-w-sm">
                     Demo feedback acknowledged for this session only. Nothing was sent to a support team.
                   </p>
                 </div>
               ) : (
                 <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Feedback Type</label>
+                    <label className="text-xs font-semibold text-slate-700">Feedback Type</label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { id: "idea", label: "💡 Feature Idea" },
@@ -313,7 +218,7 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                           className={`py-2 px-3 rounded-lg text-xs font-medium border text-center transition-all cursor-pointer ${
                             feedbackType === type.id
                               ? "bg-cyan-500/15 border-cyan-500/50 text-cyan-300"
-                              : "bg-[#141822] border-[#222838] text-slate-400 hover:text-white"
+                              : "bg-white border-slate-200 text-slate-500 hover:text-slate-900"
                           }`}
                         >
                           {type.label}
@@ -323,12 +228,13 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Experience Rating</label>
+                    <label className="text-xs font-semibold text-slate-700">Experience Rating</label>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
                           type="button"
+                          aria-label={star + " stars"}
                           onClick={() => setFeedbackRating(star)}
                           className="p-1 text-slate-500 hover:text-amber-400 transition-colors"
                         >
@@ -341,21 +247,21 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                           />
                         </button>
                       ))}
-                      <span className="text-xs text-slate-400 ml-2 font-mono">
+                      <span className="text-xs text-slate-500 ml-2 font-mono">
                         {feedbackRating} / 5 stars
                       </span>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Your Message</label>
+                    <label className="text-xs font-semibold text-slate-700">Your Message</label>
                     <textarea
                       required
                       rows={4}
                       value={feedbackText}
                       onChange={(e) => setFeedbackText(e.target.value)}
                       placeholder="Describe what you like or what could be improved in the meeting intelligence workflow..."
-                      className="w-full p-3 bg-[#171B26] border border-[#262E40] rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500/50 resize-none"
+                      className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500/50 resize-none"
                     />
                   </div>
 
@@ -374,12 +280,12 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
           {activeTab === "support" && (
             <div>
               {generatedTicketId ? (
-                <div className="p-5 rounded-xl bg-[#141924] border border-emerald-500/30 space-y-3 animate-in fade-in duration-150">
+                <div className="p-5 rounded-xl bg-white border border-emerald-500/30 space-y-3 animate-in fade-in duration-150">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold text-white">
-                        Support Ticket Created
+                      <span className="text-xs font-bold text-slate-900">
+                        Demo Ticket Preview
                       </span>
                     </div>
                     <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
@@ -387,18 +293,18 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                     </span>
                   </div>
 
-                  <div className="p-3 bg-[#0E121B] rounded-lg border border-[#1E2535] text-xs space-y-2">
-                    <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                  <div className="p-3 bg-white rounded-lg border border-slate-200 text-xs space-y-2">
+                    <div className="flex items-center justify-between text-slate-500 text-[11px]">
                       <span>Topic: {ticketTopic}</span>
-                      <span className="text-cyan-400">Status: Investigating</span>
+                      <span className="text-cyan-400">Status: Not sent</span>
                     </div>
-                    <p className="text-slate-300 italic">&ldquo;{ticketMessage}&rdquo;</p>
+                    <p className="text-slate-700 italic">&ldquo;{ticketMessage}&rdquo;</p>
                   </div>
 
-                  <div className="text-xs text-slate-400 flex items-center gap-2 pt-1">
+                  <div className="text-xs text-slate-500 flex items-center gap-2 pt-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>
-                      Simulated agent assigned: <strong>David Kim (Support Specialist)</strong>. In a live system, you would receive an email confirmation.
+                      This ticket is a local preview only. Nothing was sent and no support agent has been assigned.
                     </span>
                   </div>
 
@@ -415,11 +321,11 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
               ) : (
                 <form onSubmit={handleSupportTicketSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Support Topic</label>
+                    <label className="text-xs font-semibold text-slate-700">Support Topic</label>
                     <select
                       value={ticketTopic}
                       onChange={(e) => setTicketTopic(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#171B26] border border-[#262E40] rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50 cursor-pointer"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-cyan-500/50 cursor-pointer"
                     >
                       <option value="Audio & Capture">Audio &amp; Capture</option>
                       <option value="Summary & Action Items">Summary &amp; Action Items</option>
@@ -430,7 +336,7 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
+                    <label className="text-xs font-semibold text-slate-700">
                       Inquiry Description
                     </label>
                     <textarea
@@ -439,7 +345,7 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
                       value={ticketMessage}
                       onChange={(e) => setTicketMessage(e.target.value)}
                       placeholder="Explain the issue or question with as much detail as possible..."
-                      className="w-full p-3 bg-[#171B26] border border-[#262E40] rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500/50 resize-none"
+                      className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500/50 resize-none"
                     />
                   </div>
 
@@ -454,6 +360,7 @@ export const HelpFeedbackModal: React.FC<HelpFeedbackModalProps> = ({
             </div>
           )}
         </div>
+        <nav aria-label="Support" className="support-nav"><button aria-pressed={activeTab !== "docs"} onClick={() => setActiveTab("conversation")}><MessageSquare size={17}/>Conversation</button><button aria-pressed={activeTab === "docs"} onClick={() => setActiveTab("docs")}><BookOpen size={17}/>Help center</button></nav>
       </div>
     </div>
   );

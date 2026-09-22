@@ -104,6 +104,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   const playbackStart = readPlaybackTimestamp(params.get("t"), selectedMeeting?.duration || 0);
   const selectedMeetingTimestamp = playbackStart.seconds;
   const selectEntity = (tab: "playlists" | "alerts", id: string) => {
+    setIsSettingsOpen(false);
     setSelectedTab(tab);
     setIsMobileMenuOpen(false);
     const url = new URL("/", window.location.origin);
@@ -113,6 +114,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   };
 
   const handleSelectMeeting = (meetingId: string, timestamp?: number) => {
+    setIsSettingsOpen(false);
     navigate(meetingId, timestamp);
   };
 
@@ -126,22 +128,24 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#090B0F]">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#191919]">
       {/* 1. Global Header */}
       <Header
         onStartTestCall={showCapture}
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        settingsActive={isSettingsOpen}
+        onOpenSettings={() => setIsSettingsOpen(value => !value)}
         onOpenHelp={() => setIsHelpOpen(true)}
         onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         onNavigateHome={() => {
+          setIsSettingsOpen(false);
           navigate();
           setSelectedTab("my-calls");
           setIsMobileMenuOpen(false);
         }}
       />
 
-      <div className="flex items-center justify-between gap-2 border-b border-slate-800 bg-[#10151d] px-4 py-2 text-xs">
+      <div className="capture-status-bar">
         <button onClick={() => { if (capture.state.phase === "ready") capture.engine?.open(); setCaptureOpen(true); setCaptureMinimized(false); }} className="text-slate-300 truncate" aria-label="Open Notetaker status">Notetaker · {capture.state.phase === "ready" || capture.state.phase === "precall" ? "Ready" : capture.state.phase === "permission" ? "Permission required" : capture.state.phase === "recording" ? "Recording " + formatTime(capture.state.elapsed) : capture.state.phase === "complete" ? "Complete" : capture.state.phase}</button>
         <button onClick={showCapture} className="shrink-0 text-cyan-300 hover:text-white font-semibold">{["ready","precall","complete","declined"].includes(capture.state.phase) ? "Start Test Call" : "View Test Call"}</button>
       </div>
@@ -150,13 +154,14 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
       {(storageError || workspaceStorageError) && <p role="status" className="p-2 text-amber-300 text-xs">Browser storage is unavailable. Changes are retained only until this page closes.</p>}
       {selectedMeeting && playbackStart.invalid && <p role="status" className="p-2 text-amber-300 text-xs">The playback timestamp is invalid or outside this meeting. Playback starts at 00:00.</p>}
       {/* 2. Workspace Body */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Only show sidebar on dashboard views, not inside meeting detail */}
-        {!selectedMeeting && (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+        {/* Keep library navigation above dashboard views, outside meeting detail */}
+        {!selectedMeeting && !isSettingsOpen && (
           <Sidebar
             notetakerStatus={capture.state.phase}
             activeTab={sidebarTab}
             onSelectTab={(tab) => {
+              setIsSettingsOpen(false);
               setSelectedTab(tab);
               navigate();
             }}
@@ -173,11 +178,23 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
         )}
 
         {/* Dynamic Main Workspace Area */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {selectedMeeting ? (
-            /* Meeting Detail Vertical Slice */
+        <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {isSettingsOpen ? <SettingsModal
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            settings={settings}
+            onUpdateRecording={updateRecording}
+            onUpdateSummaries={updateSummaries}
+            onUpdateSharing={updateSharing}
+            onAddHighlightType={addHighlightType}
+            onUpdateHighlightType={updateHighlightType}
+            onReorderHighlightTypes={reorderHighlightTypes}
+            onDeleteHighlightType={deleteHighlightType}
+          /> : selectedMeeting ? (
+                /* Meeting Detail Vertical Slice */
             <MeetingDetailView
               key={`${selectedMeetingId}:${selectedMeetingTimestamp}`}
+              highlightTypes={settings.highlights.types}
               meeting={selectedMeeting}
               summaryTemplate={templates[selectedMeeting.id] || settings.summaries.defaultTemplate}
               onTemplateChange={template => setTemplate(selectedMeeting.id, template)}
@@ -271,7 +288,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
             className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative flex flex-col w-72 max-w-[85vw] bg-[#0c1017] border-r border-slate-800 shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative flex flex-col w-72 max-w-[85vw] bg-[#191919] border-r border-slate-800 shadow-2xl z-10 animate-in slide-in-from-left duration-200">
             <div className="p-3 border-b border-slate-800 flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Workspace Menu</span>
               <button
@@ -290,6 +307,7 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
                 notetakerStatus={capture.state.phase}
                 activeTab={sidebarTab}
                 onSelectTab={(tab) => {
+                  setIsSettingsOpen(false);
                   setSelectedTab(tab);
                   setIsMobileMenuOpen(false);
                   navigate();
@@ -329,18 +347,6 @@ export function MeetingWorkspace({ sharedMeetingId }: { sharedMeetingId?: string
         onClose={() => setSharingMeeting(null)}
       />}
 
-      {isSettingsOpen && <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={settings}
-        onUpdateRecording={updateRecording}
-        onUpdateSummaries={updateSummaries}
-        onUpdateSharing={updateSharing}
-        onAddHighlightType={addHighlightType}
-        onUpdateHighlightType={updateHighlightType}
-        onReorderHighlightTypes={reorderHighlightTypes}
-        onDeleteHighlightType={deleteHighlightType}
-      />}
 
       <HelpFeedbackModal
         isOpen={isHelpOpen}

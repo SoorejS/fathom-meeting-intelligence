@@ -56,7 +56,7 @@ export function FloatingNotetaker({ children, footer, minimized, onMinimize, onR
   };
   const focus = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset";
   return <aside ref={panel} aria-label="Fathom test call" style={!minimized && position ? { left: position.x, top: position.y } : { right: 12, bottom: 12 }}
-    className={`fixed z-40 rounded-xl border border-slate-700 bg-[#111722] text-slate-100 shadow-lg shadow-black/30 ${minimized ? "w-max max-w-[calc(100vw-24px)]" : "w-[min(360px,calc(100vw-24px))]"}`}
+    className={`fixed z-40 rounded-xl border border-slate-700 bg-[#191919] text-slate-100 shadow-lg shadow-black/30 ${minimized ? "w-max max-w-[calc(100vw-24px)]" : "w-[min(360px,calc(100vw-24px))]"}`}
     onKeyDown={event => { if (event.key === "Escape" && !minimized) { event.stopPropagation(); minimize(); } }}>
     {minimized && <button ref={restore} aria-label={`Restore Notetaker · ${label}`} onClick={expand} className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs ${focus}`}>
       <span className={`h-2 w-2 shrink-0 rounded-full ${recording ? "bg-red-400 animate-pulse" : "bg-cyan-400"}`} />

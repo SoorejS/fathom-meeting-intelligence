@@ -4,7 +4,11 @@ import React, { useState, useMemo, useRef } from "react";
 import { TranscriptSegment, HighlightType } from "@/types/meeting";
 import { Search, Play, Plus, MoreHorizontal, Sparkles } from "lucide-react";
 
+import { CustomHighlightType } from "@/types/settings";
+import { DEFAULT_HIGHLIGHT_TYPES } from "@/services/settingsService";
+
 interface TranscriptViewProps {
+  highlightTypes?: CustomHighlightType[];
   transcript: TranscriptSegment[];
   currentTime: number;
   onSeek: (seconds: number) => void;
@@ -12,6 +16,7 @@ interface TranscriptViewProps {
 }
 
 export const TranscriptView: React.FC<TranscriptViewProps> = ({
+  highlightTypes = DEFAULT_HIGHLIGHT_TYPES,
   transcript,
   currentTime,
   onSeek,
@@ -19,7 +24,7 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightModalSegment, setHighlightModalSegment] = useState<TranscriptSegment | null>(null);
-  const [highlightType, setHighlightType] = useState<HighlightType>("Highlight");
+  const [highlightType, setHighlightType] = useState<HighlightType>(highlightTypes[0]?.name || "Highlight");
   const activeSegmentRef = useRef<HTMLDivElement>(null);
 
   // Find currently active segment
@@ -68,7 +73,7 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search Transcript"
-            className="w-full pl-9 pr-3 py-1.5 bg-[#171922] border border-[#272b38] rounded-full text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#00c2ff]/50 transition-colors"
+            className="w-full pl-9 pr-3 py-1.5 bg-[#252527] border border-[#343436] rounded-full text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#00c2ff]/50 transition-colors"
           />
         </div>
       </div>
@@ -98,14 +103,16 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
               {/* Segment Bubble Card */}
               <div
                 onClick={() => onSeek(segment.timestamp)}
-                className={`flex-1 rounded-xl p-3.5 transition-all cursor-pointer border ${
+                role="button" tabIndex={0} aria-label={"Seek to " + segment.timestampFormatted + ", " + segment.speaker}
+                onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {event.preventDefault();onSeek(segment.timestamp);} }}
+                className={`flex-1 min-w-0 rounded-md p-3 transition-all cursor-pointer border ${
                   isActive
-                    ? "bg-[#1c212c] border-[#00c2ff]/50 shadow-lg shadow-[#00c2ff]/5"
-                    : "bg-[#161820] hover:bg-[#1a1d26] border-[#222530]"
+                    ? "bg-[#484a49] border-transparent"
+                    : "bg-[#252527] hover:bg-[#303033] border-[#343436]"
                 }`}
               >
                 {/* Header: Speaker Name + Timestamp + Menu */}
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex flex-wrap gap-2 items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-white tracking-tight">
                       {segment.speaker}
@@ -136,7 +143,7 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
                 </div>
 
                 {/* Spoken Text */}
-                <p className="text-xs text-slate-200 leading-relaxed font-normal select-text">
+                <p className="text-sm text-slate-200 leading-relaxed font-normal select-text">
                   {segment.text}
                 </p>
               </div>
@@ -147,7 +154,7 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
 
       {/* Inline Create Highlight Modal */}
       {highlightModalSegment && (
-        <div className="p-3.5 bg-[#181b24] border border-[#2b3040] rounded-xl animate-in fade-in zoom-in-95 duration-100 space-y-3 shadow-2xl">
+        <div className="p-3.5 bg-[#252527] border border-[#343436] rounded-xl animate-in fade-in zoom-in-95 duration-100 space-y-3 shadow-2xl">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#00c2ff]" />
@@ -161,30 +168,24 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
             </button>
           </div>
 
-          <p className="text-xs text-slate-300 italic line-clamp-2 bg-[#12141c] p-2.5 rounded-lg border border-[#222736]">
+          <p className="text-xs text-slate-300 italic line-clamp-2 bg-[#252527] p-2.5 rounded-lg border border-[#343436]">
             &ldquo;{highlightModalSegment.text}&rdquo;
           </p>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              {(
-                [
-                  { type: "Highlight", color: "border-[#00c2ff]/40 text-[#00c2ff]" },
-                  { type: "Positive Reaction", color: "border-[#10b981]/40 text-[#10b981]" },
-                  { type: "Needs Review", color: "border-[#f59e0b]/40 text-[#f59e0b]" },
-                  { type: "Feedback", color: "border-[#f97316]/40 text-[#f97316]" },
-                ] as const
-              ).map((item) => (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {highlightTypes.map((item) => (
                 <button
-                  key={item.type}
-                  onClick={() => setHighlightType(item.type as HighlightType)}
+                  key={item.name}
+                  onClick={() => setHighlightType(item.name as HighlightType)}
+                  style={highlightType === item.name ? {color:item.color,borderColor:item.color} : undefined}
                   className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
-                    highlightType === item.type
-                      ? "bg-white/10 " + item.color
-                      : "border-[#252a3a] text-slate-400 hover:text-white"
+                    highlightType === item.name
+                      ? "bg-white/10"
+                      : "border-[#343436] text-slate-400 hover:text-white"
                   }`}
                 >
-                  {item.type}
+                  {item.name}
                 </button>
               ))}
             </div>

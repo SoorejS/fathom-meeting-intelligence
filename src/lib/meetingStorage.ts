@@ -24,7 +24,7 @@ export function decodeState(raw: string | null, seeds: Meeting[]): SavedState {
         const highlights = Array.isArray(saved.highlights) ? saved.highlights.filter((h: Highlight) =>
           h && typeof h.id === "string" && h.creator === "You" && h.meetingId === m.id &&
           typeof h.text === "string" && typeof h.timestampFormatted === "string" &&
-          ["Highlight", "Positive Reaction", "Needs Review", "Feedback"].includes(h.type) &&
+          typeof h.type === "string" && h.type.trim().length > 0 && h.type.length <= 80 &&
           m.transcript.some(t => t.timestamp === h.timestamp) && !m.highlights.some(seed => seed.id === h.id))
           .filter((h: Highlight, index: number, all: Highlight[]) => all.findIndex(other => other.id === h.id) === index)
           .map((h: Highlight) => ({ ...h, timestampFormatted: m.transcript.find(t => t.timestamp === h.timestamp)!.timestampFormatted })) : [];

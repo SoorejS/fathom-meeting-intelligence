@@ -68,7 +68,7 @@ export const HighlightsView: React.FC<HighlightsViewProps> = ({
               className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap cursor-pointer ${
                 selectedType === t
                   ? "bg-[#00c2ff]/20 text-[#00c2ff] border border-[#00c2ff]/40"
-                  : "text-slate-400 hover:text-slate-200 border border-[#252834] bg-[#161820]"
+                  : "text-slate-400 hover:text-slate-200 border border-[#343436] bg-[#252527]"
               }`}
             >
               {t}
@@ -90,7 +90,7 @@ export const HighlightsView: React.FC<HighlightsViewProps> = ({
               <div
                 key={h.id}
                 onClick={() => onSeek(h.timestamp)}
-                className="p-3 rounded-xl bg-[#161820] hover:bg-[#1a1d26] border border-[#242734] hover:border-cyan-500/30 cursor-pointer transition-all space-y-2 group"
+                className="p-3 rounded-xl bg-[#252527] hover:bg-[#303033] border border-[#343436] hover:border-cyan-500/30 cursor-pointer transition-all space-y-2 group"
               >
                 <div className="flex items-center justify-between text-[11px]">
                   <span
@@ -110,7 +110,7 @@ export const HighlightsView: React.FC<HighlightsViewProps> = ({
                   &ldquo;{h.text}&rdquo;
                 </p>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1f222d]">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#343436]">
                   <span>Logged by {h.creator}</span>
                   <span className="text-[#00c2ff] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                     Play clip →

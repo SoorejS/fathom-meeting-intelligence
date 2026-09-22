@@ -62,8 +62,8 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1 select-none">
         <div className="flex items-center gap-2">
           {/* Template Selector Pill: [📋 Enhanced ▾] [⚙] */}
-          <div className="inline-flex items-center rounded-lg bg-[#181a22] border border-[#272b38] text-xs text-white overflow-hidden shadow-sm">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-[#202430] transition-colors relative cursor-pointer">
+          <div className="inline-flex items-center rounded-full bg-[#252527] border border-[#343436] text-xs text-white overflow-hidden shadow-sm">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-[#303033] transition-colors relative cursor-pointer">
               <FileText className="w-3.5 h-3.5 text-[#00c2ff]" />
               <select aria-label="Summary template"
                 value={activeTemplate}
@@ -71,7 +71,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
                 className="bg-transparent text-xs font-semibold text-white focus:outline-none appearance-none pr-4 cursor-pointer"
               >
                 {templateOptions.map((t) => (
-                  <option key={t.key} value={t.key} className="bg-[#181a22] text-white">
+                  <option key={t.key} value={t.key} className="bg-[#252527] text-white">
                     {t.label}
                   </option>
                 ))}
@@ -86,7 +86,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
         {/* Copy Summary Button */}
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#142633] hover:bg-[#1a3345] border border-[#00c2ff]/30 text-[#00c2ff] text-xs font-semibold transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#252527] hover:bg-[#303033] border border-[#00c2ff]/30 text-[#00c2ff] text-xs font-semibold transition-colors cursor-pointer"
           title="Copy formatted summary"
         >
           {copied ? (
@@ -104,7 +104,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
       </div>
 
       {/* 2. Customized Summary Generated Banner (Matching Screenshot 2228a0b3-d0d2-4b67-a9eb-18e9ba900015.png) */}
-      <div className="p-2.5 rounded-xl bg-[#151720] border border-[#272b38] flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div className="p-2.5 rounded-xl bg-[#252527] border border-[#343436] flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2 text-slate-300">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
           <span className="font-medium">Structured from meeting notes</span>
@@ -115,7 +115,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
 
           <button
             onClick={() => { setActiveTemplate("default"); showBannerToast("Restored the Enhanced template"); }}
-            className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#202430] transition-colors"
+            className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#303033] transition-colors"
             title="Reset to Enhanced template"
           >
             <Undo2 className="w-3.5 h-3.5" />
@@ -131,7 +131,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
       )}
 
       {/* 3. Summary Content (Matching Live Fathom Typography & Clean Bullet Spacing) */}
-      <div className="space-y-5 text-xs leading-relaxed text-slate-200">
+      <div className="space-y-5 text-sm leading-relaxed text-slate-200">
         {/* Overview bullets */}
         <div className="space-y-2">
           <ul className="space-y-2 pl-1">
@@ -165,7 +165,7 @@ ${currentSummary.decisions.map((d) => `• ${d}`).join("\n")}
         </div>
 
         {/* Decisions Made Section */}
-        <div className="space-y-2 pt-2 border-t border-[#1f222c]">
+        <div className="space-y-2 pt-2 border-t border-[#343436]">
           <h3 className="text-sm font-bold text-white tracking-tight">Decisions Made</h3>
           <ul className="space-y-2 pl-1">
             {currentSummary.decisions.map((dec, idx) => (
