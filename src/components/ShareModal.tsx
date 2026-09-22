@@ -96,7 +96,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <input
               type="checkbox"
               checked={includeTimestamp}
-              onChange={(e) => setIncludeTimestamp(e.target.checked)}
+              onChange={(e) => { setIncludeTimestamp(e.target.checked); setCopied(false); setCopyError(false); }}
               className="w-4 h-4 rounded border-[#262a36] bg-[#0e1015] text-[#00c2ff] focus:ring-0 cursor-pointer accent-[#00c2ff]"
             />
           </label>
