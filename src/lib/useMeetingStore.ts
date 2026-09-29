@@ -1,53 +1,65 @@
 "use client";
-import { useMemo, useSyncExternalStore } from "react";
-import { SEEDED_MEETINGS } from "../data/seededMeetings";
-import type { Meeting, SummaryTemplateKey, TestCallDescriptor } from "../types/meeting";
-import { STORAGE_KEY, decodeState, applySavedState, emptyState } from "./meetingStorage";
-
-let memory: string | null = null;
-let storageError = false;
-const listeners = new Set<() => void>();
-function snapshot() {
-  if (storageError) return memory;
-  try { return window.localStorage.getItem(STORAGE_KEY); }
-  catch { return memory; }
-}
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  window.addEventListener("storage", listener);
-  return () => { listeners.delete(listener); window.removeEventListener("storage", listener); };
-}
-function save(state: ReturnType<typeof emptyState>) {
-  memory = JSON.stringify(state);
-  try { window.localStorage.setItem(STORAGE_KEY, memory); storageError = false; }
-  catch { storageError = true; }
-  listeners.forEach(listener => listener());
-}
-export function storeGeneratedCall(call: TestCallDescriptor) {
-  const latest = decodeState(snapshot(), SEEDED_MEETINGS);
-  if (latest.generated.some(item => item.id === call.id)) return;
-  latest.generated.unshift(call);
-  save(latest);
+import { useEffect, useState } from "react";
+import type {
+  Meeting,
+  SummaryTemplateKey,
+  TestCallDescriptor,
+} from "@/types/meeting";
+import { api } from "./api";
+const pending = new Map<string, Promise<Meeting>>();
+export function storeGeneratedCall(call: TestCallDescriptor): Promise<Meeting> {
+  const existing = pending.get(call.id);
+  if (existing) return existing;
+  const task = api<Meeting>("/meetings", "POST", call)
+    .then((meeting) => {
+      window.dispatchEvent(new Event("relay:meetings"));
+      return meeting;
+    })
+    .finally(() => pending.delete(call.id));
+  pending.set(call.id, task);
+  return task;
 }
 export function useMeetingStore() {
-  const raw = useSyncExternalStore(subscribe, snapshot, () => null);
-  const state = useMemo(() => decodeState(raw, SEEDED_MEETINGS), [raw]);
-  const meetings = useMemo(() => applySavedState(SEEDED_MEETINGS, state), [state]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [storageError, setError] = useState(false);
+  const [templates, setTemplates] = useState<
+    Record<string, SummaryTemplateKey>
+  >({});
+  useEffect(() => {
+    const load = () => {
+      api<Meeting[]>("/meetings")
+        .then(setMeetings)
+        .catch(() => setError(true));
+    };
+    load();
+    window.addEventListener("relay:meetings", load);
+    return () => window.removeEventListener("relay:meetings", load);
+  }, []);
   return {
-    meetings, templates: state.templates, storageError,
-    updateMeeting(meeting: Meeting) {
-      const latest = decodeState(snapshot(), SEEDED_MEETINGS);
-      if (meeting.testCall && !latest.generated.some(d => d.id === meeting.id)) latest.generated.unshift(meeting.testCall);
-      latest.meetings[meeting.id] = {
-        statuses: Object.fromEntries(meeting.actionItems.map(a => [a.id, a.status])),
-        highlights: meeting.highlights.filter(h => h.creator === "You"),
-      };
-      save(latest);
+    meetings,
+    templates,
+    storageError,
+    async updateMeeting(meeting: Meeting) {
+      const prior = meetings.find((m) => m.id === meeting.id);
+      if (!prior) return;
+      try {
+        for (const a of meeting.actionItems)
+          if (prior.actionItems.find((p) => p.id === a.id)?.status !== a.status)
+            await api(`/action-items/${a.id}`, "PATCH", { status: a.status });
+        for (const h of meeting.highlights) {
+          const old = prior.highlights.find((p) => p.id === h.id);
+          if (!old) await api(`/meetings/${meeting.id}/highlights`, "POST", h);
+          else if (old.type !== h.type || old.text !== h.text)
+            await api(`/highlights/${h.id}`, "PATCH", h);
+        }
+        const fresh = await api<Meeting>(`/meetings/${meeting.id}`);
+        setMeetings((all) => all.map((m) => (m.id === fresh.id ? fresh : m)));
+      } catch {
+        setError(true);
+      }
     },
     setTemplate(id: string, template: SummaryTemplateKey) {
-      const latest = decodeState(snapshot(), SEEDED_MEETINGS);
-      latest.templates[id] = template;
-      save(latest);
+      setTemplates((old) => ({ ...old, [id]: template }));
     },
   };
 }

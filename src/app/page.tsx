@@ -1,2 +1,2 @@
-import { MeetingWorkspace } from "@/components/MeetingWorkspace";
-export default function Home() { return <MeetingWorkspace />; }
+import { RelayApp } from '@/components/relay/RelayApp';
+export default function Home(){return <RelayApp/>;}

@@ -1,19 +1,23 @@
 {
-  "name": "fathom-ai-clone",
+  "name": "relay-meeting-intelligence",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "serve out --listen 3000",
+    "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "db:seed": "tsx --env-file=.env.local scripts/seed-database.ts",
+    "test:api": "tsx --env-file=.env.local scripts/verify-api.ts"
   },
   "dependencies": {
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
+    "postgres": "^3.4.9",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -24,6 +28,7 @@
     "eslint-config-next": "16.3.5",
     "serve": "^14.2.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "engines": {

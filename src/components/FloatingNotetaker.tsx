@@ -55,7 +55,7 @@ export function FloatingNotetaker({ children, footer, minimized, onMinimize, onR
     setPosition(constrain({ x: box.left + direction[0] * step, y: box.top + direction[1] * step }));
   };
   const focus = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset";
-  return <aside ref={panel} aria-label="Fathom test call" style={!minimized && position ? { left: position.x, top: position.y } : { right: 12, bottom: 12 }}
+  return <aside ref={panel} aria-label="Relay test call" style={!minimized && position ? { left: position.x, top: position.y } : { right: 12, bottom: 12 }}
     className={`fixed z-40 rounded-xl border border-slate-700 bg-[#191919] text-slate-100 shadow-lg shadow-black/30 ${minimized ? "w-max max-w-[calc(100vw-24px)]" : "w-[min(360px,calc(100vw-24px))]"}`}
     onKeyDown={event => { if (event.key === "Escape" && !minimized) { event.stopPropagation(); minimize(); } }}>
     {minimized && <button ref={restore} aria-label={`Restore Notetaker · ${label}`} onClick={expand} className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs ${focus}`}>
@@ -69,7 +69,7 @@ export function FloatingNotetaker({ children, footer, minimized, onMinimize, onR
             onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }} onLostPointerCapture={() => { drag.current = null; }} onKeyDown={moveWithKeyboard}
             className={`flex min-w-0 flex-1 touch-none select-none items-center gap-2 rounded-lg p-1.5 text-left cursor-grab active:cursor-grabbing ${focus}`}>
             <GripVertical size={14} className="shrink-0 text-slate-500" /><Bot size={18} className="shrink-0 text-cyan-400" />
-            <span className="min-w-0"><span className="block text-xs font-semibold">Fathom Notetaker</span><span className={`block truncate text-[10px] tabular-nums ${recording ? "text-red-300" : "text-slate-400"}`}>{recording ? label : "Browser test call · no meeting bot"}</span></span>
+            <span className="min-w-0"><span className="block text-xs font-semibold">Relay Notetaker</span><span className={`block truncate text-[10px] tabular-nums ${recording ? "text-red-300" : "text-slate-400"}`}>{recording ? label : "Browser test call · no meeting bot"}</span></span>
           </button>
           <button aria-label="Minimize Notetaker" onClick={minimize} className={`rounded-lg p-2 text-slate-400 hover:text-white ${focus}`}><Minus size={16} /></button>
           {onClose && <button aria-label="Close test call" onClick={onClose} className={`rounded-lg p-2 text-slate-400 hover:text-white ${focus}`}><X size={16} /></button>}
@@ -80,3 +80,4 @@ export function FloatingNotetaker({ children, footer, minimized, onMinimize, onR
     </div>
   </aside>;
 }
+

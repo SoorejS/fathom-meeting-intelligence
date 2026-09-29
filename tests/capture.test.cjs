@@ -103,3 +103,15 @@ test('MediaRecorder adapter stores the final audio chunk and releases microphone
     const cancelled=new AbortController();cancelled.abort();await assert.rejects(()=>startMicrophone(cancelled.signal));assert.equal(starts,1);assert.equal(stops,2);
   } finally { if(previousNavigator)Object.defineProperty(globalThis,'navigator',previousNavigator);else delete globalThis.navigator;globalThis.MediaRecorder=previousRecorder; }
 });
+
+test('database completion is awaited and failed persistence remains retryable', async () => {
+ let resolveSave;
+ const waiting=new Promise(resolve=>{resolveSave=resolve;});
+ const h=harness({complete:()=>waiting});h.join();await h.engine.approve(false);h.advance(15000);await h.engine.end();h.advance(4000);
+ assert.equal(h.engine.state.phase,'processing');
+ resolveSave();await Promise.resolve();assert.equal(h.engine.state.phase,'complete');
+ let failed=true;
+ const r=harness({complete:()=>failed?Promise.reject(Error('offline')):Promise.resolve()});r.join();await r.engine.approve(false);r.advance(12000);await r.engine.end();r.advance(4000);
+ await Promise.resolve();await Promise.resolve();assert.equal(r.engine.state.phase,'interrupted');assert.match(r.engine.state.message,/retry/);
+ failed=false;await r.engine.end();r.advance(4000);await Promise.resolve();assert.equal(r.engine.state.phase,'complete');
+});

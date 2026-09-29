@@ -28,7 +28,6 @@ export function useTestCallCapture() {
   useEffect(() => {
     const engine = getEngine();
     engine.resumeProcessing();
-    if (engine.state.phase === "complete" && engine.state.call) storeGeneratedCall(engine.state.call);
     const stop = () => engine.interrupt();
     const resume = () => engine.resumeProcessing();
     window.addEventListener("pagehide", stop);

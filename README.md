@@ -1,100 +1,101 @@
-# Fathom-inspired Meeting Intelligence
+# Relay — Make the next step count
 
-## Overview
+Relay is an original meeting-intelligence workspace built around what happens after a conversation: decisions, commitments, and the moments worth keeping. Its editorial layout, quiet green palette, session shelf, action desk, and conversation workspace replace the earlier Fathom reconstruction.
 
-A meeting-intelligence demo that turns six realistic seeded conversations into searchable transcripts, structured summaries, action items, highlights, and grounded questions and answers. Open any meeting from the dashboard, or use Start Test Call to record a consented browser microphone test (with a clearly labeled simulated fallback) and generate a new meeting without signing in.
+[Live application](https://fathom-meeting-intelligence.vercel.app/) · [Public repository](https://github.com/SoorejS/fathom-meeting-intelligence)
 
-## Live Demo
+The existing deployment address is retained for continuity. The application is now Relay.
 
-[Open the public demo](https://fathom-meeting-intelligence.vercel.app)
+## Stack and architecture
 
-[Source repository](https://github.com/SoorejS/fathom-meeting-intelligence)
+Next.js 16 App Router, React 19, TypeScript, CSS/Tailwind, PostgreSQL on Neon, Postgres.js, and Zod. Vercel runs the frontend and server API; this is no longer a static export.
 
-Hosted as a static export on Vercel. The demo does not depend on a developer workstation or a tunnel.
+The browser calls `/api/*`. Route handlers validate requests and use parameterized SQL through a server-only connection. Meetings and their participant, transcript, action, and highlight records are assembled from relational tables. Collections, collection items, signals, and public share tokens also live in Postgres. There is no browser-storage fallback for application data.
 
-## Stack
+- [Relay interface](src/components/relay): overview, library, action desk, meeting workspace, collections, signals, capture studio, preferences and public view.
+- [API](src/app/api/[...path]/route.ts): actual request handlers used by the interface.
+- [Repository](src/server/repository.ts): database reads and transactional capture persistence.
+- [Schema](db/schema.sql): foreign keys, validation constraints and indexes.
+- [Seed command](scripts/seed-database.ts): the original fictional domain examples are inserted into the database once. Seed modules are not imported by the active frontend.
+- [Capture engine](src/lib/captureEngine.ts): retained consent, timing, interruption recovery and local-audio logic. Completion waits for a successful API save.
 
-Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, and Lucide icons. Node.js 24 is used for builds. No database, API key, or environment variables are required.
+## Core workflow
 
-## Architecture
+Open a session from the shelf. Read its Brief, switch the summary lens, and explore the Conversation. Timestamps seek the playback timeline. Complete a follow-up or add one with its source time. Save and edit a Moment from a transcript excerpt. Search for the new text, then create a share link and open its read-only public view. Reloading fetches the database state again.
 
-- [MeetingWorkspace](src/components/MeetingWorkspace.tsx) coordinates the existing dashboard and detail views. [useMeetingStore](src/lib/useMeetingStore.ts) shares a versioned localStorage state between the dashboard and public share routes; saved data is validated before applying it to the seeds and generated test calls.
-- [CaptureEngine](src/lib/captureEngine.ts) coordinates consent, recording, interruption recovery, and deterministic processing. Meeting metadata and preferences use localStorage; microphone blobs use IndexedDB and never leave the browser.
-- [Share routes](src/app/share/[meetingId]/page.tsx) are generated for all six meetings at build time. `/share/m_prod_strategy?t=155` opens the product meeting at 02:35 without authentication. `/share/test` reconstructs generated scenario notes from validated URL-fragment metadata; audio is never embedded.
-- [src/components](src/components) contains the dashboard, playback simulator, transcript, summaries, action items, highlights, search, sharing, and Ask Fathom views.
-- [src/data/seededMeetings.ts](src/data/seededMeetings.ts) supplies typed meeting records to every view; [src/types/meeting.ts](src/types/meeting.ts) defines their relationships.
-- [src/lib/meetingAnswers.ts](src/lib/meetingAnswers.ts) ranks transcript excerpts, notes, actions, highlights, and participant metadata from the selected meeting. Unsupported questions receive an explicit fallback instead of invented facts.
-- Next.js builds static files into `out/`. [vercel.json](vercel.json) serves that export using Vercel's static framework preset.
+The Action desk combines commitments across sessions. Collections curate saved moments with persistent ordering. Signals match keywords against database-backed transcripts and link to their sources. The question panel uses extractive retrieval over the selected meeting's saved records, not canned Q&A entries or an external LLM. Unsupported questions receive an explicit no-evidence response.
 
-## Core workflows
+## Real data and API
 
-1. **Meetings dashboard:** Start with six meetings, filter by category or keyword, and sort by date or duration. Team Calls filters by teammate and local visibility. Upcoming presents seeded calendar events and launches the consented test-call flow. Playlists curate highlights into a timed, simulated reel; Trackers scan real transcript excerpts and open their timestamps. Settings persist locally, including the default summary template. Help provides FAQs and explicitly simulated feedback/support. Deals remains a scoped demo.
-2. **Transcript and playback:** Play/pause locally recorded microphone audio when available, or the explicitly simulated timeline, seek with the scrubber or arrow keys, skip ten seconds, and cycle speeds from 1x to 2x. Transcript segments and timestamps seek the same clock and update the active speaker.
-3. **Summaries:** Switch between Enhanced, Executive Brief, Sales & Deals, and Engineering Spec. Each presents a different structured view of the same meeting facts. Selection persists per meeting; copying includes the displayed key points.
-4. **Action items:** Review owners and due dates, mark items complete, and jump to the source timestamp.
-5. **Highlights:** Create highlights from transcript segments using any of the four types; they appear in the list, timeline, and global search. Change the type or remove your own highlights.
-6. **Ask Fathom:** Ask about decisions, action owners, concerns, a named speaker, or a timestamp. Deterministic retrieval returns excerpts and note extracts with clickable sources; unsupported topics receive an explicit fallback. The dashboard overview derives answers from seeded records.
-7. **Global search:** Open the header search or press Ctrl/Cmd+K. Search titles, participants, dates, all summary templates, transcript text, action items, highlights (including your new highlights), playlists, and trackers. Filter result types, navigate with the keyboard, and open the exact entity or matching moment.
-8. **Sharing:** Copy a meeting URL, optionally including the current timestamp. Recipients can open it without an account. Clipboard failures produce a manual-copy fallback. Seeded meeting links use the public deployment and work without saved browser data. Invalid links show a recovery page; malformed or out-of-range timestamps show a notice and start at 00:00.
+The initial empty database is populated by the seed command with six fictional meetings, 20 participant records, 30 selected transcript excerpts, 16 action items, and 14 highlights. These are real database rows, not claims of real customer recordings.
 
-9. **Test capture:** A compact floating Notetaker keeps the meeting workspace usable. Drag its header (or use arrow keys; Home resets position), minimize to the live recording pill, and restore without restarting capture or losing panel scroll position. Start Test Call → join → explicitly approve or decline → watch the recording clock → End Meeting → processing → open the new call. Microphone denial, unsupported capture, empty audio, and early stops still produce usable scenario notes. A remembered permission choice never bypasses fresh approval.
+Implemented endpoints:
 
-## Seeded data
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET / POST | `/api/meetings` | List records / persist completed test capture |
+| GET | `/api/meetings/:id` | Retrieve a complete meeting |
+| GET | `/api/meetings/:id/transcript` | Retrieve transcript segments |
+| GET / POST | `/api/meetings/:id/action-items` | Read / create follow-ups |
+| PATCH | `/api/action-items/:id` | Save completion state |
+| GET / POST | `/api/meetings/:id/highlights` | Read / create moments |
+| PATCH | `/api/highlights/:id` | Edit a moment |
+| GET | `/api/search?q=...` | Search current database records |
+| POST | `/api/meetings/:id/ask` | Retrieve grounded notes and citations |
+| POST | `/api/shares` | Create a random token-backed share |
+| GET | `/api/shares/:token` | Retrieve the shared meeting and starting time |
+| GET / POST | `/api/playlists` | Read / create collections |
+| POST | `/api/playlists/:id/items` | Add a saved highlight |
+| PATCH | `/api/playlists/:id` | Reorder collection items |
+| GET / POST | `/api/trackers` | Read / create keyword signals |
+| PATCH | `/api/trackers/:id` | Pause / resume a signal |
+| GET | `/api/trackers/matches` | Find transcript matches |
+| GET | `/api/health` | Check database connectivity |
 
-The demo opens populated with product strategy, Acme onboarding, engineering incident review, a FinTech sales demo, Maya Lin's technical interview, and HealthSync customer feedback. All speakers, action owners, highlights, and Q&A citation timestamps reference the selected meeting's data.
-
-These are fictional demo records with selected transcript excerpts, not complete recordings. Meeting durations are simulated. Action completion, created highlights, highlight types, and summary-template selection survive refresh in this browser. Personal edits are not synchronized across devices: share links expose the original seeded meeting and optional playback position. If browser storage is blocked or full, a visible warning explains that edits can only last for the page session. Photos load from Unsplash; meeting intelligence is bundled locally and needs no external API.
+Search currently ranks and filters database-fetched records on the server, bounded to the newest 200 meetings. There is no separate stale client index. Public links store a random token and meeting foreign key; they never serialize a meeting into the URL.
 
 ## Capture decision
 
-The external conferencing bot is intentionally stubbed, as permitted by the assignment. The interactive test-call lifecycle uses real browser microphone capture through MediaRecorder when permission and browser support allow it. Audio stays in IndexedDB and can be played or downloaded locally. Simulated capture is available explicitly and as a fallback.
+The capture layer remains intentionally simulated, as the assignment permits. A test session can use browser microphone audio or an explicit simulated clock. Transcripts, summaries, and actions come from the disclosed scenario cues reached on that clock; they are not speech recognition. The completed meeting is posted to the real API and inserted transactionally into Postgres. Repeating a completion is idempotent.
 
-Transcripts and intelligence are deterministic release-readiness scenario notes, not speech recognition. Only cues reached on the actual recording clock are included; stopping early never invents later actions. Reloading interrupts capture safely and offers processing recovery. Generated meetings, action completion, highlights, and templates survive refresh. Shared test-call links contain title, date, duration, and scenario metadata, but neither audio nor personal edits. Clearing browser storage removes local recordings and edits.
-
-This product decision is separate from required **agent prompt/response capture**, retained in [.agent-logs](.agent-logs/), [.agents](.agents/), [.codex](.codex/), and [CAPTURE-TEST.md](CAPTURE-TEST.md).
-
-## Product decisions
-
-Prioritized a populated first visit, fast client-side search, one playback clock, grounded answers, working share URLs, responsive layouts, and deployment without credentials or local services. Kept the existing component architecture and visual direction. The final pass fixed concrete failures rather than adding a new backend or redesigning the product.
-
-## Deliberately excluded
-
-External meeting bots, system/video capture, live transcription, calendar integrations, CRM and enterprise integrations, billing, authentication, persistent multi-user storage, and a full admin/settings system. Retrieval is deterministic and extractive, with limited keyword matching rather than unrestricted natural-language reasoning; no external LLM is called. Secondary demo controls explain their scope instead of claiming live integrations are connected.
+Microphone audio remains in IndexedDB on the recording device and is not uploaded or shared. Capture-recovery state and purely visual preferences may use localStorage; meetings and edits do not. Seed meetings use a simulated playback timeline.
 
 ## Local development
 
-Use Node.js 24 and npm:
+Use Node.js 24 and a PostgreSQL database:
 
-```bash
-git clone https://github.com/SoorejS/fathom-meeting-intelligence.git
-cd fathom-meeting-intelligence
+```sh
 npm ci
+cp .env.example .env.local
+# Set DATABASE_URL in .env.local to your PostgreSQL connection string.
+npm run db:seed
 npm run dev
 ```
 
-Open the local address printed by the development server.
+The seed command creates missing tables and inserts missing examples without clearing existing data. For an empty-database verification, use a new database or Neon branch; do not reset a populated workspace.
 
-```bash
-npm run lint
+```sh
 npm test
+npm run lint
 npm run build
 npm start
+npm run test:api
 ```
 
-`npm start` serves the static export from `out/` on port 3000; stop the dev server first if it uses that port. To publish a revision after signing in to Vercel, run `npx vercel --prod`. Local Vercel project IDs and credentials are excluded from Git.
+`test:api` expects the application at port 3000 and the same database in `.env.local`. Set `VERIFY_URL` to test another deployment. It creates uniquely identified disposable fixtures, verifies API results against direct SQL reads, and cleans up only those fixtures. Unit tests also retain coverage for the original reusable domain logic; historical local-storage tests describe that legacy module, not the current application data source.
 
-## Verification
+## Deployment
 
-See [FINAL-AUDIT.md](FINAL-AUDIT.md) for final build, browser checks, deployment evidence, and known limitations. Regression tests check all six meetings' participant/citation relationships, retrieval isolation and unsupported queries, named-speaker attribution, and storage round-trips/corruption recovery. See [FUNCTIONAL-DEPTH-AUDIT.md](FUNCTIONAL-DEPTH-AUDIT.md) for the subsequent persistence, retrieval, and public share-route pass.
+Set the server-only `DATABASE_URL` variable in Vercel. Select the Next.js framework preset with no static output-directory override. Run the schema/seed command against the target database before deployment, then deploy with Vercel. Never expose the connection string through a `NEXT_PUBLIC_` variable or commit local environment files.
 
-See [CAPTURE-LIFECYCLE-AUDIT.md](CAPTURE-LIFECYCLE-AUDIT.md) for the interactive capture implementation and its verification limits.
+This is an intentionally shared, publicly writable demonstration workspace containing fictional data. There is no authentication or private tenancy. Share views are read-only interfaces, not a confidentiality boundary around otherwise public demo data. Do not enter confidential information.
 
-The focused integrity regression suite additionally checks search coverage and entity IDs, public share timestamps, saved playlist order and membership, settings recovery, and deletion without reseeding removed objects. The existing versioned browser stores remain in use; custom workspace links require the same browser, while seeded meeting share links are public.
+## Product decisions and scope
 
-See [WALKTHROUGH-VERIFICATION.md](WALKTHROUGH-VERIFICATION.md) for the final Tier 2 regression pass, public browser checks, mobile checks, and remaining demo limitations.
+We prioritized one connected meeting-to-action workflow over integrations. The original business rules, meeting data shape, capture lifecycle, source timestamps, retrieval, and tracker logic remain useful foundations. The frontend and persistence boundary were rebuilt for the revised assignment.
 
-## Agent capture integrity
+Deliberately excluded: external meeting bots, OAuth/SSO, live transcription, cloud audio storage, calendars, CRM, billing, enterprise administration, and unrestricted generative AI. The current release is a small shared workspace rather than a production multi-tenant service.
 
-The native Codex canaries belong to two different full session IDs, documented in [CAPTURE-TEST.md](CAPTURE-TEST.md). Original logs and all development commits are retained. The final audit also documents an inherited Antigravity response discrepancy; no claim is made that the earlier capture history was perfectly append-only. Historical log content is preserved verbatim, including original links. Reference screenshots and generated local build/deployment artifacts are excluded from the repository.
+## Agent capture and history
 
-See [FIDELITY-AUDIT.md](FIDELITY-AUDIT.md) for the screenshot-driven final pass: horizontal library navigation, neutral Fathom styling, full-page settings, the support widget, custom highlight persistence, and desktop/tablet/mobile verification. The current regression suite contains 31 passing tests.
+The assignment's agent-capture evidence remains in [.agent-logs](.agent-logs/), [.agents](.agents/), [.codex](.codex/), and [CAPTURE-TEST.md](CAPTURE-TEST.md). Historical logs and Git commits are preserved. Earlier audit documents describe earlier versions and remain as development evidence. Reference screenshots are excluded from Git and are no longer design specifications for Relay.

@@ -1,2 +1,2 @@
-import { MeetingWorkspace } from "@/components/MeetingWorkspace";
-export default function SharedTestCall() { return <MeetingWorkspace sharedMeetingId="test" />; }
+import {PublicSession} from '@/components/relay/PublicSession';
+export default function LegacyShare(){return <PublicSession token="test"/>;}

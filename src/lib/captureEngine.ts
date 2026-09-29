@@ -19,7 +19,7 @@ export interface CaptureDependencies {
   persist(state: CaptureState): void;
   record(signal: AbortSignal): Promise<RecordingHandle>;
   saveAudio(id: string, blob: Blob): Promise<void>;
-  complete(call: TestCallDescriptor): void;
+  complete(call: TestCallDescriptor): void | Promise<unknown>;
   later(callback: () => void, ms: number): ReturnType<typeof setTimeout>;
   cancel(id: ReturnType<typeof setTimeout>): void;
 }
@@ -119,8 +119,11 @@ export class CaptureEngine {
       if (this.state.phase !== "processing" || !this.state.call) return;
       if (this.state.step < PROCESS_STEPS.length - 1) { this.update({ step: this.state.step + 1 }); this.process(); }
       else {
-        this.deps.complete(this.state.call);
-        this.update({ phase: "complete" });
+        const saved = this.deps.complete(this.state.call);
+        if (saved && typeof saved.then === "function") {
+          saved.then(() => this.update({ phase: "complete", message: "Saved to the Relay database." }))
+            .catch(() => this.update({ phase: "interrupted", message: "The database could not save this call. Your capture is retained; choose Finish saved test call to retry." }));
+        } else this.update({ phase: "complete" });
       }
     }, 550);
   }

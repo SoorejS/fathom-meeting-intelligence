@@ -30,14 +30,14 @@ export function TestCallPanel({ state, engine, onClose, onOpenMeeting, minimized
           <p className="text-xs text-slate-400 flex gap-2"><Mic size={16} />{mode === "microphone" ? "Microphone off. Access is requested only after you approve recording. If unavailable, the call continues in simulation." : "Simulated capture: no microphone, camera, or system audio is accessed."}</p>
           <p className="text-sm text-slate-300">Practice release readiness with a scripted participant. Scenario notes appear at 0, 5, 10, 15, 20 and 25 seconds; ending early includes only the moments reached. Audio stays in this browser. No speech-to-text service is used.</p>
           {state.preference && <div className="text-xs text-slate-400 flex justify-between items-center gap-2"><span>Saved preference: {state.preference}. Each call still asks for explicit consent.</span><button className="text-cyan-400" onClick={() => engine.clearPreference()}>Forget preference</button></div>}
-          <button className={button} disabled={!title.trim()} onClick={() => engine.join({ version: 1, id: `test_${crypto.randomUUID()}`, title: title.trim(), date: new Date().toISOString(), duration: 0, captureMode: mode, hasLocalAudio: false }, target, mode)}>Join with Fathom Notetaker</button>
+          <button className={button} disabled={!title.trim()} onClick={() => engine.join({ version: 1, id: `test_${crypto.randomUUID()}`, title: title.trim(), date: new Date().toISOString(), duration: 0, captureMode: mode, hasLocalAudio: false }, target, mode)}>Join with Relay Notetaker</button>
         </> : <>
           <h3 className="text-sm font-semibold break-words">{state.call?.title}</h3>
           <div className="flex items-center gap-2 text-sm" role="status"><span className={`w-2.5 h-2.5 rounded-full ${state.phase === "recording" ? "bg-red-400 animate-pulse" : "bg-cyan-400"}`} />
             {state.phase === "joining" ? "Joining…" : state.phase === "permission" ? "Connected · Permission required" : state.phase === "recording" ? `${state.call?.captureMode === "microphone" ? "Microphone recording" : "Simulated capture"} active` : state.phase === "processing" ? PROCESS_STEPS[state.step] : state.phase === "ending" ? "Ending meeting…" : state.phase === "complete" ? "Meeting ready" : state.phase === "acquiring" ? "Connected · Waiting for microphone" : state.phase === "declined" ? "Connected · Recording declined" : "Capture interrupted"}
           </div>
           {state.phase === "permission" && <div className="p-3 rounded-xl border border-cyan-500/40 bg-cyan-950/20 space-y-3">
-            <ShieldCheck className="text-cyan-400" /><h3 className="font-semibold">Soorej&apos;s Fathom Notetaker is requesting to record this meeting</h3>
+            <ShieldCheck className="text-cyan-400" /><h3 className="font-semibold">Soorej&apos;s Relay Notetaker is requesting to record this meeting</h3>
             <p className="text-sm text-slate-300">Approve to begin {state.requestedMode === "microphone" ? "local microphone recording" : "a simulated recording"}. The Notetaker cannot record before approval. Scenario notes are generated from the test script, not your speech.</p>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="mt-1 accent-cyan-400" />Apply these permissions to future requests</label>
             <p className="text-xs text-slate-400">Remembers your choice on this device; every new call still requires approval.{state.preference && ` Last saved choice: ${state.preference}.`}</p>
@@ -53,8 +53,9 @@ export function TestCallPanel({ state, engine, onClose, onOpenMeeting, minimized
           {state.phase === "processing" && <ol className="space-y-2 text-sm">{PROCESS_STEPS.map((step,i) => <li key={step} className={i <= state.step ? "text-cyan-300" : "text-slate-500"}>{i < state.step ? "✓" : i === state.step ? "◉" : "○"} {step}</li>)}</ol>}
           {state.phase === "interrupted" && <button className={button} onClick={() => { void engine.end(); }}>Finish saved test call</button>}
           {state.phase === "declined" && <button className={secondary} onClick={() => engine.open()}>Try another test call</button>}
-          {state.phase === "complete" && <><p className="text-sm text-slate-300">Saved to My Calls · {formatTime(state.call?.duration || 0)}. Transcript, summary, actions and highlights use the same test timeline.{(state.call?.duration || 0) < 10 && " This short call ended before the first action-item cue."}</p><button className={button} onClick={() => { onOpenMeeting(state.call!.id); onClose(); }}>Open meeting</button></>}
+          {state.phase === "complete" && <><p className="text-sm text-slate-300">Saved to the workspace database · {formatTime(state.call?.duration || 0)}. Transcript, summary, actions and highlights use the same test timeline.{(state.call?.duration || 0) < 10 && " This short call ended before the first action-item cue."}</p><button className={button} onClick={() => { onOpenMeeting(state.call!.id); onClose(); }}>Open meeting</button></>}
         </>}
         <div className="border-t border-slate-800 pt-4"><p className="text-xs text-slate-400 mb-2">PARTICIPANTS</p><div className="flex flex-wrap gap-2">{TEST_PARTICIPANTS.map(p => <span key={p.id} className="text-xs rounded-lg px-3 py-2 bg-slate-800">{p.name} · {p.role}</span>)}</div></div>
   </FloatingNotetaker>;
 }
+
