@@ -99,3 +99,9 @@ Deliberately excluded: external meeting bots, OAuth/SSO, live transcription, clo
 ## Agent capture and history
 
 The assignment's agent-capture evidence remains in [.agent-logs](.agent-logs/), [.agents](.agents/), [.codex](.codex/), and [CAPTURE-TEST.md](CAPTURE-TEST.md). Historical logs and Git commits are preserved. Earlier audit documents describe earlier versions and remain as development evidence. Reference screenshots are excluded from Git and are no longer design specifications for Relay.
+
+## Intro video and verification
+
+[Watch the one-minute Relay intro](https://fathom-meeting-intelligence.vercel.app/relay-intro.mp4) · [Download the video](public/relay-intro.mp4)
+
+The 1080p intro uses actual Relay screens with captions and synthetic narration. See [RELAY-VERIFICATION.md](RELAY-VERIFICATION.md) for the empty-database seed evidence, direct SQL/API persistence checks, public browser walkthrough, capture result, and known limitations.

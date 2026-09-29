@@ -1,6 +1,6 @@
 import type { Meeting } from "../types/meeting";
 
-const ignored = new Set("what who whom when where why how did does do we they you i me our the a an and or of to in for on with about is are was were say said tell please meeting call happened around owns owner own assigned action items decide decided decisions concern concerns risks risk blockers worries raised summarize summary there any can could participants attended".split(" "));
+const ignored = new Set("what who whom when where why how did does do we they you i me our the a an and or of to in for on with about is are was were say said tell please meeting call happened made around owns owner own assigned action items decide decided decisions concern concerns risks risk blockers worries raised summarize summary there any can could participants attended".split(" "));
 const tokens = (text: string) => [...new Set((text.toLowerCase().match(/[a-z0-9]+/g) || []).filter(t => !ignored.has(t)).map(t => t.replace(/(ing|s)$/, "")))];
 export interface Citation { timestamp: number; formatted: string; text: string }
 export interface MeetingAnswer { answer: string; citations: Citation[] }
@@ -65,3 +65,4 @@ export function findMeetingAnswer(query: string, meeting: Meeting): MeetingAnswe
   const selected = ranked.filter((s,i,all) => all.findIndex(other => other.timestamp === s.timestamp) === i).slice(0,3);
   return respond(selected.map(s => `${s.kind}: ${s.text}`).join("\n\n"), selected.map(s => s.timestamp));
 }
+

@@ -72,3 +72,12 @@ test("retrieval uses current actions, created highlights and named speaker evide
   const sarah = findMeetingAnswer("What did Sarah say about search?", m);
   assert.ok(sarah.citations.every(c => original.transcript.find(t => t.timestamp === c.timestamp).speaker === "Sarah Chen"));
 });
+
+test('decision quick question returns database-compatible summary evidence', () => {
+ const meeting=meetings[0];
+ const answer=findMeetingAnswer('What decisions were made?',meeting);
+ assert.ok(answer);
+ assert.ok(answer.citations.length>0);
+ assert.match(answer.answer,/November 12/);
+});
+
