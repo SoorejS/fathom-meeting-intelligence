@@ -9,5 +9,6 @@ scripts/capture-codex.cjs
 out/
 .next/
 node_modules/
+artifacts/
 *.log
 .env*
