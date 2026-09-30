@@ -21,6 +21,7 @@ import {
   Search,
   Settings2,
   Signal,
+  Sun,
 } from "lucide-react";
 import type { Meeting } from "@/types/meeting";
 import type { SearchResult } from "@/lib/workspaceSearch";
@@ -30,6 +31,7 @@ import { useTestCallCapture } from "@/lib/useTestCallCapture";
 import { TestCallPanel } from "../TestCallPanel";
 import { MeetingPane } from "./MeetingPane";
 import { Dialog } from "./Dialog";
+import { ThemeToggle } from "./ThemeToggle";
 import { formatTime } from "@/lib/testCallMeeting";
 
 type Collection = {
@@ -297,6 +299,9 @@ export function RelayApp() {
               <br />
               More moving forward.
             </p>
+          </div>
+          <div className="nav-theme-wrap">
+            <ThemeToggle />
           </div>
           <button onClick={() => navigate("Preferences")}>
             <Settings2 size={17} />
@@ -883,6 +888,18 @@ export function RelayApp() {
                       <h1>Your workspace, your pace.</h1>
                     </div>
                   </div>
+                  <section className="preference-card">
+                    <h2>
+                      <Sun size={20} />
+                      Appearance & theme
+                    </h2>
+                    <p>
+                      Switch between Relay’s warm editorial light theme, deep forest dark theme, or follow your system preference. Changes apply across the entire workspace immediately.
+                    </p>
+                    <div style={{ maxWidth: 300, marginTop: 14 }}>
+                      <ThemeToggle />
+                    </div>
+                  </section>
                   <section className="preference-card">
                     <h2>Reading density</h2>
                     <p>

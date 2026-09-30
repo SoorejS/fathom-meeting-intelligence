@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import type { Meeting } from "@/types/meeting";
 import { MeetingPane } from "./MeetingPane";
+import { ThemeToggle } from "./ThemeToggle";
 export function PublicSession({ token }: { token: string }) {
   const [data, setData] = useState<{
       meeting: Meeting;
@@ -25,9 +26,12 @@ export function PublicSession({ token }: { token: string }) {
           <span className="brand-mark">
             <AudioLines size={22} />
           </span>
-          relay.
+          relay<span className="brand-period">.</span>
         </Link>
-        <span className="tag">Shared context · read only</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span className="tag">Shared context · read only</span>
+          <ThemeToggle compact />
+        </div>
       </header>
       {error ? (
         <div className="empty">
