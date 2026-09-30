@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "node --test tests/*.test.cjs",
     "db:seed": "tsx --env-file=.env.local scripts/seed-database.ts",
-    "test:api": "tsx --env-file=.env.local scripts/verify-api.ts"
+    "test:api": "tsx --env-file=.env.local scripts/verify-api.ts",
+    "test:parity": "tsx --env-file=.env.local scripts/verify-parity.ts",
+    "db:migrate": "tsx --env-file=.env.local scripts/migrate-parity.ts"
   },
   "dependencies": {
     "lucide-react": "^1.47.0",

@@ -41,3 +41,4 @@ CREATE INDEX IF NOT EXISTS transcript_meeting ON transcript_segments(meeting_id,
 CREATE INDEX IF NOT EXISTS actions_meeting ON action_items(meeting_id);
 CREATE INDEX IF NOT EXISTS highlights_meeting ON highlights(meeting_id);
 CREATE INDEX IF NOT EXISTS participants_meeting ON participants(meeting_id);
+CREATE TABLE IF NOT EXISTS relay_state (key text PRIMARY KEY, value jsonb NOT NULL);

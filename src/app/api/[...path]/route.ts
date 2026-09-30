@@ -1,3 +1,9 @@
+import { readState, writeState, getPreferences } from "@/server/preferences";
+import {
+  preferencesSchema,
+  sessionPreferencesSchema,
+} from "@/lib/relayPreferences";
+import type { UpcomingMeeting } from "@/types/upcoming";
 import { z } from "zod";
 import { db } from "@/server/db";
 import {
@@ -59,6 +65,102 @@ async function handle(request: Request, { params }: Context) {
       await sql`SELECT 1`;
       return json({ status: "connected", database: "PostgreSQL" });
     }
+    if (p[0] === "preferences") {
+      if (method === "GET") return json(await getPreferences());
+      if (method === "PATCH") {
+        const supplied = z
+          .record(z.string(), z.unknown())
+          .parse(await body(request));
+        // Zod applies inner defaults even for optional fields. A PATCH must
+        // change only explicitly supplied preferences.
+        const parsed = preferencesSchema.partial().parse(supplied);
+        const patch = Object.fromEntries(
+          Object.entries(parsed).filter(([key]) =>
+            Object.hasOwn(supplied, key),
+          ),
+        );
+        await sql.begin(async (tx) => {
+          await tx`SELECT pg_advisory_xact_lock(982347)`;
+          const [row] =
+            await tx`SELECT value FROM relay_state WHERE key='preferences'`;
+          const value = preferencesSchema.parse({ ...row?.value, ...patch });
+          await tx`INSERT INTO relay_state(key,value) VALUES('preferences',${tx.json(value)}) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value`;
+        });
+        return json(await getPreferences());
+      }
+    }
+    if (p[0] === "upcoming") {
+      const scheduled = await readState<UpcomingMeeting[]>(
+        "scheduled-sessions",
+        [],
+      );
+      if (method === "GET") {
+        const prefs = await getPreferences();
+        const overrides =
+          await sql`SELECT key,value FROM relay_state WHERE key LIKE 'upcoming:%'`;
+        return json(
+          scheduled.map((m) => ({
+            ...m,
+            startTimeFormatted:
+              new Date(m.startTime).toLocaleString("en-US", {
+                timeZone: "UTC",
+              }) + " UTC",
+            notetakerEnabled:
+              overrides.find((r) => r.key === "upcoming:" + m.id)?.value
+                .enabled ??
+              (prefs.autoRecordMode === "all" ||
+                (prefs.autoRecordMode === "external" &&
+                  m.id === "up_fintech_followup") ||
+                (prefs.autoRecordMode === "internal" &&
+                  m.id !== "up_fintech_followup")),
+          })),
+        );
+      }
+      if (method === "PATCH" && p[1]) {
+        if (!scheduled.some((m) => m.id === p[1]))
+          throw new ApiError(404, "Scheduled session not found");
+        const b = z.object({ enabled: z.boolean() }).parse(await body(request));
+        await writeState("upcoming:" + p[1], b);
+        return json({ saved: true });
+      }
+    }
+    if (p[0] === "feedback" && method === "POST") {
+      const b = z
+        .object({
+          kind: z.enum(["idea", "bug", "other", "support"]),
+          message: text,
+          rating: z.number().int().min(1).max(5),
+          topic: label.optional(),
+        })
+        .parse(await body(request));
+      const id = "RELAY-" + randomUUID();
+      await writeState("feedback:" + id, {
+        ...b,
+        createdAt: new Date().toISOString(),
+      });
+      return json({ id }, 201);
+    }
+    if (method === "DELETE" && p.length >= 2) {
+      let rows;
+      if (p[0] === "highlights")
+        rows = await sql`DELETE FROM highlights WHERE id=${p[1]} RETURNING id`;
+      else if (p[0] === "trackers")
+        rows = await sql.begin(async (tx) => {
+          const deleted =
+            await tx`DELETE FROM trackers WHERE id=${p[1]} RETURNING id`;
+          await tx`DELETE FROM relay_state WHERE key=${"tracker:" + p[1]}`;
+          return deleted;
+        });
+      else if (p[0] === "playlists" && p[2] === "items" && p[3])
+        rows =
+          await sql`DELETE FROM playlist_items WHERE playlist_id=${p[1]} AND id=${p[3]} RETURNING id`;
+      else if (p[0] === "playlists" && p.length === 2)
+        rows = await sql`DELETE FROM playlists WHERE id=${p[1]} RETURNING id`;
+      if (rows) {
+        if (!rows.length) throw new ApiError(404, "Record not found");
+        return json({ deleted: true });
+      }
+    }
     if (p[0] === "meetings") {
       if (p.length === 1 && method === "GET") return json(await getMeetings());
       if (p.length === 1 && method === "POST") {
@@ -69,9 +171,23 @@ async function handle(request: Request, { params }: Context) {
             "A valid completed test-call descriptor is required",
           );
         // Capture is simulated; all resulting entities are persisted transactionally in Postgres.
-        return json(await insertMeeting(createTestMeeting(data)), 201);
+        const prefs = await getPreferences();
+        const generated = createTestMeeting(data);
+        if (!prefs.autoExtractActions) generated.actionItems = [];
+        return json(await insertMeeting(generated), 201);
       }
       const m = await meeting(p[1]);
+      if (p[2] === "preferences" && method === "PATCH") {
+        const b = sessionPreferencesSchema.parse(await body(request));
+        await sql.begin(async (tx) => {
+          await tx`SELECT id FROM meetings WHERE id=${m.id} FOR UPDATE`;
+          const key = "meeting:" + m.id;
+          const [row] =
+            await tx`SELECT value FROM relay_state WHERE key=${key}`;
+          await tx`INSERT INTO relay_state(key,value) VALUES(${key},${tx.json({ ...row?.value, ...b })}) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value`;
+        });
+        return json(await meeting(m.id));
+      }
       if (p.length === 2 && method === "GET") return json(m);
       if (p[2] === "transcript" && method === "GET") return json(m.transcript);
       if (p[2] === "action-items" && method === "GET")
@@ -154,7 +270,7 @@ async function handle(request: Request, { params }: Context) {
           await getMeetings(),
           (await getCollections()) as never,
           await getTrackers(),
-        ).slice(0, 100),
+        ),
       );
     }
     if (p[0] === "shares") {
@@ -196,15 +312,35 @@ async function handle(request: Request, { params }: Context) {
       }
       if (method === "POST" && p[2] === "items") {
         const b = z.object({ highlightId: label }).parse(await body(request));
-        await sql`INSERT INTO playlist_items(id,playlist_id,highlight_id,position) VALUES(${randomUUID()},${p[1]},${b.highlightId},(SELECT count(*)::int FROM playlist_items WHERE playlist_id=${p[1]})) ON CONFLICT(playlist_id,highlight_id) DO NOTHING`;
+        await sql.begin(async (tx) => {
+          const [parent] =
+            await tx`SELECT id FROM playlists WHERE id=${p[1]} FOR UPDATE`;
+          if (!parent) throw new ApiError(404, "Collection not found");
+          await tx`INSERT INTO playlist_items(id,playlist_id,highlight_id,position) VALUES(${randomUUID()},${p[1]},${b.highlightId},(SELECT COALESCE(MAX(position),-1)+1 FROM playlist_items WHERE playlist_id=${p[1]})) ON CONFLICT(playlist_id,highlight_id) DO NOTHING`;
+        });
         return json({ saved: true }, 201);
       }
       if (method === "PATCH" && p[1]) {
-        const b = z
-          .object({ itemIds: z.array(label).max(500) })
-          .parse(await body(request));
+        const data = await body(request);
+        if (!data || typeof data !== "object" || Array.isArray(data))
+          throw new ApiError(400, "Invalid collection update");
+        if (!Object.hasOwn(data, "itemIds")) {
+          const b = z
+            .object({
+              title: label,
+              description: z.string().max(400).default(""),
+            })
+            .parse(data);
+          const rows =
+            await sql`UPDATE playlists SET title=${b.title},description=${b.description} WHERE id=${p[1]} RETURNING id`;
+          if (!rows.length) throw new ApiError(404, "Collection not found");
+          return json({ saved: true });
+        }
+        const b = z.object({ itemIds: z.array(label).max(500) }).parse(data);
         await sql.begin(async (tx) => {
-          await tx`SELECT id FROM playlists WHERE id=${p[1]} FOR UPDATE`;
+          const [parent] =
+            await tx`SELECT id FROM playlists WHERE id=${p[1]} FOR UPDATE`;
+          if (!parent) throw new ApiError(404, "Collection not found");
           const rows =
             await tx`SELECT id FROM playlist_items WHERE playlist_id=${p[1]}`;
           if (
@@ -229,18 +365,46 @@ async function handle(request: Request, { params }: Context) {
         const b = z
           .object({
             name: label,
-            keywords: z.array(z.string().trim().min(2).max(80)).min(1).max(20),
+            keywords: z
+              .array(z.string().trim().min(1).max(80))
+              .min(1)
+              .max(20)
+              .transform((v) => [...new Set(v)]),
+            meetingScope: z
+              .union([z.literal("all"), z.array(label).min(1).max(200)])
+              .default("all"),
           })
           .parse(await body(request));
         const id = randomUUID();
-        await sql`INSERT INTO trackers(id,name,keywords) VALUES(${id},${b.name},${b.keywords})`;
+        await sql.begin(async (tx) => {
+          await tx`INSERT INTO trackers(id,name,keywords) VALUES(${id},${b.name},${b.keywords})`;
+          await tx`INSERT INTO relay_state(key,value) VALUES(${"tracker:" + id},${tx.json({ meetingScope: b.meetingScope })})`;
+        });
         return json({ id }, 201);
       }
       if (method === "PATCH" && p[1]) {
-        const b = z.object({ enabled: z.boolean() }).parse(await body(request));
-        const rows =
-          await sql`UPDATE trackers SET enabled=${b.enabled} WHERE id=${p[1]} RETURNING id`;
-        if (!rows.length) throw new ApiError(404, "Signal not found");
+        const b = z
+          .object({
+            enabled: z.boolean().optional(),
+            name: label.optional(),
+            keywords: z
+              .array(z.string().trim().min(1).max(80))
+              .min(1)
+              .max(20)
+              .optional(),
+            meetingScope: z
+              .union([z.literal("all"), z.array(label).min(1).max(200)])
+              .optional(),
+          })
+          .parse(await body(request));
+        await sql.begin(async (tx) => {
+          const [old] =
+            await tx`SELECT * FROM trackers WHERE id=${p[1]} FOR UPDATE`;
+          if (!old) throw new ApiError(404, "Signal not found");
+          await tx`UPDATE trackers SET enabled=${b.enabled ?? old.enabled}, name=${b.name ?? old.name}, keywords=${b.keywords ? [...new Set(b.keywords)] : old.keywords} WHERE id=${p[1]}`;
+          if (b.meetingScope)
+            await tx`INSERT INTO relay_state(key,value) VALUES(${"tracker:" + p[1]},${tx.json({ meetingScope: b.meetingScope })}) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value`;
+        });
         return json({ saved: true });
       }
     }
@@ -272,4 +436,4 @@ async function handle(request: Request, { params }: Context) {
     );
   }
 }
-export { handle as GET, handle as POST, handle as PATCH };
+export { handle as GET, handle as POST, handle as PATCH, handle as DELETE };

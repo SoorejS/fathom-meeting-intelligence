@@ -1,3 +1,8 @@
+import { getPreferences } from "./preferences";
+import {
+  getMeetingOwner,
+  getDefaultMeetingVisibility,
+} from "@/services/teamService";
 import { db } from "./db";
 import type { Meeting } from "@/types/meeting";
 import { formatTime } from "@/lib/testCallMeeting";
@@ -6,7 +11,7 @@ export async function getMeetings(id?: string): Promise<Meeting[]> {
   const sql = db();
   const rows = id
     ? await sql`SELECT * FROM meetings WHERE id=${id}`
-    : await sql`SELECT * FROM meetings ORDER BY date DESC LIMIT 200`;
+    : await sql`SELECT * FROM meetings ORDER BY date DESC`;
   if (!rows.length) return [];
   const ids = rows.map((r) => String(r.id));
   const [people, transcript, actions, highlights] = await Promise.all([
@@ -15,7 +20,17 @@ export async function getMeetings(id?: string): Promise<Meeting[]> {
     sql`SELECT * FROM action_items WHERE meeting_id IN ${sql(ids)} ORDER BY source_timestamp,id`,
     sql`SELECT * FROM highlights WHERE meeting_id IN ${sql(ids)} ORDER BY timestamp,id`,
   ]);
-  return rows.map((r) => ({
+  const prefs = await getPreferences();
+  const states =
+    await sql`SELECT key,value FROM relay_state WHERE key LIKE 'meeting:%'`;
+  const result = rows.map((r) => ({
+    template:
+      states.find((s) => s.key === "meeting:" + r.id)?.value.template ||
+      prefs.defaultTemplate,
+    visibility:
+      states.find((s) => s.key === "meeting:" + r.id)?.value.visibility ||
+      getDefaultMeetingVisibility(r.id),
+    owner: getMeetingOwner(r.id).name,
     id: r.id,
     title: r.title,
     date: new Date(r.date).toISOString(),
@@ -76,14 +91,22 @@ export async function getMeetings(id?: string): Promise<Meeting[]> {
         creator: h.creator,
       })),
   }));
+  return JSON.parse(
+    JSON.stringify(result).replace(/\bFathom(?: AI| Notetaker)?\b/g, (match) =>
+      match.includes("Notetaker") ? "Relay Notetaker" : "Relay",
+    ),
+  ) as Meeting[];
 }
 
 // The transaction makes a completed capture visible only when all its records exist.
 export async function insertMeeting(meeting: Meeting) {
+  const preferences = await getPreferences();
   await db().begin(async (sql) => {
     const inserted =
       await sql`INSERT INTO meetings (id,title,date,duration,category,summary,test_call) VALUES (${meeting.id},${meeting.title},${meeting.date},${meeting.duration},${meeting.category},${sql.json(meeting.summary as never)},${meeting.testCall ? sql.json(meeting.testCall as never) : null}) ON CONFLICT(id) DO NOTHING RETURNING id`;
     if (!inserted.length) return;
+    if (meeting.testCall)
+      await sql`INSERT INTO relay_state(key,value) VALUES(${"meeting:" + meeting.id},${sql.json({ visibility: preferences.defaultVisibility === "private" ? "personal" : "team" })}) ON CONFLICT DO NOTHING`;
     for (const p of meeting.participants)
       await sql`INSERT INTO participants(id,meeting_id,name,role,company,initials,color) VALUES(${p.id},${meeting.id},${p.name},${p.role},${p.company || null},${p.initials},${p.color})`;
     for (const t of meeting.transcript)
@@ -106,6 +129,7 @@ export async function getCollections() {
     title: p.title,
     description: p.description,
     createdAt: p.created_at,
+    updatedAt: p.created_at,
     items: items
       .filter((i) => i.playlist_id === p.id)
       .map((i) => ({
@@ -113,17 +137,21 @@ export async function getCollections() {
         highlightId: i.highlight_id,
         meetingId: i.meeting_id,
         order: i.position,
+        addedAt: p.created_at,
       })),
   }));
 }
 export async function getTrackers() {
+  const states =
+    await db()`SELECT key,value FROM relay_state WHERE key LIKE 'tracker:%'`;
   return (await db()`SELECT * FROM trackers ORDER BY created_at DESC`).map(
     (t) => ({
       id: t.id,
       name: t.name,
       keywords: t.keywords,
       enabled: t.enabled,
-      meetingScope: "all" as const,
+      meetingScope: (states.find((s) => s.key === "tracker:" + t.id)?.value
+        .meetingScope || "all") as "all" | string[],
       createdAt: String(t.created_at),
       updatedAt: String(t.created_at),
     }),

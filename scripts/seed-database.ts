@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { db } from "../src/server/db";
 import { insertMeeting } from "../src/server/repository";
 import { SEEDED_MEETINGS } from "../src/data/seededMeetings";
+import { SEEDED_UPCOMING_MEETINGS } from "../src/data/seededUpcoming";
 
 async function seed() {
   const sql = db();
@@ -9,6 +10,7 @@ async function seed() {
     await readFile(new URL("../db/schema.sql", import.meta.url), "utf8"),
   );
   const before = await sql`SELECT count(*)::int AS count FROM meetings`;
+  await sql`INSERT INTO relay_state(key,value) VALUES('scheduled-sessions',${sql.json(SEEDED_UPCOMING_MEETINGS as never)}) ON CONFLICT DO NOTHING`;
   for (const meeting of SEEDED_MEETINGS) await insertMeeting(meeting);
   await sql`INSERT INTO playlists(id,title,description) VALUES('collection_decisions','Decisions worth revisiting','A shared reading list of important moments.') ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO trackers(id,name,keywords) VALUES('signal_risks','Delivery risks',ARRAY['risk','latency','concern']) ON CONFLICT DO NOTHING`;

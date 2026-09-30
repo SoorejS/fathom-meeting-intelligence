@@ -22,7 +22,7 @@ export function findMeetingAnswer(query: string, meeting: Meeting): MeetingAnswe
     if (!closest || seconds > meeting.duration || Math.abs(closest.timestamp-seconds) > 45) return undefined;
     return respond(`Nearest recorded excerpt (${closest.timestampFormatted}) — ${closest.speaker}: “${closest.text}”`, [closest.timestamp]);
   }
-  const terms = tokens(q);
+  const terms = tokens(q).filter(t => t !== "action");
   const speaker = meeting.participants.find(p => p.name.toLowerCase().split(" ").some(n => n.length > 2 && new RegExp(`\\b${n}\\b`).test(q)));
   const speakerQuestion = /\b(say|said|mention|mentioned)\b/.test(q);
   if (speakerQuestion) {

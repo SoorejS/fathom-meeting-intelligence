@@ -39,20 +39,28 @@ Implemented endpoints:
 | GET / POST | `/api/meetings/:id/action-items` | Read / create follow-ups |
 | PATCH | `/api/action-items/:id` | Save completion state |
 | GET / POST | `/api/meetings/:id/highlights` | Read / create moments |
-| PATCH | `/api/highlights/:id` | Edit a moment |
+| PATCH / DELETE | `/api/highlights/:id` | Edit / delete a moment |
+| PATCH | `/api/meetings/:id/preferences` | Save Brief selection and library visibility |
 | GET | `/api/search?q=...` | Search current database records |
 | POST | `/api/meetings/:id/ask` | Retrieve grounded notes and citations |
 | POST | `/api/shares` | Create a random token-backed share |
 | GET | `/api/shares/:token` | Retrieve the shared meeting and starting time |
 | GET / POST | `/api/playlists` | Read / create collections |
 | POST | `/api/playlists/:id/items` | Add a saved highlight |
-| PATCH | `/api/playlists/:id` | Reorder collection items |
+| PATCH / DELETE | `/api/playlists/:id` | Rename, describe, reorder / delete a collection |
+| DELETE | `/api/playlists/:id/items/:itemId` | Remove a moment from a collection |
 | GET / POST | `/api/trackers` | Read / create keyword signals |
-| PATCH | `/api/trackers/:id` | Pause / resume a signal |
+| PATCH / DELETE | `/api/trackers/:id` | Edit, scope, pause / delete a signal |
 | GET | `/api/trackers/matches` | Find transcript matches |
 | GET | `/api/health` | Check database connectivity |
+| GET / PATCH | `/api/preferences` | Read / save workspace defaults and moment categories |
+| GET | `/api/upcoming` | Read persisted scheduled examples |
+| PATCH | `/api/upcoming/:id` | Save a Notetaker arming override |
+| POST | `/api/feedback` | Save a demo feedback/support reference |
 
-Search currently ranks and filters database-fetched records on the server, bounded to the newest 200 meetings. There is no separate stale client index. Public links store a random token and meeting foreign key; they never serialize a meeting into the URL.
+Search ranks and filters database-fetched records on the server across the full session library. There is no separate stale client index. Public links store a random token and meeting foreign key; they never serialize a meeting into the URL.
+
+Preferences, per-session Brief and library visibility, scheduled demo sessions, Notetaker overrides, signal scope, and feedback references are persisted in `relay_state`. Collections support rename/description, removal, ordering, entity links and bounded simulated reels. Signals support editing, deletion, pausing and selected-session scope. See [the functional inventory and verification](PARITY-AUDIT.md) for the complete ZIP-to-Relay mapping.
 
 ## Capture decision
 
@@ -80,9 +88,12 @@ npm run lint
 npm run build
 npm start
 npm run test:api
+npm run test:parity
 ```
 
-`test:api` expects the application at port 3000 and the same database in `.env.local`. Set `VERIFY_URL` to test another deployment. It creates uniquely identified disposable fixtures, verifies API results against direct SQL reads, and cleans up only those fixtures. Unit tests also retain coverage for the original reusable domain logic; historical local-storage tests describe that legacy module, not the current application data source.
+The API checks expect the application at port 3000 and the same database in `.env.local`. Set `VERIFY_URL` to test another deployment. They create uniquely identified disposable fixtures and clean up only those fixtures. Run `test:parity` against a dedicated test database: it temporarily changes shared preferences and restores them in `finally`. Unit tests retain coverage for reusable domain logic; historical local-storage fixtures live only under `tests/compatibility` and are not the application data source.
+
+For an existing database, set `DATABASE_URL_UNPOOLED` in `.env.local` and run `npm run db:migrate -- --check`, then `npm run db:migrate`. The additive migration creates the metadata table and inserts missing scheduled examples without replacing existing records. Use a separate Neon branch for migration validation before applying it to a production database.
 
 ## Deployment
 

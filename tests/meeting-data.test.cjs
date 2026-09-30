@@ -15,7 +15,7 @@ test('six distinct seeded meetings with valid transcript-linked timestamps', () 
 });
 test('retrieval is meeting-scoped and every answer has real transcript sources', () => {
   for (const m of meetings) {
-    for (const query of ['What did we decide?', 'What are the action items?', 'Who attended?']) {
+    for (const query of ['What did we decide?', 'What are the action items?', 'Who owns the actions?', 'Who attended?']) {
       const result = findMeetingAnswer(query, m);
       assert.ok(result, m.id + ' ' + query);
       assert.ok(result.citations.length);
@@ -34,7 +34,7 @@ test('retrieval is meeting-scoped and every answer has real transcript sources',
   assert.ok(owned.answer.includes(action.owner));
 });
 
-const { decodeState, applySavedState, emptyState } = load('src/lib/meetingStorage.ts');
+const { decodeState, applySavedState, emptyState } = load('tests/compatibility/meetingStorage.ts');
 test('persistence round-trips edits without replacing immutable seeded meeting data', () => {
   const state = emptyState(); const m = meetings[0];
   const highlight = { ...m.highlights[0], id: 'user-created', creator: 'You', type: 'Feedback' };

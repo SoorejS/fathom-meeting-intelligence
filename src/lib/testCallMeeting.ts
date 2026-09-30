@@ -51,7 +51,7 @@ export function createTestMeeting(d: TestCallDescriptor): Meeting {
     thumbnail: "/test-call.svg", participants: TEST_PARTICIPANTS, transcript, actionItems: actions,
     highlights: cues.filter(c => c.decision || c.at === 15).map((cue, index) => ({
       id: `${d.id}_h${index}`, meetingId: d.id, timestamp: cue.at, timestampFormatted: formatTime(cue.at),
-      text: cue.text, type: cue.at === 15 ? "Needs Review" : "Highlight", creator: "Fathom Notetaker",
+      text: cue.text, type: cue.at === 15 ? "Needs Review" : "Highlight", creator: "Relay Notetaker",
     })),
     summary: {
       default: base,

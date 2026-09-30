@@ -1,12 +1,13 @@
-import { Playlist } from "../types/playlist";
-import { Tracker } from "../types/tracker";
-import { WorkspaceSettings } from "../types/settings";
-import { UpcomingMeeting } from "../types/upcoming";
-import { MeetingVisibility } from "../types/team";
-import { SEEDED_PLAYLISTS } from "../data/seededPlaylists";
-import { SEEDED_TRACKERS } from "../data/seededTrackers";
-import { SEEDED_UPCOMING_MEETINGS } from "../data/seededUpcoming";
-import { defaultSettings } from "../services/settingsService";
+// ZIP compatibility regression fixture only. Never imported by the Relay application.
+import { Playlist } from "../../src/types/playlist";
+import { Tracker } from "../../src/types/tracker";
+import { WorkspaceSettings } from "../../src/types/settings";
+import { UpcomingMeeting } from "../../src/types/upcoming";
+import { MeetingVisibility } from "../../src/types/team";
+import { SEEDED_PLAYLISTS } from "../../src/data/seededPlaylists";
+import { SEEDED_TRACKERS } from "../../src/data/seededTrackers";
+import { SEEDED_UPCOMING_MEETINGS } from "../../src/data/seededUpcoming";
+import { defaultSettings } from "../../src/services/settingsService";
 import { record, readPlaylists, readTrackers, readSettings } from "./workspaceValidation";
 
 export const TIER2_STORAGE_KEY = "fathom-tier2-state-v1";

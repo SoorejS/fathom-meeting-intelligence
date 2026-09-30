@@ -40,7 +40,7 @@ export function defaultSettings(): WorkspaceSettings {
     recording: {
       autoRecordMode: "external",
       consentPreference: "remember",
-      botDisplayName: "Fathom Notetaker",
+      botDisplayName: "Relay Notetaker",
     },
     summaries: {
       defaultTemplate: "default",

@@ -76,6 +76,9 @@ export interface AiQnAItem {
 }
 
 export interface Meeting {
+  template?: SummaryTemplateKey;
+  visibility?: "personal" | "team";
+  owner?: string;
   testCall?: TestCallDescriptor;
   id: string;
   title: string;

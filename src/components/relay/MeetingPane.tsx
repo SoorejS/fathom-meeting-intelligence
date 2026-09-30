@@ -29,6 +29,10 @@ import type { MeetingAnswer } from "@/lib/meetingAnswers";
 import { api } from "@/lib/api";
 import { formatTime } from "@/lib/testCallMeeting";
 import { useLocalAudio } from "@/lib/useLocalAudio";
+import {
+  defaultPreferences,
+  type RelayPreferences,
+} from "@/lib/relayPreferences";
 import { Dialog } from "./Dialog";
 
 export function MeetingPane({
@@ -37,19 +41,24 @@ export function MeetingPane({
   onChanged,
   readOnly = false,
   initialTime = 0,
+  initialTab = "Brief",
 }: {
   initial: Meeting;
   onBack?(): void;
   onChanged?(): void;
   readOnly?: boolean;
   initialTime?: number;
+  initialTab?: string;
 }) {
   const [meeting, setMeeting] = useState(initial),
-    [tab, setTab] = useState("Brief"),
+    [tab, setTab] = useState(initialTab),
     [time, setTime] = useState(initialTime),
     [playing, setPlaying] = useState(false),
     [speed, setSpeed] = useState(1),
-    [template, setTemplate] = useState<SummaryTemplateKey>("default");
+    [template, setTemplate] = useState<SummaryTemplateKey>(
+      initial.template || "default",
+    );
+  const [notice, setNotice] = useState("");
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [transcriptQuery, setTranscriptQuery] = useState("");
@@ -69,6 +78,75 @@ export function MeetingPane({
     [answer, setAnswer] = useState<MeetingAnswer | null>(null),
     [asking, setAsking] = useState(false);
   const audio = useRef<HTMLAudioElement>(null);
+  const [prefs, setPrefs] = useState<RelayPreferences>(defaultPreferences);
+  const [actionOwner, setActionOwner] = useState(
+      initial.participants[0]?.name || "Team",
+    ),
+    [dueDate, setDueDate] = useState("");
+  const [actionFilter, setActionFilter] = useState("all"),
+    [momentFilter, setMomentFilter] = useState("All");
+  const [addingMoment, setAddingMoment] = useState<string | null>(null),
+    [lists, setLists] = useState<{ id: string; title: string }[]>([]);
+  const [muted, setMuted] = useState(false),
+    [audioFailed, setAudioFailed] = useState(false);
+  const activeLine = useRef<HTMLElement>(null),
+    player = useRef<HTMLDivElement>(null);
+  const activeId = [...meeting.transcript]
+    .reverse()
+    .find((t) => t.timestamp <= time)?.id;
+  useEffect(() => {
+    if (!readOnly)
+      api<RelayPreferences>("/preferences")
+        .then(setPrefs)
+        .catch((e) => setError(e.message));
+  }, [readOnly]);
+  useEffect(() => {
+    if (tab === "Conversation" && !transcriptQuery)
+      activeLine.current?.scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+  }, [activeId, tab, transcriptQuery]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (
+        (e.target as HTMLElement).closest(
+          "input,textarea,select,button,a,[contenteditable],dialog",
+        )
+      )
+        return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        setPlaying((v) => !v);
+      }
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        const n = Math.max(
+          0,
+          Math.min(
+            meeting.duration,
+            time + (e.key === "ArrowRight" ? 10 : -10),
+          ),
+        );
+        setTime(n);
+        if (audio.current) audio.current.currentTime = n;
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [time, meeting.duration]);
+  async function chooseTemplate(value: SummaryTemplateKey) {
+    if (readOnly) {
+      setTemplate(value);
+      return;
+    }
+    await mutate(
+      `/meetings/${meeting.id}/preferences`,
+      "PATCH",
+      { template: value },
+      () => setTemplate(value),
+    );
+  }
   const localAudio = useLocalAudio(
     meeting.id,
     !!meeting.testCall?.hasLocalAudio,
@@ -77,7 +155,7 @@ export function MeetingPane({
     (a) => a.status === "completed",
   ).length;
   useEffect(() => {
-    if (!playing || localAudio.url) return;
+    if (!playing || (localAudio.url && !audioFailed)) return;
     const interval = setInterval(
       () =>
         setTime((t) => {
@@ -88,16 +166,24 @@ export function MeetingPane({
       1000,
     );
     return () => clearInterval(interval);
-  }, [playing, speed, meeting.duration, localAudio.url]);
+  }, [playing, speed, meeting.duration, localAudio.url, audioFailed]);
   useEffect(() => {
-    if (!audio.current) return;
+    if (!audio.current || audioFailed) return;
     audio.current.playbackRate = speed;
-    if (playing) audio.current.play().catch(() => setPlaying(false));
+    audio.current.muted = muted;
+    if (playing)
+      audio.current.play().catch(() => {
+        setPlaying(false);
+        setError(
+          "Audio could not start. Try Play again or download your recording.",
+        );
+      });
     else audio.current.pause();
-  }, [playing, speed]);
+  }, [playing, speed, muted, audioFailed, localAudio.url]);
   const seek = (n: number) => {
-    setTime(n);
-    if (audio.current) audio.current.currentTime = n;
+    const bounded = Math.max(0, Math.min(meeting.duration, n));
+    setTime(bounded);
+    if (audio.current) audio.current.currentTime = bounded;
   };
   async function refresh() {
     const next = await api<Meeting>(`/meetings/${meeting.id}`);
@@ -180,7 +266,7 @@ export function MeetingPane({
       setBusy(false);
     }
   }
-  const summary = meeting.summary[template];
+  const summary = meeting.summary[template] || meeting.summary.default;
   return (
     <section className="meeting-pane">
       <div className="breadcrumb">
@@ -213,6 +299,35 @@ export function MeetingPane({
         <Users size={16} />
         {meeting.participants.map((p) => p.name).join(" · ")}
       </div>
+      <details className="preference-card">
+        <summary>Session context & participants</summary>
+        <p>Owner: {meeting.owner || meeting.participants[0]?.name}</p>
+        {meeting.participants.map((p) => (
+          <p key={p.id}>
+            {p.name} · {p.role}
+            {p.company ? ` · ${p.company}` : ""}
+          </p>
+        ))}
+        {!readOnly && (
+          <button
+            className="secondary"
+            disabled={busy}
+            onClick={() =>
+              void mutate(`/meetings/${meeting.id}/preferences`, "PATCH", {
+                visibility: meeting.visibility === "team" ? "personal" : "team",
+              })
+            }
+          >
+            {meeting.visibility === "team"
+              ? "Move to personal sessions"
+              : "Show in team sessions"}
+          </button>
+        )}
+        <p className="muted small">
+          Library visibility is organizational only in this shared demo, not an
+          access restriction.
+        </p>
+      </details>
       {error && (
         <div className="notice error" role="alert">
           {error}
@@ -221,7 +336,12 @@ export function MeetingPane({
           </button>
         </div>
       )}
-      <div className="listening-bar">
+      {notice && (
+        <p className="notice" role="status">
+          {notice}
+        </p>
+      )}
+      <div className="listening-bar" ref={player}>
         <button
           className="play-round"
           aria-label={playing ? "Pause playback" : "Play playback"}
@@ -254,7 +374,11 @@ export function MeetingPane({
         <button
           className="speed"
           aria-label="Playback speed"
-          onClick={() => setSpeed(speed === 2 ? 1 : speed + 0.5)}
+          onClick={() =>
+            setSpeed(
+              [1, 1.25, 1.5, 2][([1, 1.25, 1.5, 2].indexOf(speed) + 1) % 4],
+            )
+          }
         >
           {speed}×
         </button>
@@ -266,9 +390,68 @@ export function MeetingPane({
             ref={audio}
             src={localAudio.url}
             onTimeUpdate={() => setTime(audio.current?.currentTime || 0)}
+            onLoadedMetadata={() => {
+              if (audio.current) audio.current.currentTime = time;
+            }}
+            onError={() => {
+              setAudioFailed(true);
+              setPlaying(false);
+              setError(
+                "Audio is unavailable. The conversation timeline is still usable.",
+              );
+            }}
             onEnded={() => setPlaying(false)}
           />
         )}
+      </div>
+      <div className="button-row playback-tools">
+        <button className="secondary" onClick={() => seek(time - 10)}>
+          −10 seconds
+        </button>
+        <button className="secondary" onClick={() => seek(time + 10)}>
+          +10 seconds
+        </button>
+        <button
+          className="secondary"
+          aria-pressed={muted}
+          onClick={() => setMuted(!muted)}
+        >
+          {muted ? "Unmute" : "Mute"}
+        </button>
+        <button
+          className="secondary"
+          onClick={() => {
+            if (document.fullscreenElement) void document.exitFullscreen();
+            else
+              void player.current
+                ?.requestFullscreen()
+                .catch(() =>
+                  setError("Fullscreen is unavailable in this browser."),
+                );
+          }}
+        >
+          Fullscreen
+        </button>
+        {localAudio.url && (
+          <a
+            className="secondary"
+            href={localAudio.url}
+            download="relay-session-audio"
+          >
+            Download local audio
+          </a>
+        )}
+      </div>
+      <div className="moment-markers" aria-label="Timeline moments">
+        {meeting.highlights.map((h) => (
+          <button
+            className="citation"
+            key={h.id}
+            onClick={() => seek(h.timestamp)}
+          >
+            {h.timestampFormatted} · {h.type}
+          </button>
+        ))}
       </div>
       <div className="meeting-grid">
         <div className="meeting-main">
@@ -299,7 +482,7 @@ export function MeetingPane({
                   aria-label="Summary template"
                   value={template}
                   onChange={(e) =>
-                    setTemplate(e.target.value as SummaryTemplateKey)
+                    void chooseTemplate(e.target.value as SummaryTemplateKey)
                   }
                 >
                   <option value="default">Full picture</option>
@@ -307,6 +490,40 @@ export function MeetingPane({
                   <option value="sales">Customer lens</option>
                   <option value="engineering">Engineering lens</option>
                 </select>
+              </div>
+              <div className="button-row">
+                <button
+                  className="text-button"
+                  disabled={busy}
+                  onClick={() => void chooseTemplate("default")}
+                >
+                  Reset brief
+                </button>
+                <button
+                  className="text-button"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(
+                        [
+                          summary.title,
+                          summary.overview,
+                          ...summary.keyPoints,
+                          "Decisions",
+                          ...summary.decisions,
+                          "Next steps",
+                          ...summary.nextSteps,
+                        ].join("\n"),
+                      )
+                      .then(() => setNotice("Brief copied."))
+                      .catch(() =>
+                        setError(
+                          "Clipboard unavailable. Select and copy the brief text.",
+                        ),
+                      );
+                  }}
+                >
+                  Copy brief
+                </button>
               </div>
               <p className="overview">{summary.overview}</p>
               <div className="decision-box">
@@ -334,6 +551,8 @@ export function MeetingPane({
                   <li key={i}>{k}</li>
                 ))}
               </ul>
+              <h2 className="subheading">Next steps</h2>
+              {summary.nextSteps.length ? <ul className="key-points">{summary.nextSteps.map((step,i)=><li key={i}>{step}</li>)}</ul> : <p>No next steps recorded in this brief.</p>}
               <button
                 className="text-button"
                 onClick={() => void changeTab("Follow-through")}
@@ -344,6 +563,28 @@ export function MeetingPane({
           )}
           {tab === "Conversation" && (
             <div className="conversation">
+              <button
+                className="text-button"
+                onClick={() => {
+                  void navigator.clipboard
+                    .writeText(
+                      meeting.transcript
+                        .map(
+                          (t) =>
+                            `${t.timestampFormatted} ${t.speaker}: ${t.text}`,
+                        )
+                        .join("\n"),
+                    )
+                    .then(() => setNotice("Conversation copied."))
+                    .catch(() =>
+                      setError(
+                        "Clipboard unavailable. Select and copy the conversation text.",
+                      ),
+                    );
+                }}
+              >
+                Copy conversation
+              </button>
               <label className="inline-search">
                 <Search size={16} />
                 <input
@@ -356,6 +597,15 @@ export function MeetingPane({
               <p className="muted small">
                 Selected transcript excerpts · choose a time to navigate
               </p>
+              {!meeting.transcript.some((t) =>
+                `${t.text} ${t.speaker}`
+                  .toLowerCase()
+                  .includes(transcriptQuery.toLowerCase()),
+              ) && (
+                <p className="empty">
+                  No conversation excerpts match this search.
+                </p>
+              )}
               {meeting.transcript
                 .filter((t) =>
                   (t.text + " " + t.speaker)
@@ -365,6 +615,8 @@ export function MeetingPane({
                 .map((t, i) => (
                   <article
                     key={t.id}
+                    ref={t.id === activeId ? activeLine : null}
+                    aria-current={t.id === activeId ? "true" : undefined}
                     className={`transcript-line ${time >= t.timestamp && time < (meeting.transcript.find((s) => s.timestamp > t.timestamp)?.timestamp ?? meeting.duration + 1) ? "current" : ""}`}
                   >
                     <button
@@ -385,7 +637,7 @@ export function MeetingPane({
                           onClick={() =>
                             setHighlight({
                               text: t.text,
-                              type: "Insight",
+                              type: prefs.momentTypes[0].name,
                               timestamp: t.timestamp,
                             })
                           }
@@ -418,40 +670,55 @@ export function MeetingPane({
                   conversation.
                 </div>
               )}
-              {meeting.actionItems.map((a) => (
-                <article
-                  key={a.id}
-                  className={`action-row ${a.status === "completed" ? "done" : ""}`}
+              <label>
+                Show follow-ups
+                <select
+                  value={actionFilter}
+                  onChange={(e) => setActionFilter(e.target.value)}
                 >
-                  <button
-                    disabled={readOnly || busy}
-                    role="checkbox"
-                    aria-checked={a.status === "completed"}
-                    aria-label={`Complete ${a.text}`}
-                    className="check-control"
-                    onClick={() =>
-                      void mutate(`/action-items/${a.id}`, "PATCH", {
-                        status: a.status === "open" ? "completed" : "open",
-                      })
-                    }
+                  {["all", "open", "completed"].map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </label>
+              {meeting.actionItems
+                .filter(
+                  (a) => actionFilter === "all" || a.status === actionFilter,
+                )
+                .map((a) => (
+                  <article
+                    key={a.id}
+                    className={`action-row ${a.status === "completed" ? "done" : ""}`}
                   >
-                    {a.status === "completed" && <Check size={16} />}
-                  </button>
-                  <div>
-                    <p>{a.text}</p>
-                    <small>
-                      {a.owner}
-                      {a.dueDate && ` · ${a.dueDate}`}
-                    </small>
-                  </div>
-                  <button
-                    className="timestamp"
-                    onClick={() => seek(a.sourceTimestamp)}
-                  >
-                    {a.sourceTimestampFormatted}
-                  </button>
-                </article>
-              ))}
+                    <button
+                      disabled={readOnly || busy}
+                      role="checkbox"
+                      aria-checked={a.status === "completed"}
+                      aria-label={`Complete ${a.text}`}
+                      className="check-control"
+                      onClick={() =>
+                        void mutate(`/action-items/${a.id}`, "PATCH", {
+                          status: a.status === "open" ? "completed" : "open",
+                        })
+                      }
+                    >
+                      {a.status === "completed" && <Check size={16} />}
+                    </button>
+                    <div>
+                      <p>{a.text}</p>
+                      <small>
+                        {a.owner}
+                        {a.dueDate && ` · ${a.dueDate}`}
+                      </small>
+                    </div>
+                    <button
+                      className="timestamp"
+                      onClick={() => seek(a.sourceTimestamp)}
+                    >
+                      {a.sourceTimestampFormatted}
+                    </button>
+                  </article>
+                ))}
             </div>
           )}
           {tab === "Moments" && (
@@ -467,38 +734,93 @@ export function MeetingPane({
                   Save a moment from the Conversation tab.
                 </div>
               )}
-              {meeting.highlights.map((h) => (
-                <article className="moment-card" key={h.id}>
-                  <div>
-                    <span className="tag">{h.type}</span>
-                    <button
-                      className="timestamp"
-                      onClick={() => seek(h.timestamp)}
-                    >
-                      {h.timestampFormatted}
-                    </button>
-                  </div>
-                  <p>{h.text}</p>
-                  <footer>
-                    <small>{h.creator}</small>
-                    {!readOnly && (
-                      <button
-                        className="text-button small"
-                        onClick={() =>
-                          setHighlight({
-                            id: h.id,
-                            text: h.text,
-                            type: h.type,
-                            timestamp: h.timestamp,
-                          })
-                        }
+              <label>
+                Moment category
+                <select
+                  value={momentFilter}
+                  onChange={(e) => setMomentFilter(e.target.value)}
+                >
+                  {[
+                    "All",
+                    ...new Set(meeting.highlights.map((h) => h.type)),
+                  ].map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </label>
+              {meeting.highlights
+                .filter(
+                  (h) => momentFilter === "All" || h.type === momentFilter,
+                )
+                .map((h) => (
+                  <article className="moment-card" key={h.id}>
+                    <div>
+                      <span
+                        className="tag"
+                        style={{
+                          borderLeft: `3px solid ${prefs.momentTypes.find((t) => t.name === h.type)?.color || "var(--green)"}`,
+                        }}
                       >
-                        Edit moment <ArrowUpRight size={13} />
+                        {h.type}
+                      </span>
+                      <button
+                        className="timestamp"
+                        onClick={() => seek(h.timestamp)}
+                      >
+                        {h.timestampFormatted}
                       </button>
-                    )}
-                  </footer>
-                </article>
-              ))}
+                    </div>
+                    <p>{h.text}</p>
+                    <footer>
+                      <small>{h.creator}</small>
+                      {!readOnly && (
+                        <button
+                          className="text-button small"
+                          onClick={() =>
+                            setHighlight({
+                              id: h.id,
+                              text: h.text,
+                              type: h.type,
+                              timestamp: h.timestamp,
+                            })
+                          }
+                        >
+                          Edit moment <ArrowUpRight size={13} />
+                        </button>
+                      )}
+                      {!readOnly && (
+                        <div className="button-row">
+                          <button
+                            className="text-button"
+                            disabled={busy}
+                            onClick={() =>
+                              void mutate(
+                                `/highlights/${h.id}`,
+                                "DELETE",
+                                undefined,
+                              )
+                            }
+                          >
+                            Delete moment
+                          </button>
+                          <button
+                            className="text-button"
+                            onClick={() => {
+                              setAddingMoment(h.id);
+                              void api<{ id: string; title: string }[]>(
+                                "/playlists",
+                              )
+                                .then(setLists)
+                                .catch((e) => setError(e.message));
+                            }}
+                          >
+                            Add to collection
+                          </button>
+                        </div>
+                      )}
+                    </footer>
+                  </article>
+                ))}
             </div>
           )}
         </div>
@@ -619,6 +941,7 @@ export function MeetingPane({
             <label>
               Label
               <input
+                list="moment-labels"
                 required
                 maxLength={80}
                 value={highlight.type}
@@ -628,6 +951,11 @@ export function MeetingPane({
               />
             </label>
             <label>
+              <datalist id="moment-labels">
+                {prefs.momentTypes.map((t) => (
+                  <option key={t.name} value={t.name} />
+                ))}
+              </datalist>
               Your moment
               <textarea
                 required
@@ -642,7 +970,11 @@ export function MeetingPane({
             <button className="primary" disabled={busy}>
               {busy ? "Saving…" : "Save to session"}
             </button>
-            {error && <p className="error-text" role="alert">{error}</p>}
+            {error && (
+              <p className="error-text" role="alert">
+                {error}
+              </p>
+            )}
           </form>
         </Dialog>
       )}
@@ -656,7 +988,8 @@ export function MeetingPane({
                 "POST",
                 {
                   text: actionText,
-                  owner: meeting.participants[0]?.name || "Team",
+                  owner: actionOwner,
+                  dueDate,
                   sourceTimestamp: Math.floor(time),
                 },
                 () => {
@@ -675,15 +1008,71 @@ export function MeetingPane({
                 onChange={(e) => setActionText(e.target.value)}
               />
             </label>
+            <label>
+              Owner
+              <input
+                required
+                value={actionOwner}
+                onChange={(e) => setActionOwner(e.target.value)}
+                list="session-people"
+                maxLength={120}
+              />
+              <datalist id="session-people">
+                {meeting.participants.map((p) => (
+                  <option key={p.id} value={p.name} />
+                ))}
+              </datalist>
+            </label>
+            <label>
+              Due date
+              <input
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                maxLength={100}
+                placeholder="Friday, 5:00 PM"
+              />
+            </label>
             <p className="muted small">
-              Assigned to {meeting.participants[0]?.name || "Team"} · linked to{" "}
-              {formatTime(time)}
+              Assigned to {actionOwner} · linked to {formatTime(time)}
             </p>
             <button className="primary" disabled={busy}>
               {busy ? "Saving…" : "Save action"}
             </button>
-            {error && <p className="error-text" role="alert">{error}</p>}
+            {error && (
+              <p className="error-text" role="alert">
+                {error}
+              </p>
+            )}
           </form>
+        </Dialog>
+      )}
+      {addingMoment && (
+        <Dialog
+          title="Add moment to collection"
+          onClose={() => setAddingMoment(null)}
+        >
+          {lists.length ? (
+            lists.map((c) => (
+              <button
+                className="secondary"
+                key={c.id}
+                disabled={busy}
+                onClick={() =>
+                  void mutate(
+                    `/playlists/${c.id}/items`,
+                    "POST",
+                    { highlightId: addingMoment },
+                    () => setAddingMoment(null),
+                  )
+                }
+              >
+                {c.title}
+              </button>
+            ))
+          ) : (
+            <p>Create a collection in the Collections workspace first.</p>
+          )}
+          {error && <p role="alert">{error}</p>}
         </Dialog>
       )}
       {share && (
@@ -705,8 +1094,9 @@ export function MeetingPane({
             Start at {formatTime(time)}
           </label>
           <p className="muted small">
-            Anyone with the link can view this fictional demo session. No audio
-            leaves your browser.
+            Workspace preference: {prefs.defaultVisibility}. Anyone with the
+            link can view this fictional demo session; this demo has no
+            authenticated private sharing. No audio leaves your browser.
           </p>
           {!shareUrl ? (
             <button

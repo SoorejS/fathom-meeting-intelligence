@@ -1,7 +1,8 @@
-import type { Playlist, PlaylistItem } from "../types/playlist";
-import type { Tracker } from "../types/tracker";
-import type { WorkspaceSettings, CustomHighlightType } from "../types/settings";
-import { defaultSettings } from "../services/settingsService";
+// ZIP compatibility regression fixture only. Never imported by the Relay application.
+import type { Playlist, PlaylistItem } from "../../src/types/playlist";
+import type { Tracker } from "../../src/types/tracker";
+import type { WorkspaceSettings, CustomHighlightType } from "../../src/types/settings";
+import { defaultSettings } from "../../src/services/settingsService";
 
 export const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};

@@ -1,6 +1,7 @@
-import type { Meeting, Highlight, SummaryTemplateKey, TestCallDescriptor } from "../types/meeting";
+// ZIP compatibility regression fixture only. Never imported by the Relay application.
+import type { Meeting, Highlight, SummaryTemplateKey, TestCallDescriptor } from "../../src/types/meeting";
 
-import { isTestCall, createTestMeeting } from "./testCallMeeting";
+import { isTestCall, createTestMeeting } from "../../src/lib/testCallMeeting";
 
 export const STORAGE_KEY = "fathom-workspace-v1";
 export interface SavedState {

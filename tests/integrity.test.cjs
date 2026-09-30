@@ -6,8 +6,8 @@ const { SEEDED_PLAYLISTS: playlists } = load('src/data/seededPlaylists.ts');
 const { SEEDED_TRACKERS: trackers } = load('src/data/seededTrackers.ts');
 const { searchWorkspace } = load('src/lib/workspaceSearch.ts');
 const { meetingShareUrl, readPlaybackTimestamp, PUBLIC_APP_URL } = load('src/lib/shareLinks.ts');
-const { decodeTier2State, defaultTier2State } = load('src/lib/workspaceStorage.ts');
-const { decodeState, applySavedState, emptyState } = load('src/lib/meetingStorage.ts');
+const { decodeTier2State, defaultTier2State } = load('tests/compatibility/workspaceStorage.ts');
+const { decodeState, applySavedState, emptyState } = load('tests/compatibility/meetingStorage.ts');
 const pl = load('src/services/playlistService.ts');
 const tr = load('src/services/trackerService.ts');
 const settings = load('src/services/settingsService.ts');
@@ -133,9 +133,9 @@ test('damaged highlight settings retain usable default categories', () => {
 
 test('support answers select the relevant help article instead of matching generic words', () => {
   const {answerSupportQuestion} = load('src/lib/supportAnswers.ts');
-  assert.match(answerSupportQuestion('How do playlists work?'), /Playlists allow/);
-  assert.match(answerSupportQuestion('How do keyword trackers work?'), /Trackers automatically/);
+  assert.match(answerSupportQuestion('How do playlists work?'), /Collections allow/);
+  assert.match(answerSupportQuestion('How do keyword trackers work?'), /Signals automatically/);
   assert.match(answerSupportQuestion('Where is microphone audio stored?'), /IndexedDB/);
-  assert.match(answerSupportQuestion('Can I customize summary templates?'), /Enhanced/);
+  assert.match(answerSupportQuestion('Can I customize summary templates?'), /Full picture/);
   assert.match(answerSupportQuestion('What is the weather tomorrow?'), /Choose Help center/);
 });

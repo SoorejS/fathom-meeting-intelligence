@@ -140,7 +140,7 @@ test('tracker lifecycle: create, update, enable/disable toggle, meeting scoping,
 test('settings service: updates recording, summary, sharing, and custom highlight types', () => {
   let settings = settingsService.defaultSettings();
   assert.equal(settings.recording.autoRecordMode, 'external');
-  assert.equal(settings.recording.botDisplayName, 'Fathom Notetaker');
+  assert.equal(settings.recording.botDisplayName, 'Relay Notetaker');
   assert.equal(settings.summaries.defaultTemplate, 'default');
   assert.equal(settings.summaries.autoExtractActions, true);
   assert.equal(settings.sharing.defaultVisibility, 'team');
@@ -239,7 +239,7 @@ test('team calls: resolves meeting owners, visibility, and teammate filters', ()
 });
 
 test('workspace snapshots remain stable after writes, external changes, and unavailable storage', () => {
-  const store = load('src/lib/workspaceStorage.ts');
+  const store = load('tests/compatibility/workspaceStorage.ts');
   let raw = null;
   global.window = {localStorage:{getItem:()=>raw,setItem:(_key,value)=>{raw=value;}}};
   try {

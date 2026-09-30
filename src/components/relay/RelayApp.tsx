@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -32,19 +32,15 @@ import { TestCallPanel } from "../TestCallPanel";
 import { MeetingPane } from "./MeetingPane";
 import { Dialog } from "./Dialog";
 import { ThemeToggle } from "./ThemeToggle";
+import { WorkspacePreferences } from "./WorkspacePreferences";
+import { RelayHelp } from "./RelayHelp";
+import { UpcomingSessions } from "./UpcomingSessions";
+import { CollectionReel } from "./CollectionReel";
+import type { Playlist } from "@/types/playlist";
 import { formatTime } from "@/lib/testCallMeeting";
+import { readPlaybackTimestamp } from "@/lib/shareLinks";
 
-type Collection = {
-  id: string;
-  title: string;
-  description: string;
-  items: {
-    id: string;
-    highlightId: string;
-    meetingId: string;
-    order: number;
-  }[];
-};
+type Collection = Playlist;
 const sections = [
   { name: "Overview", icon: LayoutDashboard },
   { name: "Sessions", icon: AudioLines },
@@ -81,6 +77,23 @@ export function RelayApp() {
     [compact, setCompact] = useState(false);
   const [captureVisible, setCaptureVisible] = useState(false),
     [minimized, setMinimized] = useState(false);
+  const [sortBy, setSortBy] = useState("newest"),
+    [libraryScope, setLibraryScope] = useState("all"),
+    [teammate, setTeammate] = useState("All"),
+    [actionStatus, setActionStatus] = useState("all");
+  const [editing, setEditing] = useState<string | null>(null),
+    [description, setDescription] = useState(""),
+    [scope, setScope] = useState<string[]>([]),
+    [selectedSignal, setSelectedSignal] = useState("all"),
+    [signalQuery, setSignalQuery] = useState("");
+  const [reel, setReel] = useState<Playlist | null>(null),
+    [entity, setEntity] = useState(""),
+    [searchType, setSearchType] = useState("all"),
+    [searchIndex, setSearchIndex] = useState(0),
+    [selectedTab, setSelectedTab] = useState("Brief"),
+    [captureTitle, setCaptureTitle] = useState("Release readiness · Test Call");
+  const [overviewAnswer, setOverviewAnswer] = useState(""),
+    [overviewQuestion, setOverviewQuestion] = useState("");
   const capture = useTestCallCapture();
   const load = useCallback(async () => {
     try {
@@ -104,26 +117,30 @@ export function RelayApp() {
     setTrackers(t);
     setMatches(m);
   }, []);
-  const openMeeting = useCallback(async (id: string, time = 0) => {
-    setBusy(true);
-    try {
-      const m = await api<Meeting>(`/meetings/${id}`);
-      setSelected(m);
-      setSelectedTime(time);
-      setSearch(false);
-      setMobileNav(false);
-      history.pushState(
-        null,
-        "",
-        `/?meeting=${encodeURIComponent(id)}&t=${time}`,
-      );
-      window.scrollTo(0, 0);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+  const openMeeting = useCallback(
+    async (id: string, time = 0, tab = "Brief") => {
+      setBusy(true);
+      try {
+        const m = await api<Meeting>(`/meetings/${id}`);
+        setSelected(m);
+        setSelectedTab(tab);
+        setSelectedTime(time);
+        setSearch(false);
+        setMobileNav(false);
+        history.pushState(
+          null,
+          "",
+          `/?meeting=${encodeURIComponent(id)}&t=${time}`,
+        );
+        window.scrollTo(0, 0);
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [],
+  );
   useEffect(() => {
     api<Meeting[]>("/meetings")
       .then((data) => {
@@ -141,28 +158,38 @@ export function RelayApp() {
         api<Meeting>(`/meetings/${encodeURIComponent(id)}`)
           .then((m) => {
             setSelected(m);
-            const n = Number(u.searchParams.get("t"));
-            setSelectedTime(Number.isFinite(n) ? n : 0);
+            const parsed = readPlaybackTimestamp(
+              u.searchParams.get("t"),
+              m.duration,
+            );
+            setSelectedTime(parsed.seconds);
+            if (parsed.invalid)
+              setError(
+                "The linked timestamp was invalid. Playback starts at the beginning.",
+              );
           })
           .catch((e) => setError(e.message));
-      else setSelected(null);
+      else {
+        setSelected(null);
+        if (u.searchParams.has("playlist")) {
+          setView("Collections");
+          setEntity(u.searchParams.get("playlist") || "");
+          void loadCollections().catch((e) => setError(e.message));
+        } else if (u.searchParams.has("tracker")) {
+          setView("Signals");
+          setSelectedSignal(u.searchParams.get("tracker") || "all");
+          void loadSignals().catch((e) => setError(e.message));
+        }
+      }
     };
-    const id = new URL(location.href).searchParams.get("meeting");
-    if (id)
-      api<Meeting>(`/meetings/${encodeURIComponent(id)}`)
-        .then((m) => {
-          setSelected(m);
-          const n = Number(new URL(location.href).searchParams.get("t"));
-          setSelectedTime(Number.isFinite(n) ? n : 0);
-        })
-        .catch((e) => setError(e.message));
+    restore();
     window.addEventListener("relay:meetings", load);
     window.addEventListener("popstate", restore);
     return () => {
       window.removeEventListener("relay:meetings", load);
       window.removeEventListener("popstate", restore);
     };
-  }, [load]);
+  }, [load, loadCollections, loadSignals]);
   useEffect(() => {
     const shortcut = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -199,6 +226,7 @@ export function RelayApp() {
     };
   }, [search, query]);
   function navigate(next: string) {
+    setEntity("");
     setView(next);
     setSelected(null);
     setMobileNav(false);
@@ -209,7 +237,8 @@ export function RelayApp() {
     if (next === "Signals")
       void loadSignals().catch((e) => setError(e.message));
   }
-  function startCall() {
+  function startCall(title = "Release readiness · Test Call") {
+    setCaptureTitle(title);
     capture.engine?.open();
     setCaptureVisible(true);
     setMinimized(false);
@@ -229,18 +258,48 @@ export function RelayApp() {
     m.actionItems.map((a) => ({ ...a, meetingTitle: m.title })),
   );
   const openActions = actions.filter((a) => a.status === "open");
-  const visible = meetings.filter(
-    (m) =>
-      (filter === "All" || m.category === filter) &&
-      (m.title + " " + m.participants.map((p) => p.name).join(" "))
-        .toLowerCase()
-        .includes(libraryQuery.toLowerCase()),
-  );
+  const visible = meetings
+    .filter(
+      (m) =>
+        (filter === "All" || m.category === filter) &&
+        (libraryScope !== "team" || m.visibility === "team") &&
+        (libraryScope !== "personal" || m.visibility === "personal") &&
+        (teammate === "All" ||
+          m.owner === teammate ||
+          m.participants.some((p) => p.name === teammate)) &&
+        (
+          m.title +
+          " " +
+          m.summary.default.overview +
+          " " +
+          m.participants.map((p) => p.name).join(" ")
+        )
+          .toLowerCase()
+          .includes(libraryQuery.toLowerCase()),
+    )
+    .sort((a, b) =>
+      sortBy === "duration"
+        ? b.duration - a.duration
+        : Date.parse(b.date) - Date.parse(a.date),
+    );
   const resultClick = (r: SearchResult) => {
-    if (r.meetingId) void openMeeting(r.meetingId, r.timestamp || 0);
+    if (r.meetingId)
+      void openMeeting(
+        r.meetingId,
+        r.timestamp || 0,
+        r.type === "transcript"
+          ? "Conversation"
+          : r.type === "highlight"
+            ? "Moments"
+            : r.type === "actionItem"
+              ? "Follow-through"
+              : "Brief",
+      );
     else {
       setSearch(false);
       navigate(r.type === "playlist" ? "Collections" : "Signals");
+      setEntity(r.entityId || "");
+      if (r.type === "tracker") setSelectedSignal(r.entityId || "all");
     }
   };
   return (
@@ -340,9 +399,11 @@ export function RelayApp() {
                 ? "Connecting"
                 : error
                   ? "Connection issue"
-                  : busy ? "Working…" : "Database connected"}
+                  : busy
+                    ? "Working…"
+                    : "Database connected"}
             </span>
-            <button className="primary" onClick={startCall}>
+            <button className="primary" onClick={() => startCall()}>
               <Plus size={16} />
               New session
             </button>
@@ -370,6 +431,7 @@ export function RelayApp() {
             <MeetingPane
               key={selected.id + ":" + selectedTime}
               initial={selected}
+              initialTab={selectedTab}
               initialTime={Math.min(
                 selected.duration,
                 Math.max(0, selectedTime),
@@ -473,6 +535,59 @@ export function RelayApp() {
                       </div>
                     </>
                   )}
+                  {view === "Overview" && (
+                    <section className="preference-card">
+                      <h2>Ask your workspace</h2>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const submitter=(e.nativeEvent as SubmitEvent).submitter;
+                          const prompt=(submitter instanceof HTMLButtonElement && submitter.value) || overviewQuestion;
+                          setOverviewQuestion(prompt);
+                          const q = prompt.toLowerCase();
+                          setOverviewAnswer(
+                            q.includes("action")
+                              ? openActions
+                                  .map((a) => a.owner + ": " + a.text)
+                                  .join(" · ") || "No open follow-ups."
+                              : q.includes("decision")
+                                ? meetings
+                                    .map(
+                                      (m) =>
+                                        m.title +
+                                        ": " +
+                                        m.summary.default.decisions.join(" "),
+                                    )
+                                    .join(" · ")
+                                : q.includes("summar")
+                                  ? meetings
+                                      .map(
+                                        (m) =>
+                                          m.title +
+                                          ": " +
+                                          m.summary.default.overview,
+                                      )
+                                      .join(" · ")
+                                  : "Ask about actions, decisions or summaries, or open a session for answers with transcript evidence.",
+                          );
+                        }}
+                      >
+                        <label>
+                          Question
+                          <input
+                            value={overviewQuestion}
+                            onChange={(e) =>
+                              setOverviewQuestion(e.target.value)
+                            }
+                            placeholder="Show open action items"
+                          />
+                        </label>
+                        <button className="secondary">Ask workspace</button>
+                        <div className="button-row">{["Show open action items","Summarize my sessions","What decisions were made?"].map(q=><button className="text-button" type="submit" value={q} key={q}>{q}</button>)}</div>
+                      </form>
+                      <p role="status">{overviewAnswer}</p>
+                    </section>
+                  )}
                   <div className="section-title library-title">
                     <div>
                       <h2>
@@ -481,7 +596,8 @@ export function RelayApp() {
                           : "Session library"}
                       </h2>
                       <p className="muted small">
-                        {meetings.length} sessions · newest first
+                        {visible.length} sessions ·{" "}
+                        {sortBy === "newest" ? "newest first" : "longest first"}
                       </p>
                     </div>
                     <label className="inline-search">
@@ -494,6 +610,54 @@ export function RelayApp() {
                       />
                     </label>
                   </div>
+                  {view === "Sessions" && (
+                    <div className="button-row library-controls">
+                      <label>
+                        Library
+                        <select
+                          value={libraryScope}
+                          onChange={(e) => setLibraryScope(e.target.value)}
+                        >
+                          <option value="all">All sessions</option>
+                          <option value="team">Team sessions</option>
+                          <option value="personal">Personal sessions</option>
+                          <option value="upcoming">Scheduled sessions</option>
+                        </select>
+                      </label>
+                      <label>
+                        Person
+                        <select
+                          value={teammate}
+                          onChange={(e) => setTeammate(e.target.value)}
+                        >
+                          {[
+                            "All",
+                            ...new Set(
+                              meetings.flatMap((m) => [
+                                m.owner || "Soorej",
+                                ...m.participants.map((p) => p.name),
+                              ]),
+                            ),
+                          ].map((v) => (
+                            <option key={v}>{v}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Sort
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                        >
+                          <option value="newest">Newest first</option>
+                          <option value="duration">Longest first</option>
+                        </select>
+                      </label>
+                    </div>
+                  )}
+                  {view === "Sessions" && libraryScope === "upcoming" && (
+                    <UpcomingSessions onCapture={startCall} />
+                  )}
                   <div className="filter-row">
                     {["All", ...new Set(meetings.map((m) => m.category))].map(
                       (c) => (
@@ -508,54 +672,72 @@ export function RelayApp() {
                     )}
                   </div>
                   <div className="session-grid">
-                    {visible.map((m, i) => (
-                      <button
-                        className="session-card"
-                        key={m.id}
-                        onClick={() => void openMeeting(m.id)}
-                        aria-label={`Open ${m.title}`}
-                      >
-                        <div className={`card-art art-${i % 4}`}>
-                          <span className="card-category">{m.category}</span>
-                          <div className="wave-art" aria-hidden="true">
-                            {[
-                              22, 38, 58, 31, 75, 46, 88, 59, 36, 68, 92, 51,
-                              77, 42, 64, 33, 51, 26,
-                            ].map((h, n) => (
-                              <i key={n} style={{ height: h + "%" }} />
-                            ))}
-                          </div>
-                          <span className="card-duration">
-                            {m.durationFormatted}
-                          </span>
-                        </div>
-                        <div className="card-body">
-                          <p className="eyebrow">{m.dateFormatted}</p>
-                          <h3>{m.title}</h3>
-                          <p className="card-summary">
-                            {m.summary.default.overview}
-                          </p>
-                          <div className="card-footer">
-                            <div className="avatars">
-                              {m.participants.slice(0, 3).map((p) => (
-                                <span title={p.name} key={p.id}>
-                                  {p.initials}
-                                </span>
+                    {(libraryScope === "upcoming" && view === "Sessions"
+                      ? []
+                      : visible
+                    ).map((m, i) => (
+                      <Fragment key={m.id}>
+                        {view === "Sessions" &&
+                          sortBy === "newest" &&
+                          (i === 0 ||
+                            visible[i - 1].date.slice(0, 10) !==
+                              m.date.slice(0, 10)) && (
+                            <h2 className="session-date-group">
+                              {new Date(m.date).toLocaleDateString("en-US", {
+                                dateStyle: "long",
+                                timeZone: "UTC",
+                              })}
+                            </h2>
+                          )}
+                        <button
+                          className="session-card"
+                          key={m.id}
+                          onClick={() => void openMeeting(m.id)}
+                          aria-label={`Open ${m.title}`}
+                        >
+                          <div className={`card-art art-${i % 4}`}>
+                            <span className="card-category">{m.category}</span>
+                            <div className="wave-art" aria-hidden="true">
+                              {[
+                                22, 38, 58, 31, 75, 46, 88, 59, 36, 68, 92, 51,
+                                77, 42, 64, 33, 51, 26,
+                              ].map((h, n) => (
+                                <i key={n} style={{ height: h + "%" }} />
                               ))}
-                              {m.participants.length > 3 && (
-                                <small>+{m.participants.length - 3}</small>
-                              )}
                             </div>
-                            <span>
-                              {
-                                m.actionItems.filter((a) => a.status === "open")
-                                  .length
-                              }{" "}
-                              next steps <ArrowUpRight size={15} />
+                            <span className="card-duration">
+                              {m.durationFormatted}
                             </span>
                           </div>
-                        </div>
-                      </button>
+                          <div className="card-body">
+                            <p className="eyebrow">{m.dateFormatted}</p>
+                            <h3>{m.title}</h3>
+                            <p className="card-summary">
+                              {m.summary.default.overview}
+                            </p>
+                            <div className="card-footer">
+                              <div className="avatars">
+                                {m.participants.slice(0, 3).map((p) => (
+                                  <span title={p.name} key={p.id}>
+                                    {p.initials}
+                                  </span>
+                                ))}
+                                {m.participants.length > 3 && (
+                                  <small>+{m.participants.length - 3}</small>
+                                )}
+                              </div>
+                              <span>
+                                {
+                                  m.actionItems.filter(
+                                    (a) => a.status === "open",
+                                  ).length
+                                }{" "}
+                                next steps <ArrowUpRight size={15} />
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      </Fragment>
                     ))}
                   </div>
                   {!visible.length && (
@@ -576,6 +758,7 @@ export function RelayApp() {
                         onClick={() => {
                           setFilter("All");
                           setLibraryQuery("");
+                          setTeammate("All");setLibraryScope("all");
                         }}
                       >
                         Clear filters
@@ -600,45 +783,61 @@ export function RelayApp() {
                     </span>
                   </div>
                   <div className="desk-list">
-                    {actions.map((a) => (
-                      <article
-                        key={a.id}
-                        className={`action-row ${a.status === "completed" ? "done" : ""}`}
+                    <label>
+                      Show follow-ups
+                      <select
+                        value={actionStatus}
+                        onChange={(e) => setActionStatus(e.target.value)}
                       >
-                        <button
-                          role="checkbox"
-                          aria-checked={a.status === "completed"}
-                          aria-label={`Complete ${a.text}`}
-                          disabled={busy}
-                          className="check-control"
-                          onClick={() =>
-                            void run(async () => {
-                              await api(`/action-items/${a.id}`, "PATCH", {
-                                status:
-                                  a.status === "open" ? "completed" : "open",
-                              });
-                              await load();
-                            })
-                          }
+                        {["all", "open", "completed"].map((v) => (
+                          <option key={v}>{v}</option>
+                        ))}
+                      </select>
+                    </label>
+                    {actions
+                      .filter(
+                        (a) =>
+                          actionStatus === "all" || a.status === actionStatus,
+                      )
+                      .map((a) => (
+                        <article
+                          key={a.id}
+                          className={`action-row ${a.status === "completed" ? "done" : ""}`}
                         >
-                          {a.status === "completed" && <Check size={16} />}
-                        </button>
-                        <div>
-                          <p>{a.text}</p>
-                          <small>
-                            {a.owner} · {a.dueDate || "No due date"}
-                          </small>
                           <button
-                            className="text-button small"
+                            role="checkbox"
+                            aria-checked={a.status === "completed"}
+                            aria-label={`Complete ${a.text}`}
+                            disabled={busy}
+                            className="check-control"
                             onClick={() =>
-                              void openMeeting(a.meetingId, a.sourceTimestamp)
+                              void run(async () => {
+                                await api(`/action-items/${a.id}`, "PATCH", {
+                                  status:
+                                    a.status === "open" ? "completed" : "open",
+                                });
+                                await load();
+                              })
                             }
                           >
-                            {a.meetingTitle} <ArrowUpRight size={12} />
+                            {a.status === "completed" && <Check size={16} />}
                           </button>
-                        </div>
-                      </article>
-                    ))}
+                          <div>
+                            <p>{a.text}</p>
+                            <small>
+                              {a.owner} · {a.dueDate || "No due date"}
+                            </small>
+                            <button
+                              className="text-button small"
+                              onClick={() =>
+                                void openMeeting(a.meetingId, a.sourceTimestamp)
+                              }
+                            >
+                              {a.meetingTitle} <ArrowUpRight size={12} />
+                            </button>
+                          </div>
+                        </article>
+                      ))}
                   </div>
                 </>
               )}
@@ -657,6 +856,8 @@ export function RelayApp() {
                       className="primary"
                       onClick={() => {
                         setNewName("");
+                        setEditing(null);
+                        setDescription("");
                         setDialog("collection");
                       }}
                     >
@@ -665,92 +866,179 @@ export function RelayApp() {
                     </button>
                   </div>
                   <div className="collection-grid">
-                    {collections.map((c) => (
-                      <section className="collection-card" key={c.id}>
-                        <Folder size={24} />
-                        <h2>{c.title}</h2>
-                        <p className="muted">
-                          {c.description ||
-                            "A collection of moments worth sharing with your team."}
-                        </p>
-                        {c.items.map((item, i) => {
-                          const m = meetings.find(
-                              (m) => m.id === item.meetingId,
-                            ),
-                            h = m?.highlights.find(
-                              (h) => h.id === item.highlightId,
-                            );
-                          return (
-                            <div className="collection-item" key={item.id}>
-                              <button
-                                onClick={() =>
-                                  void openMeeting(
-                                    item.meetingId,
-                                    h?.timestamp || 0,
+                    {entity && (
+                      <button
+                        className="text-button"
+                        onClick={() => setEntity("")}
+                      >
+                        Show all collections
+                      </button>
+                    )}
+                    {collections
+                      .filter((c) => !entity || c.id === entity)
+                      .map((c) => (
+                        <section className="collection-card" key={c.id}>
+                          <Folder size={24} />
+                          <h2>{c.title}</h2>
+                          <div className="button-row">
+                            <button
+                              className="text-button"
+                              onClick={() => {
+                                setEditing(c.id);
+                                setNewName(c.title);
+                                setDescription(c.description || "");
+                                setDialog("collection");
+                              }}
+                            >
+                              Edit collection
+                            </button>
+                            <button
+                              className="text-button"
+                              disabled={busy}
+                              onClick={() =>
+                                void run(async () => {
+                                  await api(`/playlists/${c.id}`, "DELETE");
+                                  await loadCollections();
+                                  setEntity("");
+                                })
+                              }
+                            >
+                              Delete collection
+                            </button>
+                            <button
+                              className="text-button"
+                              disabled={!c.items.length}
+                              onClick={() => setReel(c)}
+                            >
+                              Play reel
+                            </button>
+                            <button
+                              className="text-button"
+                              onClick={() => {
+                                void navigator.clipboard
+                                  .writeText(
+                                    location.origin +
+                                      "/?playlist=" +
+                                      encodeURIComponent(c.id),
                                   )
-                                }
-                              >
-                                <small>{m?.title}</small>
-                                <p>{h?.text || "Moment unavailable"}</p>
-                                <span className="timestamp">
-                                  {h?.timestampFormatted}{" "}
-                                  <ArrowUpRight size={12} />
-                                </span>
-                              </button>
-                              <div>
+                                  .catch(() =>
+                                    setError(
+                                      "Copy this collection URL: " +
+                                        location.origin +
+                                        "/?playlist=" +
+                                        c.id,
+                                    ),
+                                  );
+                              }}
+                            >
+                              Copy collection link
+                            </button>
+                          </div>
+                          <p className="muted">
+                            {c.description ||
+                              "A collection of moments worth sharing with your team."}
+                          </p>
+                          {c.items.map((item, i) => {
+                            const m = meetings.find(
+                                (m) => m.id === item.meetingId,
+                              ),
+                              h = m?.highlights.find(
+                                (h) => h.id === item.highlightId,
+                              );
+                            return (
+                              <div className="collection-item" key={item.id}>
                                 <button
-                                  className="icon-btn"
-                                  disabled={i === 0 || busy}
-                                  aria-label={`Move moment ${i + 1} up`}
                                   onClick={() =>
-                                    void run(async () => {
-                                      const ids = c.items.map((x) => x.id);
-                                      [ids[i - 1], ids[i]] = [
-                                        ids[i],
-                                        ids[i - 1],
-                                      ];
-                                      await api(`/playlists/${c.id}`, "PATCH", {
-                                        itemIds: ids,
-                                      });
-                                      await loadCollections();
-                                    })
+                                    void openMeeting(
+                                      item.meetingId,
+                                      h?.timestamp || 0,
+                                    )
                                   }
                                 >
-                                  <ArrowUp size={14} />
+                                  <small>{m?.title}</small>
+                                  <p>{h?.text || "Moment unavailable"}</p>
+                                  <span className="timestamp">
+                                    {h?.timestampFormatted}{" "}
+                                    <ArrowUpRight size={12} />
+                                  </span>
                                 </button>
-                                <button
-                                  className="icon-btn"
-                                  disabled={i === c.items.length - 1 || busy}
-                                  aria-label={`Move moment ${i + 1} down`}
-                                  onClick={() =>
-                                    void run(async () => {
-                                      const ids = c.items.map((x) => x.id);
-                                      [ids[i + 1], ids[i]] = [
-                                        ids[i],
-                                        ids[i + 1],
-                                      ];
-                                      await api(`/playlists/${c.id}`, "PATCH", {
-                                        itemIds: ids,
-                                      });
-                                      await loadCollections();
-                                    })
-                                  }
-                                >
-                                  <ArrowDown size={14} />
-                                </button>
+                                <div>
+                                  <button
+                                    className="text-button"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      void run(async () => {
+                                        await api(
+                                          `/playlists/${c.id}/items/${item.id}`,
+                                          "DELETE",
+                                        );
+                                        await loadCollections();
+                                      })
+                                    }
+                                  >
+                                    Remove
+                                  </button>
+                                  <button
+                                    className="icon-btn"
+                                    disabled={i === 0 || busy}
+                                    aria-label={`Move moment ${i + 1} up`}
+                                    onClick={() =>
+                                      void run(async () => {
+                                        const ids = c.items.map((x) => x.id);
+                                        [ids[i - 1], ids[i]] = [
+                                          ids[i],
+                                          ids[i - 1],
+                                        ];
+                                        await api(
+                                          `/playlists/${c.id}`,
+                                          "PATCH",
+                                          {
+                                            itemIds: ids,
+                                          },
+                                        );
+                                        await loadCollections();
+                                      })
+                                    }
+                                  >
+                                    <ArrowUp size={14} />
+                                  </button>
+                                  <button
+                                    className="icon-btn"
+                                    disabled={i === c.items.length - 1 || busy}
+                                    aria-label={`Move moment ${i + 1} down`}
+                                    onClick={() =>
+                                      void run(async () => {
+                                        const ids = c.items.map((x) => x.id);
+                                        [ids[i + 1], ids[i]] = [
+                                          ids[i],
+                                          ids[i + 1],
+                                        ];
+                                        await api(
+                                          `/playlists/${c.id}`,
+                                          "PATCH",
+                                          {
+                                            itemIds: ids,
+                                          },
+                                        );
+                                        await loadCollections();
+                                      })
+                                    }
+                                  >
+                                    <ArrowDown size={14} />
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                        <button
-                          className="secondary"
-                          onClick={() => setAddingTo(c.id)}
-                        >
-                          <Plus size={15} />
-                          Add a moment
-                        </button>
-                      </section>
-                    ))}
+                            );
+                          })}
+                          <button
+                            className="secondary"
+                            onClick={() => setAddingTo(c.id)}
+                          >
+                            <Plus size={15} />
+                            Add a moment
+                          </button>
+                        </section>
+                      ))}
                   </div>
                 </>
               )}
@@ -770,6 +1058,8 @@ export function RelayApp() {
                       onClick={() => {
                         setNewName("");
                         setKeywords("");
+                        setEditing(null);
+                        setScope([]);
                         setDialog("signal");
                       }}
                     >
@@ -777,12 +1067,60 @@ export function RelayApp() {
                       New signal
                     </button>
                   </div>
+                  <div className="button-row">
+                    <label>
+                      Signal
+                      <select
+                        value={selectedSignal}
+                        onChange={(e) => setSelectedSignal(e.target.value)}
+                      >
+                        <option value="all">All signals</option>
+                        {trackers.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Filter matches
+                      <input
+                        value={signalQuery}
+                        onChange={(e) => setSignalQuery(e.target.value)}
+                      />
+                    </label>
+                  </div>
                   <div className="signal-tags">
                     {trackers.map((t) => (
                       <div key={t.id}>
                         <Signal size={18} />
                         <strong>{t.name}</strong>
                         <span>{t.keywords.join(" · ")}</span>
+                        <button
+                          onClick={() => {
+                            setEditing(t.id);
+                            setNewName(t.name);
+                            setKeywords(t.keywords.join(", "));
+                            setScope(
+                              t.meetingScope === "all" ? [] : t.meetingScope,
+                            );
+                            setDialog("signal");
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() =>
+                            void run(async () => {
+                              await api(`/trackers/${t.id}`, "DELETE");
+                              await loadSignals();
+                              setSelectedSignal("all");
+                            })
+                          }
+                        >
+                          Delete
+                        </button>
                         <button
                           disabled={busy}
                           onClick={() =>
@@ -800,25 +1138,49 @@ export function RelayApp() {
                     ))}
                   </div>
                   <div className="signal-list">
-                    {matches.map((m, i) => (
-                      <button
-                        key={m.segmentId + ":" + m.trackerId + ":" + i}
-                        onClick={() =>
-                          void openMeeting(m.meetingId, m.timestamp)
-                        }
-                      >
-                        <span className="tag">{m.keyword}</span>
-                        <p>{m.excerpt}</p>
-                        <small>
-                          {m.speaker} · {m.meetingTitle}
-                        </small>
-                        <span className="timestamp">
-                          {m.timestampFormatted} <ArrowUpRight size={14} />
-                        </span>
-                      </button>
-                    ))}
+                    {matches
+                      .filter(
+                        (m) =>
+                          (selectedSignal === "all" ||
+                            m.trackerId === selectedSignal) &&
+                          (
+                            m.excerpt +
+                            " " +
+                            m.speaker +
+                            " " +
+                            m.meetingTitle +
+                            " " +
+                            m.keyword
+                          )
+                            .toLowerCase()
+                            .includes(signalQuery.toLowerCase()),
+                      )
+                      .map((m, i) => (
+                        <button
+                          key={m.segmentId + ":" + m.trackerId + ":" + i}
+                          onClick={() =>
+                            void openMeeting(m.meetingId, m.timestamp)
+                          }
+                        >
+                          <span className="tag">{m.keyword}</span>
+                          <p>{m.excerpt}</p>
+                          <small>
+                            {m.speaker} · {m.meetingTitle}
+                          </small>
+                          <span className="timestamp">
+                            {m.timestampFormatted} <ArrowUpRight size={14} />
+                          </span>
+                        </button>
+                      ))}
                   </div>
-                  {!matches.length && (
+                  {!matches.some(
+                    (m) =>
+                      (selectedSignal === "all" ||
+                        m.trackerId === selectedSignal) &&
+                      `${m.excerpt} ${m.speaker} ${m.meetingTitle} ${m.keyword}`
+                        .toLowerCase()
+                        .includes(signalQuery.toLowerCase()),
+                  ) && (
                     <div className="empty">
                       No matches yet. Add a signal with a topic your team
                       discusses.
@@ -828,6 +1190,7 @@ export function RelayApp() {
               )}
               {view === "Capture studio" && (
                 <div className="studio">
+                  <UpcomingSessions onCapture={startCall} />
                   <p className="eyebrow">A SPACE TO TRY IT OUT</p>
                   <h1>
                     Start a conversation.
@@ -843,7 +1206,7 @@ export function RelayApp() {
                     <AudioLines size={90} />
                     <span className="studio-orbit">01 → 02 → 03</span>
                   </div>
-                  <button className="primary" onClick={startCall}>
+                  <button className="primary" onClick={() => startCall()}>
                     <Mic size={18} />
                     Start a test session
                   </button>
@@ -894,12 +1257,15 @@ export function RelayApp() {
                       Appearance & theme
                     </h2>
                     <p>
-                      Switch between Relay’s warm editorial light theme, deep forest dark theme, or follow your system preference. Changes apply across the entire workspace immediately.
+                      Switch between Relay’s warm editorial light theme, deep
+                      forest dark theme, or follow your system preference.
+                      Changes apply across the entire workspace immediately.
                     </p>
                     <div style={{ maxWidth: 300, marginTop: 14 }}>
                       <ThemeToggle />
                     </div>
                   </section>
+                  <WorkspacePreferences />
                   <section className="preference-card">
                     <h2>Reading density</h2>
                     <p>
@@ -961,17 +1327,75 @@ export function RelayApp() {
       </div>
       {search && (
         <Dialog title="Find the thread" onClose={() => setSearch(false)} wide>
+          <label>
+            Result type
+            <select
+              value={searchType}
+              onChange={(e) => {
+                setSearchType(e.target.value);
+                setSearchIndex(0);
+              }}
+            >
+              {[
+                "all",
+                "meeting",
+                "transcript",
+                "summary",
+                "actionItem",
+                "highlight",
+                "playlist",
+                "tracker",
+              ].map((v) => (
+                <option value={v} key={v}>
+                  {
+                    {
+                      meeting: "Sessions",
+                      transcript: "Conversation",
+                      summary: "Briefs",
+                      actionItem: "Follow-ups",
+                      highlight: "Moments",
+                      playlist: "Collections",
+                      tracker: "Signals",
+                      all: "Everything",
+                    }[v]
+                  }
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="global-search-input">
             <Search size={22} />
             <input
               autoFocus
               placeholder="A person, a promise, a passing thought…"
               aria-label="Search workspace"
+              onKeyDown={(e) => {
+                const filtered = results.filter(
+                  (r) => searchType === "all" || r.type === searchType,
+                );
+                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setSearchIndex((i) =>
+                    Math.max(
+                      0,
+                      Math.min(
+                        filtered.length - 1,
+                        i + (e.key === "ArrowDown" ? 1 : -1),
+                      ),
+                    ),
+                  );
+                }
+                if (e.key === "Enter" && filtered[searchIndex]) {
+                  e.preventDefault();
+                  resultClick(filtered[searchIndex]);
+                }
+              }}
               maxLength={160}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
                 setResults([]);
+                setSearchIndex(0);
               }}
             />
           </label>
@@ -987,21 +1411,39 @@ export function RelayApp() {
               <div className="empty">
                 Try “migration”, “Sarah”, or a moment you saved.
               </div>
-            ) : results.length ? (
-              results.map((r, i) => (
-                <button key={i} onClick={() => resultClick(r)}>
-                  <span className="tag">
-                    {r.type === "actionItem" ? "Follow-up" : r.type}
-                  </span>
-                  <h3>{r.title}</h3>
-                  <p>{r.snippet}</p>
-                  <small>
-                    {r.meetingTitle || r.category}{" "}
-                    {r.timestampFormatted && `· ${r.timestampFormatted}`}
-                  </small>
-                  <ArrowUpRight size={17} />
-                </button>
-              ))
+            ) : results.some(
+                (r) => searchType === "all" || r.type === searchType,
+              ) ? (
+              results
+                .filter((r) => searchType === "all" || r.type === searchType)
+                .map((r, i) => (
+                  <button
+                    key={i}
+                    className={searchIndex === i ? "selected" : ""}
+                    onClick={() => resultClick(r)}
+                  >
+                    <span className="tag">
+                      {
+                        {
+                          actionItem: "Follow-up",
+                          playlist: "Collection",
+                          tracker: "Signal",
+                          meeting: "Session",
+                          transcript: "Conversation",
+                          summary: "Brief",
+                          highlight: "Moment",
+                        }[r.type]
+                      }
+                    </span>
+                    <h3>{r.title}</h3>
+                    <p>{r.snippet}</p>
+                    <small>
+                      {r.meetingTitle || r.category}{" "}
+                      {r.timestampFormatted && `· ${r.timestampFormatted}`}
+                    </small>
+                    <ArrowUpRight size={17} />
+                  </button>
+                ))
             ) : (
               <div className="empty">
                 No matches for “{query}”. Try a shorter phrase.
@@ -1022,16 +1464,25 @@ export function RelayApp() {
               e.preventDefault();
               void run(async () => {
                 if (dialog === "collection") {
-                  await api("/playlists", "POST", { title: newName });
+                  await api(
+                    editing ? `/playlists/${editing}` : "/playlists",
+                    editing ? "PATCH" : "POST",
+                    { title: newName, description },
+                  );
                   await loadCollections();
                 } else {
-                  await api("/trackers", "POST", {
-                    name: newName,
-                    keywords: keywords
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  });
+                  await api(
+                    editing ? `/trackers/${editing}` : "/trackers",
+                    editing ? "PATCH" : "POST",
+                    {
+                      meetingScope: scope.length ? scope : "all",
+                      name: newName,
+                      keywords: keywords
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    },
+                  );
                   await loadSignals();
                 }
                 setDialog(null);
@@ -1050,6 +1501,36 @@ export function RelayApp() {
                 }
               />
             </label>
+            {dialog === "collection" && (
+              <label>
+                Description
+                <textarea
+                  value={description}
+                  maxLength={400}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </label>
+            )}
+            {dialog === "signal" && (
+              <label>
+                Session scope (none selected means all)
+                <select
+                  multiple
+                  value={scope}
+                  onChange={(e) =>
+                    setScope(
+                      Array.from(e.target.selectedOptions, (o) => o.value),
+                    )
+                  }
+                >
+                  {meetings.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             {dialog === "signal" && (
               <label>
                 Keywords, separated by commas
@@ -1062,7 +1543,7 @@ export function RelayApp() {
               </label>
             )}
             <button className="primary" disabled={busy}>
-              {busy ? "Saving…" : "Create"}
+              {busy ? "Saving…" : editing ? "Save changes" : "Create"}
             </button>
             {error && <p className="error-text">{error}</p>}
           </form>
@@ -1102,33 +1583,31 @@ export function RelayApp() {
           title="A little context goes a long way"
           onClose={() => setDialog(null)}
         >
-          <div className="guide">
-            <h3>Start with a session</h3>
-            <p>
-              Open a card on the shelf. The Brief captures decisions;
-              Conversation connects them to the words that were said.
-            </p>
-            <h3>Move from listening to doing</h3>
-            <p>
-              Complete follow-ups, save a moment from the transcript, and curate
-              collections. Changes are saved to the shared database.
-            </p>
-            <h3>Find it. Pass it on.</h3>
-            <p>
-              Search with Ctrl/⌘ K. Create a share link for a read-only view on
-              another device.
-            </p>
-            <h3>Try the capture loop</h3>
-            <p>
-              New session runs a consent-based scenario. The floating recorder
-              stays with you while you work. Notes are simulated; database
-              persistence is real.
-            </p>
-          </div>
+          <RelayHelp
+            onCapture={() => {
+              setDialog(null);
+              startCall();
+            }}
+          />
         </Dialog>
+      )}
+      {reel && (
+        <CollectionReel
+          list={reel}
+          meetings={meetings}
+          onClose={() => setReel(null)}
+          onOpen={(id, time) => void openMeeting(id, time)}
+        />
+      )}
+      {capture.persistenceFailed && (
+        <p className="notice error" role="alert">
+          This browser could not save capture recovery state. Keep this page
+          open until the session is saved.
+        </p>
       )}
       {captureVisible && capture.engine && (
         <TestCallPanel
+          initialTitle={captureTitle}
           state={capture.state}
           engine={capture.engine}
           minimized={minimized}

@@ -2959,3 +2959,24 @@ body,
   border-bottom-color: var(--line);
 }
 
+
+/* Recovered workflows use the existing Relay presentation tokens. */
+.preference-card form { display:grid; gap:16px; }
+.preference-card label,.library-controls label { display:grid; gap:7px; }
+.preference-card input:not([type=checkbox]):not([type=color]),.preference-card select,.preference-card textarea,.library-controls select { background:var(--white); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:10px; width:100%; min-width:0; }
+.preference-card .checkbox-label { display:flex; align-items:center; gap:10px; }
+.preference-type { display:flex; align-items:center; gap:8px; min-width:0; }
+.preference-type input[type=color] { width:36px; flex:none; }
+.preference-type button { padding:5px; }
+.upcoming-session { border-top:1px solid var(--line); padding:20px 0; }
+.upcoming-session h3 { margin:12px 0; }
+.library-controls { align-items:end; margin:20px 0; }
+.playback-tools { margin:12px 0; flex-wrap:wrap; }
+.moment-markers { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 24px; }
+.listening-bar:fullscreen { background:var(--paper); padding:32px; justify-content:center; }
+.search-results button.selected { outline:2px solid var(--green); outline-offset:-2px; }
+.guide details { border-bottom:1px solid var(--line); padding:14px 0; }
+.guide summary { cursor:pointer; font-weight:600; }
+.relay-dialog select { background:var(--white); color:var(--ink); border:1px solid var(--line); padding:10px; border-radius:8px; max-width:100%; }
+@media(max-width:600px){.preference-type{flex-wrap:wrap}.preference-type input:not([type=color]){flex-basis:100%}.library-controls{display:grid;grid-template-columns:1fr}.button-row{flex-wrap:wrap}.signal-tags>div{flex-wrap:wrap}.public-header{flex-wrap:wrap;gap:12px}}
+.session-date-group { grid-column: 1 / -1; font-size: 1rem; margin: 16px 0 0; color: var(--muted); }

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const load = require('./load-typescript.cjs');
 const { CaptureEngine, initialCaptureState } = load('src/lib/captureEngine.ts');
 const { createTestMeeting, readTestCallFragment, testCallFragment } = load('src/lib/testCallMeeting.ts');
-const { decodeState, applySavedState, emptyState } = load('src/lib/meetingStorage.ts');
+const { decodeState, applySavedState, emptyState } = load('tests/compatibility/meetingStorage.ts');
 const { findMeetingAnswer } = load('src/lib/meetingAnswers.ts');
 const descriptor = () => ({ version:1, id:'test_12345678-abcd', title:'Capture integration test', date:'2026-09-21T12:00:00.000Z', duration:0, captureMode:'simulated', hasLocalAudio:false });
 function harness(overrides = {}, recovered) {
