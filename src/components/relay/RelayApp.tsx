@@ -22,6 +22,7 @@ import {
   Settings2,
   Signal,
   Sun,
+  X,
 } from "lucide-react";
 import type { Meeting } from "@/types/meeting";
 import type { SearchResult } from "@/lib/workspaceSearch";
@@ -33,6 +34,7 @@ import { MeetingPane } from "./MeetingPane";
 import { Dialog } from "./Dialog";
 import { ThemeToggle } from "./ThemeToggle";
 import { WorkspacePreferences } from "./WorkspacePreferences";
+import { WorkspaceIntegrations } from "./WorkspaceIntegrations";
 import { RelayHelp } from "./RelayHelp";
 import { UpcomingSessions } from "./UpcomingSessions";
 import { CollectionReel } from "./CollectionReel";
@@ -48,6 +50,7 @@ const sections = [
   { name: "Collections", icon: Folder },
   { name: "Signals", icon: Signal },
   { name: "Capture studio", icon: Mic },
+  { name: "Settings", icon: Settings2 },
 ];
 export function RelayApp() {
   const [view, setView] = useState("Overview"),
@@ -93,7 +96,10 @@ export function RelayApp() {
     [selectedTab, setSelectedTab] = useState("Brief"),
     [captureTitle, setCaptureTitle] = useState("Release readiness · Test Call");
   const [overviewAnswer, setOverviewAnswer] = useState(""),
-    [overviewQuestion, setOverviewQuestion] = useState("");
+    [overviewQuestion, setOverviewQuestion] = useState(""),
+    [settingsTab, setSettingsTab] = useState<
+      "all" | "preferences" | "appearance" | "integrations"
+    >("all");
   const capture = useTestCallCapture();
   const load = useCallback(async () => {
     try {
@@ -335,21 +341,34 @@ export function RelayApp() {
         </button>
         <p className="nav-label">WORKSPACE</p>
         <nav aria-label="Main navigation">
-          {sections.map(({ name, icon: Icon }) => (
-            <button
-              key={name}
-              className={!selected && view === name ? "active" : ""}
-              onClick={() => navigate(name)}
-            >
-              <Icon size={18} />
-              {name}
-              {name === "Action desk" && openActions.length > 0 && (
-                <span>{openActions.length}</span>
-              )}
-            </button>
-          ))}
+          {sections.map(({ name, icon: Icon }) => {
+            const active =
+              !selected &&
+              (view === name ||
+                (name === "Settings" &&
+                  (view === "Settings" || view === "Preferences")));
+            return (
+              <button
+                key={name}
+                className={active ? "active" : ""}
+                onClick={() => navigate(name)}
+              >
+                <Icon size={18} />
+                {name}
+                {name === "Action desk" && openActions.length > 0 && (
+                  <span>{openActions.length}</span>
+                )}
+              </button>
+            );
+          })}
         </nav>
+        <div className="nav-theme-wrap" aria-label="Appearance theme">
+          <ThemeToggle />
+        </div>
         <div className="nav-bottom">
+          <button onClick={() => setDialog("help")}>
+            <CircleHelp size={17} />A quick guide
+          </button>
           <div className="nav-note">
             <span className="status-dot" />
             Built for the follow-through.
@@ -359,16 +378,6 @@ export function RelayApp() {
               More moving forward.
             </p>
           </div>
-          <div className="nav-theme-wrap">
-            <ThemeToggle />
-          </div>
-          <button onClick={() => navigate("Preferences")}>
-            <Settings2 size={17} />
-            Preferences
-          </button>
-          <button onClick={() => setDialog("help")}>
-            <CircleHelp size={17} />A quick guide
-          </button>
           <div className="nav-profile">
             <span>S</span>
             <div>
@@ -390,7 +399,13 @@ export function RelayApp() {
           </button>
           <div className="topbar-path">
             Workspace <ChevronRight size={14} />{" "}
-            <strong>{selected ? "Session" : view}</strong>
+            <strong>
+              {selected
+                ? "Session"
+                : view === "Preferences"
+                  ? "Settings"
+                  : view}
+            </strong>
           </div>
           <div>
             <span className="connection">
@@ -1067,76 +1082,198 @@ export function RelayApp() {
                       New signal
                     </button>
                   </div>
-                  <div className="button-row">
-                    <label>
-                      Signal
-                      <select
-                        value={selectedSignal}
-                        onChange={(e) => setSelectedSignal(e.target.value)}
-                      >
-                        <option value="all">All signals</option>
-                        {trackers.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Filter matches
-                      <input
-                        value={signalQuery}
-                        onChange={(e) => setSignalQuery(e.target.value)}
-                      />
-                    </label>
+                  <div className="signal-controls-bar">
+                    <div className="signal-control-item">
+                      <span className="control-label">FILTER BY SIGNAL</span>
+                      <div className="signal-select-wrap">
+                        <Signal size={15} className="control-icon" />
+                        <select
+                          value={selectedSignal}
+                          onChange={(e) => setSelectedSignal(e.target.value)}
+                          aria-label="Filter by signal"
+                        >
+                          <option value="all">All signals ({trackers.length})</option>
+                          {trackers.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="signal-control-item search-item">
+                      <span className="control-label">SEARCH MATCHED EXCERPTS</span>
+                      <div className="signal-input-wrap">
+                        <Search size={15} className="control-icon" />
+                        <input
+                          placeholder="Search in excerpts, speakers, topics, or keywords…"
+                          value={signalQuery}
+                          onChange={(e) => setSignalQuery(e.target.value)}
+                          aria-label="Search matched excerpts"
+                        />
+                        {signalQuery && (
+                          <button
+                            type="button"
+                            className="signal-clear-btn"
+                            onClick={() => setSignalQuery("")}
+                            aria-label="Clear search query"
+                          >
+                            <X size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="signal-tags">
-                    {trackers.map((t) => (
-                      <div key={t.id}>
-                        <Signal size={18} />
-                        <strong>{t.name}</strong>
-                        <span>{t.keywords.join(" · ")}</span>
-                        <button
-                          onClick={() => {
-                            setEditing(t.id);
-                            setNewName(t.name);
-                            setKeywords(t.keywords.join(", "));
-                            setScope(
-                              t.meetingScope === "all" ? [] : t.meetingScope,
-                            );
-                            setDialog("signal");
+
+                  <div className="signal-cards-grid">
+                    {trackers.map((t) => {
+                      const matchCount = matches.filter(
+                        (m) => m.trackerId === t.id,
+                      ).length;
+                      const isSelected = selectedSignal === t.id;
+                      return (
+                        <div
+                          key={t.id}
+                          className={`signal-card ${isSelected ? "selected" : ""} ${!t.enabled ? "paused" : ""}`}
+                          onClick={() =>
+                            setSelectedSignal(isSelected ? "all" : t.id)
+                          }
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelectedSignal(isSelected ? "all" : t.id);
+                            }
                           }}
                         >
-                          Edit
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() =>
-                            void run(async () => {
-                              await api(`/trackers/${t.id}`, "DELETE");
-                              await loadSignals();
-                              setSelectedSignal("all");
-                            })
-                          }
-                        >
-                          Delete
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() =>
-                            void run(async () => {
-                              await api(`/trackers/${t.id}`, "PATCH", {
-                                enabled: !t.enabled,
-                              });
-                              await loadSignals();
-                            })
-                          }
-                        >
-                          {t.enabled ? "Pause" : "Resume"}
-                        </button>
-                      </div>
-                    ))}
+                          <div className="signal-card-main">
+                            <div className="signal-card-header">
+                              <div className="signal-icon-mark">
+                                <Signal size={16} />
+                              </div>
+                              <div className="signal-title-wrap">
+                                <strong>{t.name}</strong>
+                                <div className="signal-meta-line">
+                                  <span
+                                    className={`signal-status-pill ${t.enabled ? "active" : "paused"}`}
+                                  >
+                                    <span className="status-dot" />
+                                    {t.enabled ? "Tracking" : "Paused"}
+                                  </span>
+                                  <span className="signal-match-count">
+                                    {matchCount}{" "}
+                                    {matchCount === 1 ? "match" : "matches"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="signal-keywords-wrap">
+                              {t.keywords.map((kw) => (
+                                <span key={kw} className="keyword-chip">
+                                  {kw}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div
+                            className="signal-card-actions"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="signal-action-btn"
+                              title="Edit signal"
+                              aria-label={`Edit ${t.name}`}
+                              onClick={() => {
+                                setEditing(t.id);
+                                setNewName(t.name);
+                                setKeywords(t.keywords.join(", "));
+                                setScope(
+                                  t.meetingScope === "all"
+                                    ? []
+                                    : t.meetingScope,
+                                );
+                                setDialog("signal");
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="signal-action-btn"
+                              title={t.enabled ? "Pause tracking" : "Resume tracking"}
+                              aria-label={`${t.enabled ? "Pause" : "Resume"} ${t.name}`}
+                              disabled={busy}
+                              onClick={() =>
+                                void run(async () => {
+                                  await api(`/trackers/${t.id}`, "PATCH", {
+                                    enabled: !t.enabled,
+                                  });
+                                  await loadSignals();
+                                })
+                              }
+                            >
+                              {t.enabled ? "Pause" : "Resume"}
+                            </button>
+                            <button
+                              type="button"
+                              className="signal-action-btn danger"
+                              title="Delete signal"
+                              aria-label={`Delete ${t.name}`}
+                              disabled={busy}
+                              onClick={() =>
+                                void run(async () => {
+                                  await api(`/trackers/${t.id}`, "DELETE");
+                                  await loadSignals();
+                                  if (selectedSignal === t.id)
+                                    setSelectedSignal("all");
+                                })
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+
+                  <div className="signal-matches-header">
+                    <h2>
+                      Matched conversations
+                      <span className="count-pill">
+                        {
+                          matches.filter(
+                            (m) =>
+                              (selectedSignal === "all" ||
+                                m.trackerId === selectedSignal) &&
+                              (
+                                m.excerpt +
+                                " " +
+                                m.speaker +
+                                " " +
+                                m.meetingTitle +
+                                " " +
+                                m.keyword
+                              )
+                                .toLowerCase()
+                                .includes(signalQuery.toLowerCase()),
+                          ).length
+                        }
+                      </span>
+                    </h2>
+                    {selectedSignal !== "all" && (
+                      <button
+                        type="button"
+                        className="text-button small"
+                        onClick={() => setSelectedSignal("all")}
+                      >
+                        Reset filter to all signals
+                      </button>
+                    )}
+                  </div>
+
                   <div className="signal-list">
                     {matches
                       .filter(
@@ -1158,21 +1295,51 @@ export function RelayApp() {
                       .map((m, i) => (
                         <button
                           key={m.segmentId + ":" + m.trackerId + ":" + i}
+                          className="signal-match-card"
                           onClick={() =>
-                            void openMeeting(m.meetingId, m.timestamp)
+                            void openMeeting(
+                              m.meetingId,
+                              m.timestamp,
+                              "Conversation",
+                            )
                           }
                         >
-                          <span className="tag">{m.keyword}</span>
-                          <p>{m.excerpt}</p>
-                          <small>
-                            {m.speaker} · {m.meetingTitle}
-                          </small>
-                          <span className="timestamp">
-                            {m.timestampFormatted} <ArrowUpRight size={14} />
-                          </span>
+                          <div className="match-card-top">
+                            <div className="match-badge-group">
+                              <span className="keyword-badge">
+                                <Signal size={12} />
+                                {m.keyword}
+                              </span>
+                              <span className="tracker-name-badge">
+                                {trackers.find((t) => t.id === m.trackerId)
+                                  ?.name || "Signal"}
+                              </span>
+                            </div>
+                            <span className="match-timestamp">
+                              {m.timestampFormatted}{" "}
+                              <ArrowUpRight size={14} />
+                            </span>
+                          </div>
+                          <blockquote className="match-excerpt">
+                            “{m.excerpt}”
+                          </blockquote>
+                          <div className="match-card-footer">
+                            <div className="speaker-info">
+                              <span className="speaker-avatar-dot" />
+                              <strong>{m.speaker}</strong>
+                              <span className="meta-separator">·</span>
+                              <span className="meeting-title-label">
+                                {m.meetingTitle}
+                              </span>
+                            </div>
+                            <span className="jump-hint">
+                              Jump to moment <ArrowRight size={13} />
+                            </span>
+                          </div>
                         </button>
                       ))}
                   </div>
+
                   {!matches.some(
                     (m) =>
                       (selectedSignal === "all" ||
@@ -1182,8 +1349,10 @@ export function RelayApp() {
                         .includes(signalQuery.toLowerCase()),
                   ) && (
                     <div className="empty">
-                      No matches yet. Add a signal with a topic your team
-                      discusses.
+                      No matches found{signalQuery ? ` for “${signalQuery}”` : ""}.
+                      {selectedSignal !== "all"
+                        ? " Try selecting “All signals” or adjusting your search phrase."
+                        : " Add a new signal above to follow topics across your sessions."}
                     </div>
                   )}
                 </>
@@ -1243,76 +1412,134 @@ export function RelayApp() {
                   </p>
                 </div>
               )}
-              {view === "Preferences" && (
+              {(view === "Settings" || view === "Preferences") && (
                 <>
                   <div className="page-heading">
                     <div>
-                      <p className="eyebrow">MAKE ROOM FOR YOUR WORK</p>
-                      <h1>Your workspace, your pace.</h1>
+                      <p className="eyebrow">WORKSPACE SETTINGS</p>
+                      <h1>Settings & Preferences</h1>
                     </div>
                   </div>
-                  <section className="preference-card">
-                    <h2>
-                      <Sun size={20} />
-                      Appearance & theme
-                    </h2>
-                    <p>
-                      Switch between Relay’s warm editorial light theme, deep
-                      forest dark theme, or follow your system preference.
-                      Changes apply across the entire workspace immediately.
-                    </p>
-                    <div style={{ maxWidth: 300, marginTop: 14 }}>
-                      <ThemeToggle />
-                    </div>
-                  </section>
-                  <WorkspacePreferences />
-                  <section className="preference-card">
-                    <h2>Reading density</h2>
-                    <p>
-                      Choose how much breathing room the session library gets.
-                      This preference is stored only in this browser.
-                    </p>
-                    <button
-                      className="secondary"
-                      onClick={() => {
-                        const next = !compact;
-                        setCompact(next);
-                        try {
-                          localStorage.setItem(
-                            "relay-density",
-                            next ? "compact" : "comfortable",
-                          );
-                        } catch {
-                          setError(
-                            "Your browser could not save this display preference.",
-                          );
+                  <div className="filter-row" style={{ marginBottom: 24 }}>
+                    {[
+                      { id: "all", label: "All settings" },
+                      { id: "preferences", label: "Preferences" },
+                      { id: "appearance", label: "Appearance" },
+                      { id: "integrations", label: "Integrations" },
+                    ].map(({ id, label }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={settingsTab === id ? "selected" : ""}
+                        onClick={() =>
+                          setSettingsTab(id as typeof settingsTab)
                         }
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {(settingsTab === "all" || settingsTab === "appearance") && (
+                    <section className="preference-card" id="appearance">
+                      <h2>
+                        <Sun size={20} />
+                        Appearance & theme
+                      </h2>
+                      <p>
+                        Switch between Relay’s warm editorial light theme, deep
+                        forest dark theme, or follow your system preference.
+                        Changes apply across the entire workspace immediately.
+                      </p>
+                      <div style={{ maxWidth: 300, marginTop: 14 }}>
+                        <ThemeToggle />
+                      </div>
+                      <h3 style={{ marginTop: 24, fontSize: 15 }}>
+                        Reading & transcript density
+                      </h3>
+                      <p>
+                        Choose how much breathing room the session library and
+                        conversation transcript get. This preference is saved in
+                        this browser.
+                      </p>
+                      <div className="button-row">
+                        <button
+                          type="button"
+                          className={!compact ? "primary" : "secondary"}
+                          onClick={() => {
+                            setCompact(false);
+                            try {
+                              localStorage.setItem(
+                                "relay-density",
+                                "comfortable",
+                              );
+                            } catch {
+                              setError(
+                                "Your browser could not save this display preference.",
+                              );
+                            }
+                          }}
+                        >
+                          Comfortable spacing
+                        </button>
+                        <button
+                          type="button"
+                          className={compact ? "primary" : "secondary"}
+                          onClick={() => {
+                            setCompact(true);
+                            try {
+                              localStorage.setItem("relay-density", "compact");
+                            } catch {
+                              setError(
+                                "Your browser could not save this display preference.",
+                              );
+                            }
+                          }}
+                        >
+                          Compact spacing
+                        </button>
+                      </div>
+                    </section>
+                  )}
+
+                  {(settingsTab === "all" ||
+                    settingsTab === "preferences") && (
+                    <WorkspacePreferences />
+                  )}
+
+                  {(settingsTab === "all" ||
+                    settingsTab === "integrations") && (
+                    <WorkspaceIntegrations
+                      onStartCall={() => startCall()}
+                      onViewUpcoming={() => {
+                        setLibraryScope("upcoming");
+                        navigate("Sessions");
                       }}
-                    >
-                      {compact
-                        ? "Use comfortable spacing"
-                        : "Use compact spacing"}
-                    </button>
-                  </section>
-                  <section className="preference-card">
-                    <h2>
-                      <Database size={20} />
-                      Connected workspace
-                    </h2>
-                    <p>
-                      Meetings, participants, transcripts, follow-ups, moments,
-                      collections, signals and share links live in PostgreSQL.
-                      Reloading fetches their saved state from the API.
-                    </p>
-                    <span className="tag">
-                      Public demo · fictional example data
-                    </span>
-                    <p className="muted small">
-                      This demo has no private accounts. Do not enter
-                      confidential information. Calendar integrations and
-                      external meeting bots are outside this release.
-                    </p>
-                  </section>
+                    />
+                  )}
+
+                  {settingsTab === "all" && (
+                    <section className="preference-card">
+                      <h2>
+                        <Database size={20} />
+                        Connected workspace
+                      </h2>
+                      <p>
+                        Meetings, participants, transcripts, follow-ups,
+                        moments, collections, signals and share links live in
+                        PostgreSQL. Reloading fetches their saved state from the
+                        API.
+                      </p>
+                      <span className="tag status-connected">
+                        <span className="status-dot" />
+                        PostgreSQL Connected · Neon Serverless
+                      </span>
+                      <p className="muted small" style={{ marginTop: 12 }}>
+                        Public demo data environment. Calendar integrations and
+                        external meeting bots are simulated safely in browser.
+                      </p>
+                    </section>
+                  )}
                 </>
               )}
             </>

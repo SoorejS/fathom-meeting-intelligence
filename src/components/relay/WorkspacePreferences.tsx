@@ -66,6 +66,17 @@ export function WorkspacePreferences() {
           />
           Extract actions for new captured sessions
         </label>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={prefs.showTimestamps !== false}
+            onChange={(e) => change({ showTimestamps: e.target.checked })}
+          />
+          Show timestamps in conversation transcript
+        </label>
+        <p className="muted small">
+          Displays clickable time markers beside spoken utterances in session transcripts.
+        </p>
         <label>
           Schedule capture
           <select

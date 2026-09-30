@@ -15,6 +15,7 @@ export const preferencesSchema = z.object({
   consentPreference: z.enum(["remember", "required"]).default("remember"),
   botDisplayName: z.string().trim().min(1).max(80).default("Relay Notetaker"),
   defaultVisibility: z.enum(["private", "team", "public"]).default("team"),
+  showTimestamps: z.boolean().default(true),
   momentTypes: z
     .array(
       z.object({

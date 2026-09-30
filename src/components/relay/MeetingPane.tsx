@@ -97,9 +97,14 @@ export function MeetingPane({
   useEffect(() => {
     if (!readOnly)
       api<RelayPreferences>("/preferences")
-        .then(setPrefs)
+        .then((p) => {
+          setPrefs(p);
+          if (!initial.template && p.defaultTemplate) {
+            setTemplate(p.defaultTemplate);
+          }
+        })
         .catch((e) => setError(e.message));
-  }, [readOnly]);
+  }, [readOnly, initial.template]);
   useEffect(() => {
     if (tab === "Conversation" && !transcriptQuery)
       activeLine.current?.scrollIntoView({
@@ -495,6 +500,13 @@ export function MeetingPane({
                 <button
                   className="text-button"
                   disabled={busy}
+                  onClick={() => void chooseTemplate(prefs.defaultTemplate || "default")}
+                >
+                  Apply default brief ({prefs.defaultTemplate || "default"})
+                </button>
+                <button
+                  className="text-button"
+                  disabled={busy}
                   onClick={() => void chooseTemplate("default")}
                 >
                   Reset brief
@@ -563,28 +575,48 @@ export function MeetingPane({
           )}
           {tab === "Conversation" && (
             <div className="conversation">
-              <button
-                className="text-button"
-                onClick={() => {
-                  void navigator.clipboard
-                    .writeText(
-                      meeting.transcript
-                        .map(
-                          (t) =>
-                            `${t.timestampFormatted} ${t.speaker}: ${t.text}`,
-                        )
-                        .join("\n"),
-                    )
-                    .then(() => setNotice("Conversation copied."))
-                    .catch(() =>
-                      setError(
-                        "Clipboard unavailable. Select and copy the conversation text.",
-                      ),
-                    );
-                }}
-              >
-                Copy conversation
-              </button>
+              <div className="button-row" style={{ marginBottom: 12 }}>
+                <button
+                  className="text-button"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(
+                        meeting.transcript
+                          .map(
+                            (t) =>
+                              `${t.timestampFormatted} ${t.speaker}: ${t.text}`,
+                          )
+                          .join("\n"),
+                      )
+                      .then(() => setNotice("Conversation copied."))
+                      .catch(() =>
+                        setError(
+                          "Clipboard unavailable. Select and copy the conversation text.",
+                        ),
+                      );
+                  }}
+                >
+                  Copy conversation
+                </button>
+                {!readOnly && (
+                  <button
+                    className="text-button"
+                    onClick={async () => {
+                      const next = !(prefs.showTimestamps !== false);
+                      setPrefs((p) => ({ ...p, showTimestamps: next }));
+                      try {
+                        await api<RelayPreferences>("/preferences", "PATCH", {
+                          showTimestamps: next,
+                        });
+                      } catch {}
+                    }}
+                  >
+                    {prefs.showTimestamps !== false
+                      ? "Hide timestamps"
+                      : "Show timestamps"}
+                  </button>
+                )}
+              </div>
               <label className="inline-search">
                 <Search size={16} />
                 <input
@@ -619,12 +651,14 @@ export function MeetingPane({
                     aria-current={t.id === activeId ? "true" : undefined}
                     className={`transcript-line ${time >= t.timestamp && time < (meeting.transcript.find((s) => s.timestamp > t.timestamp)?.timestamp ?? meeting.duration + 1) ? "current" : ""}`}
                   >
-                    <button
-                      className="timestamp"
-                      onClick={() => seek(t.timestamp)}
-                    >
-                      {t.timestampFormatted}
-                    </button>
+                    {prefs.showTimestamps !== false && (
+                      <button
+                        className="timestamp"
+                        onClick={() => seek(t.timestamp)}
+                      >
+                        {t.timestampFormatted}
+                      </button>
+                    )}
                     <div>
                       <strong>
                         <span className={`speaker-dot tone-${i % 4}`} />
