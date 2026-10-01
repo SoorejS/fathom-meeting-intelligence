@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { useTheme, type ThemePreference } from "@/lib/useTheme";
 
 interface ThemeToggleProps {
@@ -21,7 +21,6 @@ export function ThemeToggle({
   const options: { id: ThemePreference; label: string; icon: typeof Sun }[] = [
     { id: "light", label: "Light", icon: Sun },
     { id: "dark", label: "Dark", icon: Moon },
-    { id: "system", label: "Auto", icon: Monitor },
   ];
 
   return (
@@ -31,7 +30,7 @@ export function ThemeToggle({
       aria-label="Appearance theme preference"
     >
       {options.map(({ id, label, icon: Icon }) => {
-        const isSelected = mounted ? theme === id : id === "system";
+        const isSelected = mounted ? theme === id : id === "dark";
         return (
           <button
             key={id}

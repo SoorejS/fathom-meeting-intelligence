@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, useCallback, useEffect } from "react";
 
-export type ThemePreference = "light" | "dark" | "system";
+export type ThemePreference = "light" | "dark";
 export type EffectiveTheme = "light" | "dark";
 
 const STORAGE_KEY = "relay-theme";
@@ -16,22 +16,21 @@ export function getSystemTheme(): EffectiveTheme {
 }
 
 export function getStoredTheme(): ThemePreference {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "dark";
   try {
     const val = localStorage.getItem(STORAGE_KEY);
-    if (val === "light" || val === "dark" || val === "system") {
+    if (val === "light" || val === "dark") {
       return val;
     }
   } catch {
     // Ignore localStorage access errors
   }
-  return "system";
+  return "dark";
 }
 
 export function applyThemeToDOM(pref: ThemePreference): EffectiveTheme {
   if (typeof document === "undefined") return "light";
-  const effective: EffectiveTheme =
-    pref === "system" ? getSystemTheme() : pref;
+  const effective: EffectiveTheme = pref;
 
   const root = document.documentElement;
   root.setAttribute("data-theme", effective);
@@ -70,7 +69,7 @@ function getSnapshot(): ThemePreference {
 }
 
 function getServerSnapshot(): ThemePreference {
-  return "system";
+  return "dark";
 }
 
 export function useTheme() {
@@ -80,8 +79,7 @@ export function useTheme() {
     applyThemeToDOM(theme);
   }, [theme]);
 
-  const effectiveTheme: EffectiveTheme =
-    theme === "system" ? getSystemTheme() : theme;
+  const effectiveTheme: EffectiveTheme = theme;
 
   const setTheme = useCallback((next: ThemePreference) => {
     try {
