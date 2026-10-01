@@ -553,6 +553,10 @@ export function RelayApp() {
                   {view === "Overview" && (
                     <section className="preference-card">
                       <h2>Ask your workspace</h2>
+                      <p className="muted small" style={{ marginBottom: 10 }}>
+                        Workspace summaries from loaded sessions. Open a session
+                        for transcript-cited Q&amp;A with source evidence.
+                      </p>
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();

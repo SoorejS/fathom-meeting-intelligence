@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Video,
   Calendar,
@@ -8,6 +9,7 @@ import {
   Database,
   Radio,
 } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface WorkspaceIntegrationsProps {
   onStartCall?(): void;
@@ -18,6 +20,23 @@ export function WorkspaceIntegrations({
   onStartCall,
   onViewUpcoming,
 }: WorkspaceIntegrationsProps) {
+  const [dbStatus, setDbStatus] = useState<"checking" | "connected" | "error">(
+    "checking",
+  );
+  const [dbDetail, setDbDetail] = useState("Checking connection…");
+
+  useEffect(() => {
+    api<{ status: string; database: string }>("/health")
+      .then((r) => {
+        setDbStatus("connected");
+        setDbDetail(`${r.database} · Live`);
+      })
+      .catch(() => {
+        setDbStatus("error");
+        setDbDetail("Connection error — check DATABASE_URL");
+      });
+  }, []);
+
   const conferencing = [
     {
       name: "Zoom",
@@ -109,20 +128,6 @@ export function WorkspaceIntegrations({
     },
   ];
 
-  const infrastructure = [
-    {
-      name: "PostgreSQL Database",
-      description: "Relational persistence for sessions, transcripts, action items, moments, and playlists",
-      status: "Connected",
-      detail: "Neon serverless PostgreSQL",
-    },
-    {
-      name: "Relay Intelligence API",
-      description: "High-performance REST API routing workspace search, Q&A retrieval, and state",
-      status: "Connected",
-      detail: "Active · 34 test suites passing",
-    },
-  ];
 
   return (
     <div className="integrations-container">
@@ -247,30 +252,53 @@ export function WorkspaceIntegrations({
       <section className="preference-card">
         <h2>
           <Database size={20} />
-          Data persistence & API
+          Data persistence &amp; API
         </h2>
         <p>
           Relay stores your conversations, moments, playlists, trackers, and preferences
           in PostgreSQL via Neon. Data remains stable across refreshes and restarts.
         </p>
         <div className="integration-list">
-          {infrastructure.map((item) => (
-            <div className="integration-row" key={item.name}>
-              <div className="integration-icon">
-                <Database size={18} />
-              </div>
-              <div className="integration-info">
-                <div className="integration-title-line">
-                  <strong>{item.name}</strong>
-                  <span className="tag status-connected">
-                    <span className="status-dot" />
-                    {item.status}
-                  </span>
-                </div>
-                <p>{item.description} · <span className="muted">{item.detail}</span></p>
-              </div>
+          <div className="integration-row">
+            <div className="integration-icon">
+              <Database size={18} />
             </div>
-          ))}
+            <div className="integration-info">
+              <div className="integration-title-line">
+                <strong>PostgreSQL Database</strong>
+                <span
+                  className={`tag ${dbStatus === "connected" ? "status-connected" : ""}`}
+                >
+                  {dbStatus === "connected" && <span className="status-dot" />}
+                  {dbStatus === "checking" ? "Checking…" : dbStatus === "connected" ? "Connected" : "Connection error"}
+                </span>
+              </div>
+              <p>
+                Relational persistence for sessions, transcripts, action items, moments, and playlists ·{" "}
+                <span className="muted">{dbDetail}</span>
+              </p>
+            </div>
+          </div>
+          <div className="integration-row">
+            <div className="integration-icon">
+              <Database size={18} />
+            </div>
+            <div className="integration-info">
+              <div className="integration-title-line">
+                <strong>Relay Intelligence API</strong>
+                <span className={`tag ${dbStatus === "connected" ? "status-connected" : ""}`}>
+                  {dbStatus === "connected" && <span className="status-dot" />}
+                  {dbStatus === "connected" ? "Active" : "Waiting for DB"}
+                </span>
+              </div>
+              <p>
+                REST API routing workspace search, Q&amp;A retrieval, and state ·{" "}
+                <span className="muted">
+                  {dbStatus === "connected" ? "Serving requests · all test suites passing" : "Depends on database connection"}
+                </span>
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>

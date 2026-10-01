@@ -901,8 +901,16 @@ export function MeetingPane({
                 ))}
               </div>
               {answer && (
-                <div className="answer" role="status">
+                <div
+                  className={`answer ${answer.citations.length === 0 ? "answer-nomatch" : ""}`}
+                  role="status"
+                >
                   <p>{answer.answer}</p>
+                  {answer.citations.length === 0 && (
+                    <p className="muted small" style={{ marginTop: 6, fontStyle: "italic" }}>
+                      No transcript evidence found. Try a specific person, decision, or action item.
+                    </p>
+                  )}
                   {answer.citations.map((c, i) => (
                     <button
                       className="citation"

@@ -1054,6 +1054,9 @@ select {
   line-height: 1.8;
   padding-top: 17px;
 }
+.answer.answer-nomatch {
+  opacity: 0.65;
+}
 .answer p {
   white-space: pre-line;
 }
